@@ -31,7 +31,7 @@ class User(AbstractUser):
     organization_name = models.CharField(max_length=255, blank=True, null=True)
     citizenship = models.CharField(max_length=2, choices=CITIZENSHIP_CHOICES, blank=True, null=True)
     citizenship_number = models.CharField(max_length=14, blank=True, null=True, unique=True)
-    pan_number = models.CharField(max_length=9, blank=True, null=True)
+    pan_number = models.CharField(max_length=9, blank=True, null=True, unique=True)
     bank_name = models.CharField(max_length=255, blank=True, null=True)
     bank_account_number = models.CharField(max_length=20, blank=True, null=True)
     is_organizer_approved = models.BooleanField(default=False)
