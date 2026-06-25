@@ -3,13 +3,20 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from  .validators import validate_nepali_phone
+from rest_framework.validators import UniqueValidator
 
 User = get_user_model()
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(
-        validators=[validate_nepali_phone],
+        validators=[
+            validate_nepali_phone,
+            UniqueValidator(
+                queryset=User.objects.all(),
+                message="This phone number is already registered."
+            )
+        ],
         required=False,
         allow_null=True,
     )
@@ -53,7 +60,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
-    phone_number = serializers.CharField(validators=[validate_nepali_phone])
+    phone_number = serializers.CharField(validators=[
+        validate_nepali_phone,
+        UniqueValidator(queryset=User.objects.all(), message="This phone number is already registered.")
+    ])
 
     class Meta:
         model = User
