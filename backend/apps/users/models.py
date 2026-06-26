@@ -37,11 +37,11 @@ class User(AbstractUser):
     bank_account_number = models.CharField(max_length=20, blank=True, null=True)
     is_organizer_approved = models.BooleanField(default=False)
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email']
 
     class Meta:
         db_table = 'users'
 
     def __str__(self):
-        return self.email
+        return self.username
