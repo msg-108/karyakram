@@ -222,3 +222,4 @@ backend/.env
 backend/staticfiles/
 backend/media/
 .idea/
+

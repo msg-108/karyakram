@@ -6,6 +6,7 @@ class User(AbstractUser):
     ROLE_CHOICES = (
         ('user', 'User'),
         ('organizer', 'Organizer'),
+        ('admin', 'Admin'),
     )
 
     CITIZENSHIP_CHOICES = (
