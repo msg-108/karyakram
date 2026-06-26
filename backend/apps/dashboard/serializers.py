@@ -9,10 +9,23 @@ class UserDashboardSerializer(serializers.Serializer):
 
     def to_representation(self, user):
         return {
-            "profile": UserProfileSerializer(user).data,
+            "profile": {
+                "id": user.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "username": user.username,
+                "email": user.email,
+                "phone_number": user.phone_number,
+                "date_of_birth": user.date_of_birth,
+                "role": user.role,
+                "is_email_verified": user.is_email_verified,
+                "is_phone_verified": user.is_phone_verified,
+                "created_at": user.created_at,
+                "updated_at": user.updated_at,
+
             # "total_bookings": user.bookings.count(),
         }
-
+    }
 
 class OrganizerDashboardSerializer(serializers.Serializer):
     profile = UserProfileSerializer()
