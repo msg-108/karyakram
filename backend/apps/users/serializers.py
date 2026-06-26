@@ -60,6 +60,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
+    email = serializers.EmailField(  # 👈 add this
+        required=True,
+        validators=[
+            UniqueValidator(
+                queryset=User.objects.all(),
+                message="This email is already registered."
+            )
+        ]
+    )
     phone_number = serializers.CharField(validators=[
         validate_nepali_phone,
         UniqueValidator(queryset=User.objects.all(), message="This phone number is already registered.")
