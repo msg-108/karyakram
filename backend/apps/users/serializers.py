@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from  .validators import validate_nepali_phone
+from .validators import validate_nepali_phone
 from rest_framework.validators import UniqueValidator
 
 User = get_user_model()
@@ -20,6 +20,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+
     class Meta:
         model = User
         fields = [
@@ -36,16 +37,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
 
-        #     Organizer specific fields
+            # Organizer specific fields
             'organization_name',
-            'citizenship',
+            'is_nepali_citizen',
             'citizenship_number',
             'pan_number',
             'bank_name',
             'bank_account_number',
             'is_organizer_approved',
         ]
-
 
         read_only_fields = [
             'id',
@@ -60,7 +60,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
-    email = serializers.EmailField(  # 👈 add this
+    email = serializers.EmailField(
         required=True,
         validators=[
             UniqueValidator(
@@ -73,6 +73,36 @@ class RegisterSerializer(serializers.ModelSerializer):
         validate_nepali_phone,
         UniqueValidator(queryset=User.objects.all(), message="This phone number is already registered.")
     ])
+
+    # NOTE: citizenship_number and pan_number are EncryptedCharField on the
+    # model. UniqueValidator runs a DB filter() under the hood, which compares
+    # ciphertext, not plaintext. If django-encrypted-model-fields uses a
+    # random IV per encryption (likely, since that's standard for proper
+    # encryption), two identical plaintext values will NOT produce identical
+    # ciphertext -- meaning this filter() may fail to catch real duplicates.
+    # Confirm the library's IV behavior before trusting this in production.
+    # If non-deterministic, replace with a validate() step that decrypts
+    # and compares against existing values instead of relying on a DB match.
+    citizenship_number = serializers.CharField(
+        required=False,
+        allow_null=True,
+        validators=[
+            UniqueValidator(
+                queryset=User.objects.all(),
+                message="This citizenship number is already registered."
+            )
+        ]
+    )
+    pan_number = serializers.CharField(
+        required=False,
+        allow_null=True,
+        validators=[
+            UniqueValidator(
+                queryset=User.objects.all(),
+                message="This PAN number is already registered."
+            )
+        ]
+    )
 
     class Meta:
         model = User
@@ -88,7 +118,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             'role',
             # Organizer specific fields
             'organization_name',
-            'citizenship',
+            'is_nepali_citizen',
             'citizenship_number',
             'pan_number',
             'bank_name',
@@ -103,9 +133,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             'role': {'required': False, 'choices': ['user', 'organizer']},
             # Organizer fields are optional here, validated in validate()
             'organization_name': {'required': False},
-            'citizenship': {'required': False},
-            'citizenship_number': {'required': False},
-            'pan_number': {'required': False},
+            'is_nepali_citizen': {'required': False},
             'bank_name': {'required': False},
             'bank_account_number': {'required': False},
         }
@@ -124,7 +152,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         if attrs.get('role') == 'organizer':
             required_fields = [
                 'organization_name',
-                'citizenship',
                 'citizenship_number',
                 'pan_number',
                 'bank_name',
@@ -137,7 +164,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             # Clear organizer fields for non-organizer users
             organizer_fields = [
                 'organization_name',
-                'citizenship',
                 'citizenship_number',
                 'pan_number',
                 'bank_name',

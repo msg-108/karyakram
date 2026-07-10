@@ -1,15 +1,12 @@
 ﻿from django.contrib.auth.models import AbstractUser
 from django.db import models
+from encrypted_model_fields.fields import EncryptedCharField
 
 
 class User(AbstractUser):
     ROLE_CHOICES = (
         ('user', 'User'),
         ('organizer', 'Organizer'),
-    )
-
-    CITIZENSHIP_CHOICES = (
-        ('NP', 'Nepali'),
     )
 
     # Basic Fields
@@ -29,11 +26,11 @@ class User(AbstractUser):
 
     # Organizer Specific Fields
     organization_name = models.CharField(max_length=255, blank=True, null=True)
-    citizenship = models.CharField(max_length=2, choices=CITIZENSHIP_CHOICES, blank=True, null=True)
-    citizenship_number = models.CharField(max_length=14, blank=True, null=True, unique=True)
-    pan_number = models.CharField(max_length=9, blank=True, null=True, unique=True)
+    is_nepali_citizen = models.BooleanField(default=True)
+    citizenship_number = EncryptedCharField(max_length=14, blank=True, null=True)
+    pan_number = EncryptedCharField(max_length=9, blank=True, null=True)
     bank_name = models.CharField(max_length=255, blank=True, null=True)
-    bank_account_number = models.CharField(max_length=20, blank=True, null=True)
+    bank_account_number = EncryptedCharField(max_length=20, blank=True, null=True)
     is_organizer_approved = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'username'

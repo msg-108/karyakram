@@ -47,14 +47,21 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'django_filters',
+    'encrypted_model_fields',
 ]
 
 LOCAL_APPS = [
     'apps.users',
     'apps.dashboard',
+    'apps.events',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+FIELD_ENCRYPTION_KEY = config('FIELD_ENCRYPTION_KEY', default=None)
+
+if not FIELD_ENCRYPTION_KEY:
+    raise ValueError("FIELD_ENCRYPTION_KEY is not set in environment")
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
