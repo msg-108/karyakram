@@ -10,8 +10,6 @@ class EventGalleryImageSerializer(serializers.ModelSerializer):
 
 
 class EventListSerializer(serializers.ModelSerializer):
-    """Lightweight serializer for list views -- avoids pulling full
-    description/terms/gallery for every event in a listing response."""
     organizer_name = serializers.CharField(source='organizer.username', read_only=True)
 
     class Meta:
@@ -31,9 +29,6 @@ class EventListSerializer(serializers.ModelSerializer):
 
 
 class EventDetailSerializer(serializers.ModelSerializer):
-    """Full serializer for retrieve/create/update. Organizer is read-only here --
-    it's set explicitly in the view from request.user, never from client input,
-    so a user can never create or reassign an event under someone else's name."""
     organizer_name = serializers.CharField(source='organizer.username', read_only=True)
     gallery_images = EventGalleryImageSerializer(many=True, read_only=True)
 
@@ -72,11 +67,6 @@ class EventDetailSerializer(serializers.ModelSerializer):
         ]
 
     def validate_status(self, value):
-        # Organizers may only ever submit as draft. Requesting 'published'
-        # directly is rejected explicitly rather than silently downgraded --
-        # this makes the rule visible in the API response instead of a
-        # confusing silent no-op. 'cancelled' is allowed since an organizer
-        # cancelling their own event doesn't require approval either way.
         if value == 'published':
             instance = getattr(self, 'instance', None)
             already_approved = instance and instance.approval_status == 'approved'
@@ -88,10 +78,6 @@ class EventDetailSerializer(serializers.ModelSerializer):
 
 
 class AdminEventApprovalSerializer(serializers.ModelSerializer):
-    """Separate, narrow serializer used only by admin-facing approval endpoints.
-    Deliberately exposes nothing except approval_status -- an admin approving
-    an event should not be able to accidentally rewrite its title/description
-    through the same request."""
     class Meta:
         model = Event
         fields = ['id', 'approval_status']
