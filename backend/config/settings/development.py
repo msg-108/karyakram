@@ -18,3 +18,10 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ]
+# Email Configuration (Development)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Print emails to console for development
+
+# Media Files Configuration
+from pathlib import Path
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

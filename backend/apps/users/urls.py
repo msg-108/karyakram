@@ -9,6 +9,10 @@ from .views import (
     OrganizerRegisterView,
     OrganizerProfileView,
     OrganizerApprovalStatusView,
+    SendEmailVerificationView,
+    VerifyEmailTokenView,
+    OrganizerApprovalReplyView,
+    OrganizerApprovalListView,
     LogoutView,
 )
 
@@ -23,6 +27,14 @@ urlpatterns = [
     path('auth/organizer/register/', OrganizerRegisterView.as_view(), name='organizer-register'),
     path('auth/organizer/profile/', OrganizerProfileView.as_view(), name='organizer-profile'),
     path('auth/organizer/approval-status/', OrganizerApprovalStatusView.as_view(), name='organizer-approval-status'),
+    
+    # Email verification endpoints
+    path('auth/email/send-verification/', SendEmailVerificationView.as_view(), name='send-email-verification'),
+    path('auth/email/verify/', VerifyEmailTokenView.as_view(), name='verify-email'),
+    
+    # Admin approval endpoints
+    path('admin/approvals/', OrganizerApprovalListView.as_view(), name='approval-list'),
+    path('admin/approvals/reply/', OrganizerApprovalReplyView.as_view(), name='approval-reply'),
     
     # JWT endpoints (work for both User and Organizer)
     path('auth/login/', TokenObtainPairView.as_view(), name='login'),

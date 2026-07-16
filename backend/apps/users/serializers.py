@@ -217,3 +217,75 @@ class OrganizerRegisterSerializer(serializers.ModelSerializer):
         )
         
         return organizer
+
+
+# ==================== EMAIL VERIFICATION SERIALIZERS ====================
+
+class EmailVerificationSerializer(serializers.Serializer):
+    """Serializer for email verification."""
+    email = serializers.EmailField()
+    
+    def validate_email(self, value):
+        if not User.objects.filter(email=value).exists() and not Organizer.objects.filter(email=value).exists():
+            raise serializers.ValidationError("No account found with this email.")
+        return value
+
+
+class VerifyEmailTokenSerializer(serializers.Serializer):
+    """Serializer for verifying email token."""
+    email = serializers.EmailField()
+    token = serializers.CharField(max_length=255)
+    
+    def validate(self, attrs):
+        email = attrs.get('email')
+        token = attrs.get('token')
+        
+        # Try to find user or organizer with this email and token
+        user = User.objects.filter(email=email, email_verification_token=token).first()
+        if user:
+            if user.is_email_verified:
+                raise serializers.ValidationError("Email is already verified.")
+            return attrs
+        
+        organizer = Organizer.objects.filter(email=email, email_verification_token=token).first()
+        if organizer:
+            if organizer.is_email_verified:
+                raise serializers.ValidationError("Email is already verified.")
+            return attrs
+        
+        raise serializers.ValidationError("Invalid email or token.")
+
+
+# ==================== ORGANIZER APPROVAL SERIALIZERS ====================
+
+class OrganizerApprovalStatusSerializer(serializers.ModelSerializer):
+    """Serializer for displaying organizer approval status."""
+    organizer_name = serializers.CharField(source='organizer.organization_name', read_only=True)
+    organizer_email = serializers.CharField(source='organizer.email', read_only=True)
+    
+    class Meta:
+        model = OrganizerApprovalRequest
+        fields = [
+            'id',
+            'organizer_name',
+            'organizer_email',
+            'status',
+            'submitted_at',
+            'reviewed_at',
+            'admin_comments',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = fields
+
+
+class OrganizerApprovalReplySerializer(serializers.Serializer):
+    """Serializer for admin to approve/reject organizer applications."""
+    approval_id = serializers.IntegerField()
+    status = serializers.ChoiceField(choices=['approved', 'rejected', 'needs_revision'])
+    admin_comments = serializers.CharField(required=False, allow_blank=True)
+    
+    def validate_status(self, value):
+        if value not in ['approved', 'rejected', 'needs_revision']:
+            raise serializers.ValidationError("Invalid status. Choose from: approved, rejected, needs_revision.")
+        return value
