@@ -8,6 +8,7 @@ from .views import (
     UserProfileView,
     OrganizerRegisterView,
     OrganizerProfileView,
+    OrganizerApprovalStatusView,
     LogoutView,
 )
 
@@ -21,6 +22,7 @@ urlpatterns = [
     # Organizer endpoints
     path('auth/organizer/register/', OrganizerRegisterView.as_view(), name='organizer-register'),
     path('auth/organizer/profile/', OrganizerProfileView.as_view(), name='organizer-profile'),
+    path('auth/organizer/approval-status/', OrganizerApprovalStatusView.as_view(), name='organizer-approval-status'),
     
     # JWT endpoints (work for both User and Organizer)
     path('auth/login/', TokenObtainPairView.as_view(), name='login'),

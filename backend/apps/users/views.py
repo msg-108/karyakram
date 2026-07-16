@@ -4,21 +4,20 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema, inline_serializer
-from .models import User, Organizer
+from .models import User, Organizer, OrganizerApprovalRequest
 from .serializers import (
     UserRegisterSerializer,
     UserProfileSerializer,
     OrganizerRegisterSerializer,
     OrganizerProfileSerializer,
+    OrganizerApprovalRequestSerializer,
 )
 
 
 # ==================== USER VIEWS ====================
 
 class UserRegisterView(APIView):
-    """
-    API endpoint for user registration.
-    """
+    """API endpoint for user registration."""
     permission_classes = [AllowAny]
 
     @extend_schema(
@@ -37,14 +36,11 @@ class UserRegisterView(APIView):
 
 
 class UserProfileView(APIView):
-    """
-    API endpoint for user profile management.
-    """
+    """API endpoint for user profile management."""
     permission_classes = [IsAuthenticated]
 
     def get_user_or_404(self, request):
-        """Helper to get authenticated user if they are a User (not Organizer)."""
-        if isinstance(request.user, User):
+        if isinstance(request.user, User) and not isinstance(request.user, Organizer):
             return request.user
         return None
 
@@ -88,16 +84,13 @@ class UserProfileView(APIView):
 # ==================== ORGANIZER VIEWS ====================
 
 class OrganizerRegisterView(APIView):
-    """
-    API endpoint for organizer registration.
-    Requires email, phone, and detailed business information.
-    """
+    """API endpoint for organizer registration."""
     permission_classes = [AllowAny]
 
     @extend_schema(
         request=OrganizerRegisterSerializer,
         responses=OrganizerProfileSerializer,
-        description="Register a new organizer account",
+        description="Register a new organizer account (requires email verification and admin approval)",
         tags=["Organizer Authentication"],
     )
     def post(self, request):
@@ -110,13 +103,10 @@ class OrganizerRegisterView(APIView):
 
 
 class OrganizerProfileView(APIView):
-    """
-    API endpoint for organizer profile management.
-    """
+    """API endpoint for organizer profile management."""
     permission_classes = [IsAuthenticated]
 
     def get_organizer_or_404(self, request):
-        """Helper to get authenticated organizer if they are an Organizer (not User)."""
         if isinstance(request.user, Organizer):
             return request.user
         return None
@@ -158,12 +148,44 @@ class OrganizerProfileView(APIView):
         return Response(serializer.data)
 
 
+class OrganizerApprovalStatusView(APIView):
+    """API endpoint to check organizer approval status."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        responses=OrganizerApprovalRequestSerializer,
+        description="Get organizer's approval request status",
+        tags=["Organizer Profile"],
+    )
+    def get(self, request):
+        """Get approval status."""
+        organizer = self.get_organizer_or_404(request)
+        if not organizer:
+            return Response(
+                {"detail": "Only organizers can access this endpoint."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            approval_request = organizer.approval_request
+            serializer = OrganizerApprovalRequestSerializer(approval_request)
+            return Response(serializer.data)
+        except OrganizerApprovalRequest.DoesNotExist:
+            return Response(
+                {"detail": "No approval request found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    def get_organizer_or_404(self, request):
+        if isinstance(request.user, Organizer):
+            return request.user
+        return None
+
+
 # ==================== LOGOUT VIEW ====================
 
 class LogoutView(APIView):
-    """
-    API endpoint for user logout (works for both User and Organizer).
-    """
+    """API endpoint for user logout (works for both User and Organizer)."""
     permission_classes = [IsAuthenticated]
 
     @extend_schema(

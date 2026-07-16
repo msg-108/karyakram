@@ -2,7 +2,7 @@ import re
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.validators import UniqueValidator
-from .models import User, Organizer
+from .models import User, Organizer, OrganizerApprovalRequest
 from .validators import validate_nepali_phone
 
 
@@ -81,10 +81,35 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 # ==================== ORGANIZER SERIALIZERS ====================
 
+class OrganizerApprovalRequestSerializer(serializers.ModelSerializer):
+    """Serializer for approval request status."""
+    organizer_name = serializers.CharField(source='organizer.organization_name', read_only=True)
+    
+    class Meta:
+        model = OrganizerApprovalRequest
+        fields = [
+            'id',
+            'organizer_name',
+            'status',
+            'submitted_at',
+            'reviewed_at',
+            'admin_comments',
+        ]
+        read_only_fields = [
+            'id',
+            'organizer_name',
+            'status',
+            'submitted_at',
+            'reviewed_at',
+            'admin_comments',
+        ]
+
+
 class OrganizerProfileSerializer(serializers.ModelSerializer):
     """Serializer for organizer profile management."""
     email = serializers.EmailField(read_only=True)
-    phone_number = serializers.CharField(read_only=True)
+    approval_status = serializers.SerializerMethodField()
+    approval_request = OrganizerApprovalRequestSerializer(read_only=True)
 
     class Meta:
         model = Organizer
@@ -94,14 +119,16 @@ class OrganizerProfileSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'email',
-            'phone_number',
             'is_email_verified',
-            'is_phone_verified',
             'is_approved_by_admin',
+            'approval_status',
+            'approval_request',
             'organization_name',
             'organization_description',
-            'citizenship_number',
-            'pan_number',
+            'citizenship_image',
+            'citizenship_pdf',
+            'pancard_image',
+            'pancard_pdf',
             'bank_name',
             'bank_account_number',
             'created_at',
@@ -110,13 +137,18 @@ class OrganizerProfileSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id',
             'email',
-            'phone_number',
             'is_email_verified',
-            'is_phone_verified',
             'is_approved_by_admin',
+            'approval_status',
             'created_at',
             'updated_at',
         ]
+
+    def get_approval_status(self, obj):
+        try:
+            return obj.approval_request.status
+        except OrganizerApprovalRequest.DoesNotExist:
+            return None
 
 
 class OrganizerRegisterSerializer(serializers.ModelSerializer):
@@ -132,34 +164,10 @@ class OrganizerRegisterSerializer(serializers.ModelSerializer):
             )
         ]
     )
-    phone_number = serializers.CharField(
-        required=True,
-        validators=[
-            validate_nepali_phone,
-            UniqueValidator(
-                queryset=Organizer.objects.all(),
-                message="This phone number is already registered."
-            )
-        ]
-    )
-    citizenship_number = serializers.CharField(
-        required=True,
-        validators=[
-            UniqueValidator(
-                queryset=Organizer.objects.all(),
-                message="This citizenship number is already registered."
-            )
-        ]
-    )
-    pan_number = serializers.CharField(
-        required=True,
-        validators=[
-            UniqueValidator(
-                queryset=Organizer.objects.all(),
-                message="This PAN number is already registered."
-            )
-        ]
-    )
+    citizenship_image = serializers.ImageField(required=False, allow_null=True)
+    citizenship_pdf = serializers.FileField(required=False, allow_null=True)
+    pancard_image = serializers.ImageField(required=False, allow_null=True)
+    pancard_pdf = serializers.FileField(required=False, allow_null=True)
 
     class Meta:
         model = Organizer
@@ -168,13 +176,14 @@ class OrganizerRegisterSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'email',
-            'phone_number',
             'password',
             'password_confirm',
             'organization_name',
             'organization_description',
-            'citizenship_number',
-            'pan_number',
+            'citizenship_image',
+            'citizenship_pdf',
+            'pancard_image',
+            'pancard_pdf',
             'bank_name',
             'bank_account_number',
         ]
@@ -183,18 +192,9 @@ class OrganizerRegisterSerializer(serializers.ModelSerializer):
             'first_name': {'required': True},
             'last_name': {'required': True},
             'organization_name': {'required': True},
-            'citizenship_number': {'required': True},
-            'pan_number': {'required': True},
-            'bank_name': {'required': True},
-            'bank_account_number': {'required': True},
+            'bank_name': {'required': False},
+            'bank_account_number': {'required': False},
         }
-
-    def validate_pan_number(self, value):
-        if not value.isdigit() or len(value) != 9:
-            raise serializers.ValidationError(
-                "PAN number must be exactly 9 digits."
-            )
-        return value
 
     def validate(self, attrs):
         if attrs.get('password') != attrs.get('password_confirm'):
@@ -209,4 +209,11 @@ class OrganizerRegisterSerializer(serializers.ModelSerializer):
         organizer = Organizer(**validated_data)
         organizer.set_password(password)
         organizer.save()
+        
+        # Create approval request
+        OrganizerApprovalRequest.objects.create(
+            organizer=organizer,
+            requested_by=None  # Can be set if request context has user
+        )
+        
         return organizer
