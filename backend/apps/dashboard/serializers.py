@@ -3,12 +3,12 @@ from apps.users.serializers import UserProfileSerializer
 from django.contrib.auth import get_user_model
 
 class UserDashboardSerializer(serializers.Serializer):
+    role = serializers.CharField(default="user")
     profile = UserProfileSerializer()
-
-    # Add user specific stats later
 
     def to_representation(self, user):
         return {
+            "role": "user",
             "profile": {
                 "id": user.id,
                 "first_name": user.first_name,
@@ -22,33 +22,27 @@ class UserDashboardSerializer(serializers.Serializer):
                 "is_phone_verified": user.is_phone_verified,
                 "created_at": user.created_at,
                 "updated_at": user.updated_at,
-
-            # "total_bookings": user.bookings.count(),
+            },
         }
-    }
+
 
 class OrganizerDashboardSerializer(serializers.Serializer):
+    role = serializers.CharField(default="organizer")
     profile = UserProfileSerializer()
-
-    # Add organizer specific stats later
 
     def to_representation(self, user):
         return {
+            "role": "organizer",
             "profile": UserProfileSerializer(user).data,
-            # "total_events": user.events.count(),
-
         }
 
 
 class AdminDashboardSerializer(serializers.Serializer):
+    role = serializers.CharField(default="admin")
     profile = UserProfileSerializer()
 
-    # Add admin specific stats later
-
     def to_representation(self, user):
-
-        # User = get_user_model()
         return {
+            "role": "admin",
             "profile": UserProfileSerializer(user).data,
-            # "total_users": User.objects.filter(role="user").count(),
         }

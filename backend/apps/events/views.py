@@ -67,6 +67,7 @@ class MyEventsView(generics.ListAPIView):
 
 class AdminEventApprovalView(APIView):
     permission_classes = [permissions.IsAdminUser]
+    serializer_class = AdminEventApprovalSerializer
 
     def patch(self, request, slug):
         event = get_object_or_404(Event, slug=slug)
