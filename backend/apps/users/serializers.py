@@ -1,63 +1,40 @@
-﻿import re
+import re
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from .validators import validate_nepali_phone
 from rest_framework.validators import UniqueValidator
+from .models import User, Organizer
+from .validators import validate_nepali_phone
 
-User = get_user_model()
 
+# ==================== USER SERIALIZERS ====================
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    phone_number = serializers.CharField(
-        validators=[
-            validate_nepali_phone,
-            UniqueValidator(
-                queryset=User.objects.all(),
-                message="This phone number is already registered."
-            )
-        ],
-        required=False,
-        allow_null=True,
-    )
+    """Serializer for standard user profile management."""
+    email = serializers.EmailField(read_only=True)
 
     class Meta:
         model = User
         fields = [
             'id',
+            'username',
             'first_name',
             'last_name',
-            'username',
             'email',
-            'phone_number',
-            'date_of_birth',
-            'role',
             'is_email_verified',
-            'is_phone_verified',
             'created_at',
             'updated_at',
-
-            # Organizer specific fields
-            'organization_name',
-            'is_nepali_citizen',
-            'citizenship_number',
-            'pan_number',
-            'bank_name',
-            'bank_account_number',
-            'is_organizer_approved',
         ]
-
         read_only_fields = [
             'id',
             'email',
-            'role',
+            'is_email_verified',
             'created_at',
             'updated_at',
-            'is_organizer_approved',
         ]
 
 
-class RegisterSerializer(serializers.ModelSerializer):
+class UserRegisterSerializer(serializers.ModelSerializer):
+    """Serializer for user registration."""
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
     email = serializers.EmailField(
@@ -69,118 +46,167 @@ class RegisterSerializer(serializers.ModelSerializer):
             )
         ]
     )
-    phone_number = serializers.CharField(validators=[
-        validate_nepali_phone,
-        UniqueValidator(queryset=User.objects.all(), message="This phone number is already registered.")
-    ])
 
-    # NOTE: citizenship_number and pan_number are EncryptedCharField on the
-    # model. UniqueValidator runs a DB filter() under the hood, which compares
-    # ciphertext, not plaintext. If django-encrypted-model-fields uses a
-    # random IV per encryption (likely, since that's standard for proper
-    # encryption), two identical plaintext values will NOT produce identical
-    # ciphertext -- meaning this filter() may fail to catch real duplicates.
-    # Confirm the library's IV behavior before trusting this in production.
-    # If non-deterministic, replace with a validate() step that decrypts
-    # and compares against existing values instead of relying on a DB match.
-    citizenship_number = serializers.CharField(
-        required=False,
-        allow_null=True,
+    class Meta:
+        model = User
+        fields = [
+            'username',
+            'email',
+            'password',
+            'password_confirm',
+            'first_name',
+            'last_name',
+        ]
+        extra_kwargs = {
+            'username': {'required': True},
+            'first_name': {'required': True},
+            'last_name': {'required': True},
+        }
+
+    def validate(self, attrs):
+        if attrs.get('password') != attrs.get('password_confirm'):
+            raise serializers.ValidationError(
+                {"password_confirm": "Passwords don't match."}
+            )
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop('password_confirm')
+        password = validated_data.pop('password')
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
+
+
+# ==================== ORGANIZER SERIALIZERS ====================
+
+class OrganizerProfileSerializer(serializers.ModelSerializer):
+    """Serializer for organizer profile management."""
+    email = serializers.EmailField(read_only=True)
+    phone_number = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Organizer
+        fields = [
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'email',
+            'phone_number',
+            'is_email_verified',
+            'is_phone_verified',
+            'is_approved_by_admin',
+            'organization_name',
+            'organization_description',
+            'citizenship_number',
+            'pan_number',
+            'bank_name',
+            'bank_account_number',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = [
+            'id',
+            'email',
+            'phone_number',
+            'is_email_verified',
+            'is_phone_verified',
+            'is_approved_by_admin',
+            'created_at',
+            'updated_at',
+        ]
+
+
+class OrganizerRegisterSerializer(serializers.ModelSerializer):
+    """Serializer for organizer registration."""
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password_confirm = serializers.CharField(write_only=True)
+    email = serializers.EmailField(
+        required=True,
         validators=[
             UniqueValidator(
-                queryset=User.objects.all(),
+                queryset=Organizer.objects.all(),
+                message="This email is already registered."
+            )
+        ]
+    )
+    phone_number = serializers.CharField(
+        required=True,
+        validators=[
+            validate_nepali_phone,
+            UniqueValidator(
+                queryset=Organizer.objects.all(),
+                message="This phone number is already registered."
+            )
+        ]
+    )
+    citizenship_number = serializers.CharField(
+        required=True,
+        validators=[
+            UniqueValidator(
+                queryset=Organizer.objects.all(),
                 message="This citizenship number is already registered."
             )
         ]
     )
     pan_number = serializers.CharField(
-        required=False,
-        allow_null=True,
+        required=True,
         validators=[
             UniqueValidator(
-                queryset=User.objects.all(),
+                queryset=Organizer.objects.all(),
                 message="This PAN number is already registered."
             )
         ]
     )
 
     class Meta:
-        model = User
+        model = Organizer
         fields = [
+            'username',
             'first_name',
             'last_name',
-            'username',
             'email',
+            'phone_number',
             'password',
             'password_confirm',
-            'phone_number',
-            'date_of_birth',
-            'role',
-            # Organizer specific fields
             'organization_name',
-            'is_nepali_citizen',
+            'organization_description',
             'citizenship_number',
             'pan_number',
             'bank_name',
             'bank_account_number',
         ]
-
         extra_kwargs = {
+            'username': {'required': True},
             'first_name': {'required': True},
             'last_name': {'required': True},
-            'username': {'required': True},
-            'date_of_birth': {'required': True},
-            'role': {'required': False, 'choices': ['user', 'organizer']},
-            # Organizer fields are optional here, validated in validate()
-            'organization_name': {'required': False},
-            'is_nepali_citizen': {'required': False},
-            'bank_name': {'required': False},
-            'bank_account_number': {'required': False},
+            'organization_name': {'required': True},
+            'citizenship_number': {'required': True},
+            'pan_number': {'required': True},
+            'bank_name': {'required': True},
+            'bank_account_number': {'required': True},
         }
 
     def validate_pan_number(self, value):
-        if value and (not value.isdigit() or len(value) != 9):
-            raise serializers.ValidationError("PAN number must be exactly 9 digits.")
+        if not value.isdigit() or len(value) != 9:
+            raise serializers.ValidationError(
+                "PAN number must be exactly 9 digits."
+            )
         return value
 
     def validate(self, attrs):
-        # Check if passwords match
         if attrs.get('password') != attrs.get('password_confirm'):
-            raise serializers.ValidationError({"password_confirm": "Password fields didn't match."})
-
-        # If role is organizer, validate organizer specific fields
-        if attrs.get('role') == 'organizer':
-            required_fields = [
-                'organization_name',
-                'citizenship_number',
-                'pan_number',
-                'bank_name',
-                'bank_account_number',
-            ]
-            for field in required_fields:
-                if not attrs.get(field):
-                    raise serializers.ValidationError({field: f"{field.replace('_', ' ').capitalize()} is required for organizers."})
-        else:
-            # Clear organizer fields for non-organizer users
-            organizer_fields = [
-                'organization_name',
-                'citizenship_number',
-                'pan_number',
-                'bank_name',
-                'bank_account_number',
-            ]
-            for field in organizer_fields:
-                attrs[field] = None
-
+            raise serializers.ValidationError(
+                {"password_confirm": "Passwords don't match."}
+            )
         return attrs
 
     def create(self, validated_data):
-        # Remove password_confirm as it's not a User model field
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
-
-        user = User(**validated_data)
-        user.set_password(password)  # hashes the password properly
-        user.save()
-
-        return user
+        organizer = Organizer(**validated_data)
+        organizer.set_password(password)
+        organizer.save()
+        return organizer

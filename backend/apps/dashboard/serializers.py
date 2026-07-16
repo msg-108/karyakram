@@ -1,48 +1,55 @@
 from rest_framework import serializers
-from apps.users.serializers import UserProfileSerializer
-from django.contrib.auth import get_user_model
+from apps.users.models import User, Organizer
+
 
 class UserDashboardSerializer(serializers.Serializer):
-    role = serializers.CharField(default="user")
-    profile = UserProfileSerializer()
+    """Serializer for standard user dashboard."""
+    role = serializers.SerializerMethodField()
+    id = serializers.IntegerField(source='pk')
+    username = serializers.CharField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    email = serializers.EmailField()
+    is_email_verified = serializers.BooleanField()
+    created_at = serializers.DateTimeField()
+    updated_at = serializers.DateTimeField()
 
-    def to_representation(self, user):
-        return {
-            "role": "user",
-            "profile": {
-                "id": user.id,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "username": user.username,
-                "email": user.email,
-                "phone_number": user.phone_number,
-                "date_of_birth": user.date_of_birth,
-                "role": user.role,
-                "is_email_verified": user.is_email_verified,
-                "is_phone_verified": user.is_phone_verified,
-                "created_at": user.created_at,
-                "updated_at": user.updated_at,
-            },
-        }
+    def get_role(self, obj):
+        return 'user'
 
 
 class OrganizerDashboardSerializer(serializers.Serializer):
-    role = serializers.CharField(default="organizer")
-    profile = UserProfileSerializer()
+    """Serializer for organizer dashboard."""
+    role = serializers.SerializerMethodField()
+    id = serializers.IntegerField(source='pk')
+    username = serializers.CharField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    email = serializers.EmailField()
+    phone_number = serializers.CharField()
+    organization_name = serializers.CharField()
+    is_email_verified = serializers.BooleanField()
+    is_phone_verified = serializers.BooleanField()
+    is_approved_by_admin = serializers.BooleanField()
+    created_at = serializers.DateTimeField()
+    updated_at = serializers.DateTimeField()
 
-    def to_representation(self, user):
-        return {
-            "role": "organizer",
-            "profile": UserProfileSerializer(user).data,
-        }
+    def get_role(self, obj):
+        return 'organizer'
 
 
 class AdminDashboardSerializer(serializers.Serializer):
-    role = serializers.CharField(default="admin")
-    profile = UserProfileSerializer()
+    """Serializer for admin dashboard."""
+    role = serializers.SerializerMethodField()
+    id = serializers.IntegerField(source='pk')
+    username = serializers.CharField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    email = serializers.EmailField()
+    is_staff = serializers.BooleanField()
+    is_superuser = serializers.BooleanField()
+    created_at = serializers.DateTimeField()
+    updated_at = serializers.DateTimeField()
 
-    def to_representation(self, user):
-        return {
-            "role": "admin",
-            "profile": UserProfileSerializer(user).data,
-        }
+    def get_role(self, obj):
+        return 'admin'

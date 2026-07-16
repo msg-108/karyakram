@@ -1,9 +1,13 @@
-from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
+from apps.users.models import Organizer
 
 
 class Event(models.Model):
+    """
+    Event model for event management.
+    Only Organizers can create events.
+    """
     EVENT_STATUS = (
         ('draft', 'Draft'),
         ('published', 'Published'),
@@ -27,9 +31,9 @@ class Event(models.Model):
         ('other', 'Other'),
     )
 
-    # Ownership
+    # Ownership - Only Organizer can own events
     organizer = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        Organizer,
         on_delete=models.PROTECT,
         related_name='events'
     )
