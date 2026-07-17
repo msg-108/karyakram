@@ -91,6 +91,16 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "karyakram_db",
+        "USER": "karyakram_user",
+        "PASSWORD": "karyakram",
+        "HOST": "localhost",
+        "PORT": "5432",
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -128,11 +138,6 @@ STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = 'users.User'
 
-# Custom Authentication Backend
-AUTHENTICATION_BACKENDS = [
-    'apps.users.backends.DualModelBackend',
-    'django.contrib.auth.backends.ModelBackend',
-]
 
 # REST Framework Configuration
 REST_FRAMEWORK = {
@@ -186,3 +191,16 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ]
+
+OTP_VALIDITY_MINUTES = 10
+
+OTP_RESEND_COOLDOWN_SECONDS = 60
+
+OTP_MAX_ATTEMPTS = 5
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'madhusudhangharti.108@gmail.com'
+EMAIL_HOST_PASSWORD = 'ptdsgelcvvfvxsnh'

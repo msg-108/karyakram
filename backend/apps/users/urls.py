@@ -1,43 +1,42 @@
 from django.urls import path
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+from rest_framework_simplejwt.views import TokenRefreshView
+
 from .views import (
-    UserRegisterView,
-    UserProfileView,
+    LoginView,
+    MeView,
+    MyOrganizerProfileView,
+    OrganizerApprovalView,
     OrganizerRegisterView,
-    OrganizerProfileView,
-    OrganizerApprovalStatusView,
-    SendEmailVerificationView,
-    VerifyEmailTokenView,
-    OrganizerApprovalReplyView,
-    OrganizerApprovalListView,
-    LogoutView,
+    PendingOrganizerListView,
+    ResendOTPView,
+    UserRegisterView,
+    VerifyEmailOTPView,
 )
 
-app_name = 'users'
+app_name = "users"
 
 urlpatterns = [
-    # User endpoints
-    path('auth/user/register/', UserRegisterView.as_view(), name='user-register'),
-    path('auth/user/profile/', UserProfileView.as_view(), name='user-profile'),
-    
-    # Organizer endpoints
-    path('auth/organizer/register/', OrganizerRegisterView.as_view(), name='organizer-register'),
-    path('auth/organizer/profile/', OrganizerProfileView.as_view(), name='organizer-profile'),
-    path('auth/organizer/approval-status/', OrganizerApprovalStatusView.as_view(), name='organizer-approval-status'),
-    
-    # Email verification endpoints
-    path('auth/email/send-verification/', SendEmailVerificationView.as_view(), name='send-email-verification'),
-    path('auth/email/verify/', VerifyEmailTokenView.as_view(), name='verify-email'),
-    
-    # Admin approval endpoints
-    path('admin/approvals/', OrganizerApprovalListView.as_view(), name='approval-list'),
-    path('admin/approvals/reply/', OrganizerApprovalReplyView.as_view(), name='approval-reply'),
-    
-    # JWT endpoints (work for both User and Organizer)
-    path('auth/login/', TokenObtainPairView.as_view(), name='login'),
-    path('auth/refresh/', TokenRefreshView.as_view(), name='refresh'),
-    path('auth/logout/', LogoutView.as_view(), name='logout'),
+    # Registration
+    path("auth/register/user/", UserRegisterView.as_view(), name="register-user"),
+    path("auth/register/organizer/", OrganizerRegisterView.as_view(), name="register-organizer"),
+    # Email verification (OTP)
+    path("auth/verify-otp/", VerifyEmailOTPView.as_view(), name="verify-otp"),
+    path("auth/resend-otp/", ResendOTPView.as_view(), name="resend-otp"),
+    # Login
+    path("auth/login/", LoginView.as_view(), name="login"),
+    path("auth/token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
+    # Profile
+    path("me/", MeView.as_view(), name="me"),
+    path("me/organizer-profile/", MyOrganizerProfileView.as_view(), name="my-organizer-profile"),
+    # Admin: organizer approval
+    path(
+        "admin/organizers/pending/",
+        PendingOrganizerListView.as_view(),
+        name="pending-organizers",
+    ),
+    path(
+        "admin/organizers/<int:user_id>/approval/",
+        OrganizerApprovalView.as_view(),
+        name="organizer-approval",
+    ),
 ]

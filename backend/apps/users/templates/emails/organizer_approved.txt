@@ -1,0 +1,8 @@
+Hi {{ user.first_name }},
+
+Congratulations! 🎉
+
+Your organizer account has been approved. You can now start creating and managing events.
+
+Thanks,
+Karyakram Team

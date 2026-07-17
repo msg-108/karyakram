@@ -2,15 +2,14 @@ from .base import *
 from decouple import config
 
 DEBUG = True
-
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "karyakram_db",
+        "USER": "karyakram_user",
+        "PASSWORD": "karyakram",
+        "HOST": "localhost",
+        "PORT": "5432",
     }
 }
 
@@ -18,8 +17,6 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ]
-# Email Configuration (Development)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Print emails to console for development
 
 # Media Files Configuration
 from pathlib import Path

@@ -1,444 +1,338 @@
+"""
+Thin API views. Every view delegates to `services` for anything beyond
+request parsing / permission checks / response shaping.
+"""
+from __future__ import annotations
+
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiResponse,
+    extend_schema,
+    inline_serializer,
+)
 from rest_framework import serializers, status
-from rest_framework.views import APIView
+from rest_framework.generics import RetrieveAPIView
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework_simplejwt.tokens import RefreshToken
-from drf_spectacular.utils import extend_schema, inline_serializer
-from .models import User, Organizer, OrganizerApprovalRequest
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+from apps.dashboard.permissions import IsOrganizer
+from . import services
+from .models import EmailOTP, OrganizerProfile, User
 from .serializers import (
-    UserRegisterSerializer,
-    UserProfileSerializer,
-    OrganizerRegisterSerializer,
+    OrganizerApprovalActionSerializer,
     OrganizerProfileSerializer,
-    OrganizerApprovalRequestSerializer,
+    OrganizerRegisterSerializer,
+    OTPRequestSerializer,
+    OTPVerifySerializer,
+    UserPublicSerializer,
+    UserRegisterSerializer,
+    UserTokenObtainPairSerializer,
+)
+
+_DETAIL_RESPONSE = inline_serializer(
+    name="DetailResponse", fields={"detail": serializers.CharField()}
 )
 
 
-# ==================== USER VIEWS ====================
+# ==================== REGISTRATION ====================
+
 
 class UserRegisterView(APIView):
-    """API endpoint for user registration."""
+    """Register a standard USER account. Inactive until email is verified."""
+
     permission_classes = [AllowAny]
 
     @extend_schema(
+        operation_id="registerUser",
+        summary="Register a user account",
+        description=(
+                "Create a new standard user account. "
+                "The account is created inactive and a 6-digit verification OTP "
+                "is sent to the registered email address. The user must verify "
+                "their email before they can log in."
+        ),
+        tags=["Authentication"],
         request=UserRegisterSerializer,
-        responses=UserProfileSerializer,
-        description="Register a new standard user account",
-        tags=["User Authentication"],
+        responses={
+            201: OpenApiResponse(UserPublicSerializer, description="Account created; OTP sent."),
+            400: OpenApiResponse(description="Validation error."),
+        },
+        examples=[
+            OpenApiExample(
+                "Request",
+                value={
+                    "username": "sitagharti",
+                    "email": "sita@example.com",
+                    "password": "S3cure!Pass",
+                    "password_confirm": "S3cure!Pass",
+                    "first_name": "Sita",
+                    "last_name": "Gharti",
+                },
+                request_only=True,
+            )
+        ],
     )
     def post(self, request):
-        """Register a new user."""
         serializer = UserRegisterSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        return Response(UserProfileSerializer(user).data, status=status.HTTP_201_CREATED)
+        return Response(UserPublicSerializer(user).data, status=status.HTTP_201_CREATED)
 
-
-class UserProfileView(APIView):
-    """API endpoint for user profile management."""
-    permission_classes = [IsAuthenticated]
-
-    def get_user_or_404(self, request):
-        if isinstance(request.user, User) and not isinstance(request.user, Organizer):
-            return request.user
-        return None
-
-    @extend_schema(
-        responses=UserProfileSerializer,
-        description="Get the authenticated user's profile",
-        tags=["User Profile"],
-    )
-    def get(self, request):
-        """Get user profile."""
-        user = self.get_user_or_404(request)
-        if not user:
-            return Response(
-                {"detail": "Only standard users can access this endpoint."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        serializer = UserProfileSerializer(user)
-        return Response(serializer.data)
-
-    @extend_schema(
-        request=UserProfileSerializer,
-        responses=UserProfileSerializer,
-        description="Update the authenticated user's profile",
-        tags=["User Profile"],
-    )
-    def patch(self, request):
-        """Update user profile."""
-        user = self.get_user_or_404(request)
-        if not user:
-            return Response(
-                {"detail": "Only standard users can access this endpoint."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        serializer = UserProfileSerializer(user, data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save()
-        return Response(serializer.data)
-
-
-# ==================== ORGANIZER VIEWS ====================
 
 class OrganizerRegisterView(APIView):
-    """API endpoint for organizer registration."""
+    """Register an ORGANIZER account. Inactive until email is verified AND admin-approved."""
+
     permission_classes = [AllowAny]
+    # Explicit, since this endpoint accepts file uploads (citizenship/PAN
+    # documents) alongside regular form fields — JSONParser alone can't
+    # handle multipart bodies.
+    parser_classes = [MultiPartParser, FormParser]
 
     @extend_schema(
-        request=OrganizerRegisterSerializer,
-        responses=OrganizerProfileSerializer,
-        description="Register a new organizer account (requires email verification and admin approval)",
-        tags=["Organizer Authentication"],
-    )
-    def post(self, request):
-        """Register a new organizer."""
-        serializer = OrganizerRegisterSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        organizer = serializer.save()
-        return Response(OrganizerProfileSerializer(organizer).data, status=status.HTTP_201_CREATED)
+        operation_id="registerOrganizer",
+        summary="Register an organizer account",
+        description=(
+                "Create a new organizer account and upload the required "
+                "verification documents. After email verification, the account "
+                "must be approved by an administrator before login is allowed."
+        ),
 
-
-class OrganizerProfileView(APIView):
-    """API endpoint for organizer profile management."""
-    permission_classes = [IsAuthenticated]
-
-    def get_organizer_or_404(self, request):
-        if isinstance(request.user, Organizer):
-            return request.user
-        return None
-
-    @extend_schema(
-        responses=OrganizerProfileSerializer,
-        description="Get the authenticated organizer's profile",
-        tags=["Organizer Profile"],
-    )
-    def get(self, request):
-        """Get organizer profile."""
-        organizer = self.get_organizer_or_404(request)
-        if not organizer:
-            return Response(
-                {"detail": "Only organizers can access this endpoint."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        serializer = OrganizerProfileSerializer(organizer)
-        return Response(serializer.data)
-
-    @extend_schema(
-        request=OrganizerProfileSerializer,
-        responses=OrganizerProfileSerializer,
-        description="Update the authenticated organizer's profile",
-        tags=["Organizer Profile"],
-    )
-    def patch(self, request):
-        """Update organizer profile."""
-        organizer = self.get_organizer_or_404(request)
-        if not organizer:
-            return Response(
-                {"detail": "Only organizers can access this endpoint."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        serializer = OrganizerProfileSerializer(organizer, data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save()
-        return Response(serializer.data)
-
-
-class OrganizerApprovalStatusView(APIView):
-    """API endpoint to check organizer approval status."""
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        responses=OrganizerApprovalRequestSerializer,
-        description="Get organizer's approval request status",
-        tags=["Organizer Profile"],
-    )
-    def get(self, request):
-        """Get approval status."""
-        organizer = self.get_organizer_or_404(request)
-        if not organizer:
-            return Response(
-                {"detail": "Only organizers can access this endpoint."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        try:
-            approval_request = organizer.approval_request
-            serializer = OrganizerApprovalRequestSerializer(approval_request)
-            return Response(serializer.data)
-        except OrganizerApprovalRequest.DoesNotExist:
-            return Response(
-                {"detail": "No approval request found."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-    def get_organizer_or_404(self, request):
-        if isinstance(request.user, Organizer):
-            return request.user
-        return None
-
-
-# ==================== LOGOUT VIEW ====================
-
-class LogoutView(APIView):
-    """API endpoint for user logout (works for both User and Organizer)."""
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        request=inline_serializer(name="LogoutRequest", fields={"refresh": serializers.CharField()}),
-        responses=inline_serializer(name="LogoutResponse", fields={"detail": serializers.CharField()}),
-        description="Logout the authenticated user",
         tags=["Authentication"],
+        request=OrganizerRegisterSerializer,
+        responses={
+            201: OpenApiResponse(UserPublicSerializer, description="Account created; OTP sent."),
+            400: OpenApiResponse(description="Validation error."),
+        },
     )
     def post(self, request):
-        """Logout user by blacklisting their refresh token."""
-        try:
-            refresh_token = request.data["refresh"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response(
-                {"detail": "Successfully logged out."},
-                status=status.HTTP_205_RESET_CONTENT
-            )
-        except Exception as e:
-            return Response(
-                {"detail": "Invalid token."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        serializer = OrganizerRegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(serializer.to_representation(user), status=status.HTTP_201_CREATED)
 
 
-# ==================== EMAIL VERIFICATION VIEWS ====================
-
-class SendEmailVerificationView(APIView):
-    """API endpoint to send email verification link."""
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        responses=inline_serializer(
-            name="EmailVerificationResponse",
-            fields={"detail": serializers.CharField()}
-        ),
-        description="Send email verification link to the user",
-        tags=["Email Verification"],
-    )
-    def post(self, request):
-        """Send email verification link."""
-        user = request.user
-        
-        # Check if email already verified
-        if user.is_email_verified:
-            return Response(
-                {"detail": "Email is already verified."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Generate verification token
-        from .email_utils import generate_email_token
-        token = generate_email_token()
-        user.email_verification_token = token
-        user.save()
-        
-        # Send email (console backend prints it)
-        from django.core.mail import send_mail
-        frontend_url = "http://localhost:5173"  # TODO: Make configurable
-        verification_link = f"{frontend_url}/verify-email?email={user.email}&token={token}"
-        
-        send_mail(
-            subject="Email Verification for Karyakram",
-            message=f"Click the link to verify your email:\n\n{verification_link}\n\nToken: {token}",
-            from_email="noreply@karyakram.com",
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
-        
-        return Response(
-            {"detail": "Verification email sent. Check your email for the link."},
-            status=status.HTTP_200_OK
-        )
+# ==================== EMAIL VERIFICATION (OTP) ====================
 
 
-class VerifyEmailTokenView(APIView):
-    """API endpoint to verify email token."""
+class VerifyEmailOTPView(APIView):
+    """Verify the 6-digit OTP sent at registration. USER accounts activate
+    immediately; ORGANIZER accounts remain inactive pending admin approval."""
+
     permission_classes = [AllowAny]
 
     @extend_schema(
-        request=inline_serializer(
-            name="VerifyEmailRequest",
-            fields={
-                "email": serializers.EmailField(),
-                "token": serializers.CharField(),
-            }
+        operation_id="verifyEmailOTP",
+        summary="Verify email address",
+        description=(
+                "Verify the 6-digit OTP sent to the user's email address. "
+                "Regular users become active immediately after verification. "
+                "Organizer accounts remain pending until approved by an administrator."
         ),
-        responses=inline_serializer(
-            name="VerifyEmailResponse",
-            fields={"detail": serializers.CharField(), "is_verified": serializers.BooleanField()}
-        ),
-        description="Verify email using token",
         tags=["Email Verification"],
+        request=OTPVerifySerializer,
+        responses={
+            200: OpenApiResponse(_DETAIL_RESPONSE, description="Email verified."),
+            400: OpenApiResponse(description="Invalid/expired code, or too many attempts."),
+        },
     )
     def post(self, request):
-        """Verify email token."""
-        email = request.data.get("email")
-        token = request.data.get("token")
-        
-        if not email or not token:
-            return Response(
-                {"detail": "Email and token are required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Find user or organizer with this email
-        user = User.objects.filter(email=email).first()
-        if user:
-            if user.email_verification_token == token:
-                user.is_email_verified = True
-                user.email_verification_token = ""
-                user.save()
-                return Response(
-                    {"detail": "Email verified successfully.", "is_verified": True},
-                    status=status.HTTP_200_OK
-                )
-        
-        organizer = Organizer.objects.filter(email=email).first()
-        if organizer:
-            if organizer.email_verification_token == token:
-                organizer.is_email_verified = True
-                organizer.email_verification_token = ""
-                organizer.save()
-                return Response(
-                    {"detail": "Email verified successfully.", "is_verified": True},
-                    status=status.HTTP_200_OK
-                )
-        
-        return Response(
-            {"detail": "Invalid email or token.", "is_verified": False},
-            status=status.HTTP_400_BAD_REQUEST
+        serializer = OTPVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = get_object_or_404(User, email=serializer.validated_data["email"])
+
+        result = services.verify_otp(
+            user,
+            code=serializer.validated_data["code"],
+            purpose=EmailOTP.Purpose.EMAIL_VERIFICATION,
         )
 
+        detail = (
+            "Email verified. You can now log in."
+            if result.activated
+            else "Email verified. Your account is now awaiting admin approval."
+        )
+        return Response({"detail": detail}, status=status.HTTP_200_OK)
 
-# ==================== ORGANIZER APPROVAL VIEWS ====================
 
-class OrganizerApprovalReplyView(APIView):
-    """API endpoint for admin to approve/reject organizer applications."""
-    permission_classes = [IsAuthenticated]
+class ResendOTPView(APIView):
+    """Resend the email-verification OTP, subject to a cooldown."""
 
-    def check_admin_permission(self, request):
-        """Check if user is admin/staff."""
-        return request.user.is_staff
+    permission_classes = [AllowAny]
 
     @extend_schema(
-        request=inline_serializer(
-            name="ApprovalReplyRequest",
-            fields={
-                "approval_id": serializers.IntegerField(),
-                "status": serializers.ChoiceField(choices=["approved", "rejected", "needs_revision"]),
-                "admin_comments": serializers.CharField(required=False, allow_blank=True),
-            }
+        operation_id="resendVerificationOTP",
+        summary="Resend verification OTP",
+        description=(
+                "Generate and send a new email verification OTP. "
+                "Requests are subject to the configured resend cooldown period."
         ),
-        responses=inline_serializer(
-            name="ApprovalReplyResponse",
-            fields={"detail": serializers.CharField(), "status": serializers.CharField()}
-        ),
-        description="Admin endpoint to approve/reject organizer application",
-        tags=["Organizer Approval"],
+        tags=["Email Verification"],
+        request=OTPRequestSerializer,
+        responses={
+            200: OpenApiResponse(_DETAIL_RESPONSE, description="A new code was sent."),
+            400: OpenApiResponse(description="Cooldown still active, or no account found."),
+        },
     )
     def post(self, request):
-        """Process organizer approval/rejection."""
-        if not self.check_admin_permission(request):
-            return Response(
-                {"detail": "Only admin can access this endpoint."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        approval_id = request.data.get("approval_id")
-        new_status = request.data.get("status")
-        admin_comments = request.data.get("admin_comments", "")
-        
-        if not approval_id or not new_status:
-            return Response(
-                {"detail": "approval_id and status are required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        if new_status not in ["approved", "rejected", "needs_revision"]:
-            return Response(
-                {"detail": "Invalid status. Choose from: approved, rejected, needs_revision."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            approval_request = OrganizerApprovalRequest.objects.get(id=approval_id)
-        except OrganizerApprovalRequest.DoesNotExist:
-            return Response(
-                {"detail": "Approval request not found."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        # Update approval status
-        approval_request.status = new_status
-        approval_request.reviewed_by = request.user
-        approval_request.reviewed_at = __import__('django.utils.timezone', fromlist=['now']).now()
-        approval_request.admin_comments = admin_comments
-        approval_request.save()
-        
-        # Update organizer approval status if approved
-        if new_status == "approved":
-            organizer = approval_request.organizer
-            organizer.is_approved_by_admin = True
-            organizer.approval_date = __import__('django.utils.timezone', fromlist=['now']).now()
-            organizer.save()
-        elif new_status == "rejected":
-            organizer = approval_request.organizer
-            organizer.is_approved_by_admin = False
-            organizer.rejection_reason = admin_comments
-            organizer.save()
-        
-        return Response(
-            {"detail": f"Organizer application {new_status.lower()}.", "status": new_status},
-            status=status.HTTP_200_OK
-        )
+        serializer = OTPRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = get_object_or_404(User, email=serializer.validated_data["email"])
+
+        services.resend_otp(user, purpose=EmailOTP.Purpose.EMAIL_VERIFICATION)
+        return Response({"detail": "A new verification code has been sent."})
 
 
-class OrganizerApprovalListView(APIView):
-    """API endpoint to list pending organizer approvals (admin only)."""
-    permission_classes = [IsAuthenticated]
+# ==================== LOGIN ====================
 
-    def check_admin_permission(self, request):
-        """Check if user is admin/staff."""
-        return request.user.is_staff
+
+class LoginView(TokenObtainPairView):
+    """
+    Username + password login. Rejects (per requirement #9) when the
+    email is unverified, the account is inactive, or an organizer is
+    still pending admin approval — enforced in
+    UserTokenObtainPairSerializer.validate() via services.assert_can_login.
+    """
+
+    serializer_class = UserTokenObtainPairSerializer
 
     @extend_schema(
-        responses=inline_serializer(
-            name="ApprovalListResponse",
-            fields={
-                "pending": serializers.ListField(child=serializers.DictField()),
-                "approved": serializers.ListField(child=serializers.DictField()),
-                "rejected": serializers.ListField(child=serializers.DictField()),
-            }
+        operation_id="login",
+        summary="Authenticate user",
+        description=(
+                "Authenticate using username and password. "
+                "Returns JWT access and refresh tokens. "
+                "Login is denied if the email is unverified, "
+                "the account is inactive, or the organizer "
+                "is still awaiting administrator approval."
         ),
-        description="List organizer approval requests (admin only)",
-        tags=["Organizer Approval"],
+        tags=["Authentication"],
+        responses={
+            200: OpenApiResponse(description="Returns `access` and `refresh` JWTs."),
+            400: OpenApiResponse(description="Invalid credentials, unverified email, or inactive account."),
+            403: OpenApiResponse(description="Organizer account pending admin approval."),
+        },
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+
+# ==================== PROFILE ====================
+
+
+class MeView(RetrieveAPIView):
+    """Return the authenticated user's own profile."""
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserPublicSerializer
+
+    def get_object(self) -> User:
+        return self.request.user
+
+    @extend_schema(
+        operation_id="getCurrentUser",
+        summary="Get current user profile",
+        description=(
+                "Return the authenticated user's profile information."
+        ),
+        tags=["Profile"],
+        responses=UserPublicSerializer)
+
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+class MyOrganizerProfileView(RetrieveAPIView):
+    """Return the authenticated organizer's OrganizerProfile."""
+
+    permission_classes = [IsAuthenticated, IsOrganizer]
+    serializer_class = OrganizerProfileSerializer
+
+    def get_object(self) -> OrganizerProfile:
+        return get_object_or_404(OrganizerProfile, user=self.request.user)
+
+    @extend_schema(
+        operation_id="getOrganizerProfile",
+        summary="Get organizer profile",
+        description=(
+                "Return the authenticated organizer's profile information."
+        ),
+        tags=["Profile"],
+        responses=OrganizerProfileSerializer,
+    )
+
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+# ==================== ADMIN: ORGANIZER APPROVAL ====================
+
+
+class PendingOrganizerListView(APIView):
+    """List organizers awaiting approval (email verified, not yet approved). Admin only."""
+
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(
+        operation_id="listPendingOrganizers",
+        summary="List pending organizers",
+        description=(
+                "Return all organizer accounts that have verified "
+                "their email but are still waiting for administrator approval."
+        ),
+        tags=["Admin"],
+        responses=OrganizerProfileSerializer(many=True),
     )
     def get(self, request):
-        """Get list of approval requests."""
-        if not self.check_admin_permission(request):
-            return Response(
-                {"detail": "Only admin can access this endpoint."},
-                status=status.HTTP_403_FORBIDDEN
+        pending = OrganizerProfile.objects.filter(
+            user__role=User.Role.ORGANIZER,
+            user__is_email_verified=True,
+            user__is_approved=False,
+        ).select_related("user")
+        return Response(OrganizerProfileSerializer(pending, many=True).data)
+
+
+class OrganizerApprovalView(APIView):
+    """Approve or reject a specific organizer's application. Admin only."""
+
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(
+        operation_id="approveOrRejectOrganizer",
+        summary="Approve or reject organizer",
+        description=(
+                "Approve or reject an organizer registration request. "
+                "Approving activates the account. Rejecting keeps the "
+                "account inactive and stores the rejection reason."
+        ),
+        tags=["Admin"],
+        request=OrganizerApprovalActionSerializer,
+        responses={
+            200: OpenApiResponse(
+                OrganizerProfileSerializer,
+                description="Organizer approval status updated."
+            ),
+            400: OpenApiResponse(
+                description="Invalid approval request."
+            ),
+            404: OpenApiResponse(
+                description="Organizer not found."
+            ),
+        },
+    )
+
+    def post(self, request, user_id: int):
+        profile = get_object_or_404(OrganizerProfile, user_id=user_id)
+        serializer = OrganizerApprovalActionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if serializer.validated_data["action"] == "approve":
+            profile = services.approve_organizer(profile, admin=request.user)
+        else:
+            profile = services.reject_organizer(
+                profile, admin=request.user, reason=serializer.validated_data["reason"]
             )
-        
-        from .serializers import OrganizerApprovalStatusSerializer
-        
-        pending = OrganizerApprovalRequest.objects.filter(status="pending")
-        approved = OrganizerApprovalRequest.objects.filter(status="approved")
-        rejected = OrganizerApprovalRequest.objects.filter(status="rejected")
-        
-        return Response({
-            "pending": OrganizerApprovalStatusSerializer(pending, many=True).data,
-            "approved": OrganizerApprovalStatusSerializer(approved, many=True).data,
-            "rejected": OrganizerApprovalStatusSerializer(rejected, many=True).data,
-        })
+        return Response(OrganizerProfileSerializer(profile).data)
