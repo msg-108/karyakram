@@ -185,6 +185,7 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["role"] = user.role
         token["is_email_verified"] = user.is_email_verified
         token["is_approved"] = user.is_approved
+        token["is_staff"] = user.is_staff
         return token
 
     def validate(self, attrs: dict) -> dict:

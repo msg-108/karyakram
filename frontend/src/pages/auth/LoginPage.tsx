@@ -1,44 +1,56 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import api from "../../api/axios";
-import useAuthStore from "../../store/authStore";
-import PublicNavbar from "../../components/PublicNavbar";
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import client from '../../api/client'
+import useAuthStore from '../../store/authStore'
+import PublicNavbar from '../../components/PublicNavbar'
+import type { LoginPayload, LoginResponse } from '../../types/auth'
 
 export default function LoginPage() {
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
+  const [form, setForm] = useState<LoginPayload & { remember: boolean }>({
+    username: '',
+    password: '',
     remember: false,
-  });
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [showPass, setShowPass] = useState(false);
-  const { login } = useAuthStore();
-  const navigate = useNavigate();
+  })
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [showPass, setShowPass] = useState(false)
+  const { login } = useAuthStore()
+  const navigate = useNavigate()
 
-  const set = (field) => (e) =>
-    setForm({
-      ...form,
-      [field]: e.target.type === "checkbox" ? e.target.checked : e.target.value,
-    });
+  const set =
+    (field: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      setForm({
+        ...form,
+        [field]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
+      })
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
     try {
-      const { data } = await api.post("/auth/login/", {
-        email: form.email,
+      // POST { username, password } — the real LoginView expects username, not email.
+      // Response is { access, refresh } only — no user object.
+      const { data } = await client.post<LoginResponse>('/auth/login/', {
+        username: form.username,
         password: form.password,
-      });
-      login(data.user, data.access, data.refresh);
-      navigate("/dashboard");
-    } catch (err) {
-      setError(err.response?.data?.detail || "Invalid email or password.");
+      })
+      // Decode JWT claims internally; no user object to store separately.
+      login(data.access, data.refresh)
+      const role = useAuthStore.getState().role
+      if (role === 'ORGANIZER') {
+        navigate('/dashboard')
+      } else {
+        navigate('/')
+      }
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { detail?: string } } }
+      setError(axiosErr.response?.data?.detail ?? 'Invalid username or password.')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--color-bg)]">
@@ -136,9 +148,9 @@ export default function LoginPage() {
           {/* Bottom — social proof */}
           <div className="relative flex items-center gap-6">
             {[
-              { value: "500+", label: "Events" },
-              { value: "12K+", label: "Attendees" },
-              { value: "200+", label: "Organizers" },
+              { value: '500+', label: 'Events' },
+              { value: '12K+', label: 'Attendees' },
+              { value: '200+', label: 'Organizers' },
             ].map(({ value, label }) => (
               <div key={label}>
                 <p className="text-white font-bold text-xl">{value}</p>
@@ -161,46 +173,59 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Error */}
+            {/* Error & Warning Gating */}
             {error && (
-              <div
-                className="flex items-start gap-2.5 bg-red-50 border border-red-200
-                              text-red-600 text-sm rounded-lg px-4 py-3 mb-6"
-              >
-                <svg
-                  className="size-4 mt-0.5 shrink-0"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <path
-                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948
-                           3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949
-                           3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12
-                           15.75h.007v.008H12v-.008Z"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                {error}
-              </div>
+              error === 'Please verify your email before logging in.' ? (
+                <div className="flex flex-col gap-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-3 mb-6">
+                  <div className="flex items-start gap-2.5">
+                    <svg className="size-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span>Please verify your email before logging in.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/verify?email=${encodeURIComponent(localStorage.getItem('last_registered_email') || '')}`)}
+                    className="text-left text-xs font-semibold underline text-amber-900 hover:text-amber-950 cursor-pointer"
+                  >
+                    Go to verification page &rarr;
+                  </button>
+                </div>
+              ) : error === 'Your organizer account is pending admin approval.' ? (
+                <div className="flex items-start gap-2.5 bg-violet-50 border border-violet-200 text-violet-700 text-sm rounded-lg px-4 py-3 mb-6">
+                  <svg className="size-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <div>
+                    <p className="font-semibold text-violet-800">Account Pending Approval</p>
+                    <p className="text-xs text-violet-600 mt-0.5">Your organizer account is pending approval by the admin team.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3 mb-6">
+                  <svg className="size-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span>{error}</span>
+                </div>
+              )
             )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Email */}
+              {/* Username — the real LoginView expects username, not email */}
               <div>
                 <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">
-                  Email
+                  Username
                 </label>
                 <input
-                  type="email"
-                  value={form.email}
-                  onChange={set("email")}
-                  placeholder="you@example.com"
+                  id="login-username"
+                  type="text"
+                  value={form.username}
+                  onChange={set('username')}
+                  placeholder="your_username"
                   required
-                  autoComplete="email"
+                  autoComplete="username"
                   className="w-full border border-[var(--color-border)] bg-white rounded-lg
                              px-4 py-2.5 text-sm text-[var(--color-text)]
                              placeholder:text-[var(--color-muted)] outline-none
@@ -224,9 +249,10 @@ export default function LoginPage() {
                 </div>
                 <div className="relative">
                   <input
-                    type={showPass ? "text" : "password"}
+                    id="login-password"
+                    type={showPass ? 'text' : 'password'}
                     value={form.password}
-                    onChange={set("password")}
+                    onChange={set('password')}
                     placeholder="••••••••"
                     required
                     autoComplete="current-password"
@@ -296,7 +322,7 @@ export default function LoginPage() {
                   id="remember"
                   type="checkbox"
                   checked={form.remember}
-                  onChange={set("remember")}
+                  onChange={set('remember')}
                   className="size-4 rounded border-[var(--color-border)]
                              accent-[var(--color-primary-500)] cursor-pointer"
                 />
@@ -340,14 +366,14 @@ export default function LoginPage() {
                     Signing in…
                   </span>
                 ) : (
-                  "Sign In"
+                  'Sign In'
                 )}
               </button>
             </form>
 
             {/* Register link */}
             <p className="text-center text-sm text-[var(--color-muted)] mt-6">
-              Don't have an account?{" "}
+              Don't have an account?{' '}
               <a
                 href="/register"
                 className="text-[var(--color-primary-500)] font-medium hover:underline"
@@ -359,5 +385,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }
