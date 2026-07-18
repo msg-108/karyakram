@@ -15,10 +15,9 @@
  */
 import client from './client'
 import type { BookingListItem, BookingDetail, BookingCreatePayload } from '../types/bookings'
-import type { PaginatedResponse } from '../types/events'
 
-export const listBookings = (page?: number) =>
-  client.get<PaginatedResponse<BookingListItem>>('/bookings/bookings/', { params: page ? { page } : undefined })
+export const listBookings = () =>
+  client.get<BookingListItem[]>('/bookings/bookings/')
 
 export const createBooking = (payload: BookingCreatePayload) =>
   client.post<BookingDetail>('/bookings/bookings/', payload)

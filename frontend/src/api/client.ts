@@ -22,7 +22,6 @@ if (!API_URL) {
 
 const client: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
 })
 
 // ── Request interceptor: attach access token ──

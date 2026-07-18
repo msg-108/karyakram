@@ -18,6 +18,8 @@ from __future__ import annotations
 import logging
 from decimal import Decimal
 
+from django.core.mail import send_mail
+from django.conf import settings
 from django.db import transaction
 from django.db.models import QuerySet
 from django.utils import timezone
@@ -51,6 +53,21 @@ def _normalize_items(items: list[dict]) -> dict[int, int]:
         quantity = item["quantity"]
         normalized[tier_id] = normalized.get(tier_id, 0) + quantity
     return normalized
+
+
+def send_booking_email(booking: Booking):
+    subject = f"Booking Confirmation: {booking.event.title} (Booking #{booking.id})"
+    message = f"Hello {booking.user.first_name or booking.user.username},\n\nYour booking for the event '{booking.event.title}' has been confirmed!\n\nBooking ID: #{booking.id}\nVenue: {booking.event.venue}, {booking.event.city}\nDate & Time: {booking.event.start_datetime}\n\nTotal Paid: Rs. {booking.total_amount}\n\nThank you for using Karyakram!"
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[booking.user.email],
+            fail_silently=False,
+        )
+    except Exception as e:
+        logger.exception("Failed to send booking confirmation email")
 
 
 @transaction.atomic
@@ -109,8 +126,8 @@ def create_booking(*, user: User, event: Event, items: list[dict]) -> Booking:
     if not items:
         raise ValidationError({"items": "At least one item is required to create a booking."})
 
-    if event.status != Event.Status.PUBLISHED:
-        raise ValidationError({"detail": "Tickets can only be booked for a published event."})
+    if event.status not in [Event.Status.APPROVED, Event.Status.PUBLISHED]:
+        raise ValidationError({"detail": "Tickets can only be booked for an approved or published event."})
 
     if event.registration_deadline is not None and timezone.now() > event.registration_deadline:
         raise ValidationError({"detail": "The registration deadline for this event has passed."})
@@ -177,6 +194,10 @@ def create_booking(*, user: User, event: Event, items: list[dict]) -> Booking:
 
     booking.total_amount = total_amount
     booking.save(update_fields=["total_amount", "updated_at"])
+
+    transaction.on_commit(
+        lambda: send_booking_email(booking)
+    )
 
     return booking
 

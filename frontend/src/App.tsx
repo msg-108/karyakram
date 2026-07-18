@@ -11,6 +11,7 @@ import EventDetailPage from './pages/events/EventDetailPage'
 import BookTicketsPage from './pages/bookings/BookTicketsPage'
 import BookingConfirmationPage from './pages/bookings/BookingConfirmationPage'
 import CreateEventPage from './pages/events/CreateEventPage'
+import EditEventPage from './pages/events/EditEventPage'
 import useAuthStore from './store/authStore'
 
 /**
@@ -73,6 +74,14 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['ORGANIZER']}>
               <CreateEventPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/organizer/events/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={['ORGANIZER']}>
+              <EditEventPage />
             </ProtectedRoute>
           }
         />

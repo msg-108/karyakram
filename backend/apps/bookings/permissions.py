@@ -27,13 +27,14 @@ class IsPlainUser(BasePermission):
     user).
     """
 
-    message = "This action is only available to regular users, not organizer accounts."
+    message = "This action is only available to regular users, not organizer or administrator accounts."
 
     def has_permission(self, request, view):
         return (
             bool(request.user)
             and request.user.is_authenticated
             and not hasattr(request.user, "organizer_profile")
+            and not request.user.is_staff
         )
 
 

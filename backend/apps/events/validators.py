@@ -59,8 +59,8 @@ def validate_remaining_quantity(*, quantity: int, remaining_quantity: int) -> No
 class EventImageValidator:
     """Restrict event banner/gallery uploads to common image formats, capped size."""
 
-    ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"]
-    MAX_SIZE_MB = 5
+    ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff"]
+    MAX_SIZE_MB = 10
 
     def __init__(self):
         self._extension_validator = FileExtensionValidator(
@@ -69,9 +69,26 @@ class EventImageValidator:
 
     def __call__(self, value) -> None:
         self._extension_validator(value)
-        allowed_types = {"image/jpeg", "image/png", "image/webp"}
+        allowed_types = {
+            "image/jpeg",
+            "image/jpg",
+            "image/pjpeg",
+            "image/png",
+            "image/x-png",
+            "image/webp",
+            "image/gif",
+            "image/bmp",
+            "image/x-ms-bmp",
+            "image/tiff",
+        }
 
-        if getattr(value, "content_type", None) not in allowed_types:
+        content_type = getattr(value, "content_type", None)
+        if content_type and content_type != "application/octet-stream" and content_type not in allowed_types:
+            raise ValidationError("Unsupported file type.")
+
+        # Fallback: check file name extension
+        exts = tuple(f".{ext}" for ext in self.ALLOWED_EXTENSIONS)
+        if not value.name.lower().endswith(exts):
             raise ValidationError("Unsupported file type.")
 
         max_bytes = self.MAX_SIZE_MB * 1024 * 1024

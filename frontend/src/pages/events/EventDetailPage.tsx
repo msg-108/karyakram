@@ -14,7 +14,7 @@ export default function EventDetailPage() {
   // Selection state: mapping tier ID -> quantity chosen
   const [quantities, setQuantities] = useState<Record<number, number>>({})
 
-  const { accessToken, role } = useAuthStore()
+  const { accessToken, role, isStaff } = useAuthStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -73,6 +73,11 @@ export default function EventDetailPage() {
 
     if (role === 'ORGANIZER') {
       alert('Organizer accounts cannot book tickets. Please log in as an Attendee.')
+      return
+    }
+
+    if (isStaff) {
+      alert('Administrator accounts cannot book tickets. Please log in as an Attendee.')
       return
     }
 

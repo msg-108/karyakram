@@ -22,10 +22,14 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { refreshToken, role } = useAuthStore()
+  const { refreshToken, role, isStaff } = useAuthStore()
 
   if (!refreshToken) {
     return <Navigate to="/login" replace />
+  }
+
+  if (isStaff && allowedRoles?.includes('USER')) {
+    return <Navigate to="/unauthorized" replace />
   }
 
   if (allowedRoles && !allowedRoles.includes(role ?? '')) {

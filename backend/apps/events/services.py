@@ -23,6 +23,7 @@ from django.utils.text import slugify
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.users.models import OrganizerProfile, User
+from apps.users.services import _send_email
 
 from .models import Event, EventCategory, EventImage, TicketTier
 from .validators import validate_event_schedule, validate_remaining_quantity
@@ -206,6 +207,26 @@ def submit_event_for_review(event: Event, *, organizer: OrganizerProfile) -> Eve
 # ==================== EVENT: ADMIN REVIEW ====================
 
 
+def send_event_approved_email(event: Event) -> None:
+    _send_email(
+        to=event.organizer.user.email,
+        subject="Your event has been approved",
+        template_prefix="emails/event_approved",
+        context={"event": event, "organizer": event.organizer},
+        user=event.organizer.user,
+    )
+
+
+def send_event_rejected_email(event: Event, reason: str) -> None:
+    _send_email(
+        to=event.organizer.user.email,
+        subject="Update on your event submission",
+        template_prefix="emails/event_rejected",
+        context={"event": event, "organizer": event.organizer, "reason": reason},
+        user=event.organizer.user,
+    )
+
+
 @transaction.atomic
 def approve_event(event: Event, *, admin: User) -> Event:
     if event.status != Event.Status.SUBMITTED:
@@ -216,6 +237,10 @@ def approve_event(event: Event, *, admin: User) -> Event:
     event.approved_at = timezone.now()
     event.rejection_reason = ""
     event.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason", "updated_at"])
+
+    transaction.on_commit(
+        lambda: send_event_approved_email(event)
+    )
     return event
 
 
@@ -232,6 +257,10 @@ def reject_event(event: Event, *, admin: User, reason: str) -> Event:
     event.approved_at = None
     event.rejection_reason = reason
     event.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason", "updated_at"])
+
+    transaction.on_commit(
+        lambda: send_event_rejected_email(event, reason)
+    )
     return event
 
 
@@ -275,9 +304,12 @@ def archive_event(event: Event) -> Event:
 
 
 def list_public_events() -> QuerySet[Event]:
-    """Base queryset for anything public-facing: published + public visibility only."""
+    """Base queryset for anything public-facing: approved/published + public visibility only."""
     return (
-        Event.objects.filter(status=Event.Status.PUBLISHED, visibility=Event.Visibility.PUBLIC)
+        Event.objects.filter(
+            status__in=[Event.Status.APPROVED, Event.Status.PUBLISHED],
+            visibility=Event.Visibility.PUBLIC,
+        )
         .select_related("organizer", "category")
     )
 
@@ -289,7 +321,7 @@ def list_organizer_events(organizer: OrganizerProfile) -> QuerySet[Event]:
 
 def list_pending_events() -> QuerySet[Event]:
     """Admin review queue: events awaiting a decision."""
-    return Event.objects.filter(status=Event.Status.SUBMITTED).select_related("organizer", "category")
+    return Event.objects.filter(status__in=[Event.Status.SUBMITTED, Event.Status.APPROVED]).select_related("organizer", "category")
 
 
 def search_events(queryset: QuerySet[Event], *, query: str) -> QuerySet[Event]:
