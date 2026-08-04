@@ -23,11 +23,15 @@ from apps.common.permissions import IsOrganizer
 from . import services
 from .models import EmailOTP, OrganizerProfile, User
 from .serializers import (
+    LogoutSerializer,
     OrganizerApprovalActionSerializer,
     OrganizerProfileSerializer,
     OrganizerRegisterSerializer,
     OTPRequestSerializer,
     OTPVerifySerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetVerifySerializer,
     UserPublicSerializer,
     UserRegisterSerializer,
     UserTokenObtainPairSerializer,
@@ -144,7 +148,7 @@ class VerifyEmailOTPView(APIView):
         serializer.is_valid(raise_exception=True)
         user = get_object_or_404(User, email=serializer.validated_data["email"])
 
-        result = services.verify_otp(
+        result = services.verify_email_otp(
             user,
             code=serializer.validated_data["code"],
             purpose=EmailOTP.Purpose.EMAIL_VERIFICATION,
@@ -336,3 +340,109 @@ class OrganizerApprovalView(APIView):
                 profile, admin=request.user, reason=serializer.validated_data["reason"]
             )
         return Response(OrganizerProfileSerializer(profile).data)
+
+
+# ==================== PASSWORD RESET & LOGOUT ====================
+
+
+class PasswordResetRequestView(APIView):
+    """Request a password reset code to be sent via email."""
+
+    permission_classes = []
+
+    @extend_schema(
+        operation_id="requestPasswordReset",
+        summary="Request password reset",
+        description="Send a password reset OTP to the given email address.",
+        tags=["Authentication"],
+        request=PasswordResetRequestSerializer,
+        responses={200: OpenApiResponse(description="If the email exists and is active, an OTP is sent.")},
+    )
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        services.request_password_reset(email=serializer.validated_data["email"])
+        return Response({"detail": "If the email is registered, a password reset code has been sent."})
+
+
+class PasswordResetVerifyView(APIView):
+    """Verify a password reset code without consuming it."""
+
+    permission_classes = []
+
+    @extend_schema(
+        operation_id="verifyPasswordResetCode",
+        summary="Verify password reset code",
+        description="Verify that a password reset OTP is valid.",
+        tags=["Authentication"],
+        request=PasswordResetVerifySerializer,
+        responses={
+            200: OpenApiResponse(description="Code is valid."),
+            400: OpenApiResponse(description="Code is invalid or expired."),
+        },
+    )
+    def post(self, request):
+        serializer = PasswordResetVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        services.verify_password_reset_code(
+            email=serializer.validated_data["email"],
+            code=serializer.validated_data["code"],
+        )
+        return Response({"detail": "Code is valid."})
+
+
+class PasswordResetConfirmView(APIView):
+    """Submit a new password along with a valid reset code."""
+
+    permission_classes = []
+
+    @extend_schema(
+        operation_id="confirmPasswordReset",
+        summary="Confirm password reset",
+        description="Change the password using a valid reset OTP.",
+        tags=["Authentication"],
+        request=PasswordResetConfirmSerializer,
+        responses={
+            200: OpenApiResponse(description="Password changed successfully."),
+            400: OpenApiResponse(description="Code is invalid or expired."),
+        },
+    )
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        services.confirm_password_reset(
+            email=serializer.validated_data["email"],
+            code=serializer.validated_data["code"],
+            new_password=serializer.validated_data["new_password"],
+        )
+        return Response({"detail": "Password has been successfully changed."})
+
+
+class LogoutView(APIView):
+    """Log out by blacklisting the refresh token."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        operation_id="logout",
+        summary="Log out",
+        description="Blacklist the provided refresh token.",
+        tags=["Authentication"],
+        request=LogoutSerializer,
+        responses={
+            200: OpenApiResponse(description="Logged out successfully."),
+            400: OpenApiResponse(description="Invalid token."),
+        },
+    )
+    def post(self, request):
+        from rest_framework_simplejwt.tokens import RefreshToken
+        from rest_framework_simplejwt.exceptions import TokenError
+
+        serializer = LogoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            token = RefreshToken(serializer.validated_data["refresh_token"])
+            token.blacklist()
+        except TokenError:
+            raise ValidationError({"refresh_token": "Token is invalid or expired."})
+        return Response({"detail": "Successfully logged out."})

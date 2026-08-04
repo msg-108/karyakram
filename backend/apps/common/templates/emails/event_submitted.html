@@ -1,0 +1,8 @@
+{% extends "emails/base.html" %}
+{% block subject %}Event submitted for review{% endblock %}
+{% block content %}
+<h2>Event Submitted</h2>
+<p>Hello {{ organizer.user.username }},</p>
+<p>Your event <strong>{{ event.title }}</strong> has been successfully submitted and is currently pending admin approval.</p>
+<p>We will notify you once it has been reviewed.</p>
+{% endblock %}

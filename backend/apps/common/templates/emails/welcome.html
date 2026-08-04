@@ -1,0 +1,7 @@
+{% extends "emails/base.html" %}
+{% block subject %}Welcome to Karyakram!{% endblock %}
+{% block content %}
+<h2>Welcome, {{ user.username }}!</h2>
+<p>Your email has been successfully verified, and your account is now active.</p>
+<p>Explore upcoming events and start booking your tickets today!</p>
+{% endblock %}

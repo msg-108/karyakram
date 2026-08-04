@@ -1,0 +1,5 @@
+Event Approved!
+
+Hello {{ organizer.user.username }},
+
+Good news! Your event "{{ event.title }}" has been approved by our admin team. You can now publish this event from your dashboard to make it visible to the public.

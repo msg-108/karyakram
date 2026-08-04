@@ -229,3 +229,31 @@ class OrganizerApprovalActionSerializer(serializers.Serializer):
                 {"reason": "A reason is required when rejecting an organizer."}
             )
         return attrs
+
+
+# ==================== PASSWORD RESET & LOGOUT ====================
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetVerifySerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6, min_length=6)
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6, min_length=6)
+    new_password = serializers.CharField(validators=[validate_password])
+    new_password_confirm = serializers.CharField()
+
+    def validate(self, attrs: dict) -> dict:
+        if attrs["new_password"] != attrs["new_password_confirm"]:
+            raise serializers.ValidationError({"new_password_confirm": "Passwords do not match."})
+        return attrs
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField()

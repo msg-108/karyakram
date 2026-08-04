@@ -1,0 +1,9 @@
+Pending Event Approval
+
+Hello Admin,
+
+A new event has been submitted for review.
+- Event: {{ event.title }}
+- Organizer: {{ event.organizer.organization_name }}
+
+Please log in to the admin portal to review this event.

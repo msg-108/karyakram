@@ -1,0 +1,5 @@
+Application Approved!
+
+Hello {{ user.username }},
+
+Great news! Your organizer account for {{ user.organizer_profile.organization_name }} has been approved by our admin team. You can now log in and start creating events.

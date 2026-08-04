@@ -1,0 +1,10 @@
+Event Submission Update
+
+Hello {{ organizer.user.username }},
+
+We have reviewed your event "{{ event.title }}". Unfortunately, it cannot be approved at this time.
+
+Reason provided:
+{{ reason }}
+
+Please log in to your dashboard to make the necessary changes and resubmit.

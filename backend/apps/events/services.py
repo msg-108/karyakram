@@ -199,10 +199,44 @@ def submit_event_for_review(event: Event, *, organizer: OrganizerProfile) -> Eve
     event.status = Event.Status.SUBMITTED
     event.rejection_reason = ""
     event.save(update_fields=["status", "rejection_reason", "updated_at"])
+
+    transaction.on_commit(
+        lambda: send_event_submitted_email(event)
+    )
+    transaction.on_commit(
+        lambda: send_admin_event_pending_email(event)
+    )
+
     return event
 
 
 # ==================== EVENT: ADMIN REVIEW ====================
+
+
+def send_event_submitted_email(event: Event) -> None:
+    send_email(
+        to=event.organizer.user.email,
+        subject="Event submitted for review",
+        template_prefix="emails/event_submitted",
+        context={"event": event, "organizer": event.organizer},
+        user=event.organizer.user,
+    )
+
+
+def send_admin_event_pending_email(event: Event) -> None:
+    from django.conf import settings
+    admin_emails = User.objects.filter(is_superuser=True, is_active=True).values_list("email", flat=True)
+    if not admin_emails:
+        admin_emails = [settings.DEFAULT_FROM_EMAIL]
+    
+    for admin_email in admin_emails:
+        send_email(
+            to=admin_email,
+            subject="New Event Pending Review",
+            template_prefix="emails/admin_event_pending",
+            context={"event": event},
+            user=event.organizer.user,
+        )
 
 
 def send_event_approved_email(event: Event) -> None:
@@ -221,6 +255,16 @@ def send_event_rejected_email(event: Event, reason: str) -> None:
         subject="Update on your event submission",
         template_prefix="emails/event_rejected",
         context={"event": event, "organizer": event.organizer, "reason": reason},
+        user=event.organizer.user,
+    )
+
+
+def send_event_published_email(event: Event) -> None:
+    send_email(
+        to=event.organizer.user.email,
+        subject="Your event is now live!",
+        template_prefix="emails/event_published",
+        context={"event": event, "organizer": event.organizer},
         user=event.organizer.user,
     )
 
@@ -278,6 +322,11 @@ def publish_event(event: Event, *, admin: User) -> Event:
     event.status = Event.Status.PUBLISHED
     event.published_at = timezone.now()
     event.save(update_fields=["status", "published_at", "updated_at"])
+
+    transaction.on_commit(
+        lambda: send_event_published_email(event)
+    )
+
     return event
 
 

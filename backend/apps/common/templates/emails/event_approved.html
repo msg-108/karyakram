@@ -1,0 +1,8 @@
+{% extends "emails/base.html" %}
+{% block subject %}Your event has been approved{% endblock %}
+{% block content %}
+<h2>Event Approved!</h2>
+<p>Hello {{ organizer.user.username }},</p>
+<p>Good news! Your event <strong>{{ event.title }}</strong> has been approved by our admin team.</p>
+<p>You can now publish this event from your dashboard to make it visible to the public.</p>
+{% endblock %}

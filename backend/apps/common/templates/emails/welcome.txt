@@ -1,0 +1,3 @@
+Welcome, {{ user.username }}!
+
+Your email has been successfully verified, and your account is now active. Explore upcoming events and start booking your tickets today!

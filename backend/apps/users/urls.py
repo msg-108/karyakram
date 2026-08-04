@@ -11,6 +11,10 @@ from .views import (
     ResendOTPView,
     UserRegisterView,
     VerifyEmailOTPView,
+    PasswordResetRequestView,
+    PasswordResetVerifyView,
+    PasswordResetConfirmView,
+    LogoutView,
 )
 
 app_name = "users"
@@ -22,9 +26,14 @@ urlpatterns = [
     # Email verification (OTP)
     path("auth/verify-otp/", VerifyEmailOTPView.as_view(), name="verify-otp"),
     path("auth/resend-otp/", ResendOTPView.as_view(), name="resend-otp"),
-    # Login
+    # Login & Logout
     path("auth/login/", LoginView.as_view(), name="login"),
+    path("auth/logout/", LogoutView.as_view(), name="logout"),
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
+    # Password Reset
+    path("auth/password-reset/", PasswordResetRequestView.as_view(), name="password-reset-request"),
+    path("auth/password-reset/verify/", PasswordResetVerifyView.as_view(), name="password-reset-verify"),
+    path("auth/password-reset/confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
     # Profile
     path("me/", MeView.as_view(), name="me"),
     path("me/organizer-profile/", MyOrganizerProfileView.as_view(), name="my-organizer-profile"),

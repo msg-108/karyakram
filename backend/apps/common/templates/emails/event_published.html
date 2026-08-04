@@ -1,0 +1,8 @@
+{% extends "emails/base.html" %}
+{% block subject %}Your event is now live!{% endblock %}
+{% block content %}
+<h2>Event Published!</h2>
+<p>Hello {{ organizer.user.username }},</p>
+<p>Congratulations! Your event <strong>{{ event.title }}</strong> is now live and public.</p>
+<p>Users can now discover your event and start booking tickets.</p>
+{% endblock %}

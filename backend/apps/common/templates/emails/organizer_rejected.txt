@@ -1,0 +1,10 @@
+Application Update
+
+Hello {{ user.username }},
+
+We have reviewed your organizer account application for {{ user.organizer_profile.organization_name }}. Unfortunately, we cannot approve it at this time.
+
+Reason provided:
+{{ reason }}
+
+You may contact support for further clarification.

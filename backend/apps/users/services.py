@@ -60,6 +60,56 @@ def send_organizer_rejected_email(user: User, reason: str) -> None:
     )
 
 
+def send_welcome_email(user: User) -> None:
+    send_email(
+        to=user.email,
+        subject="Welcome to Karyakram!",
+        template_prefix="emails/welcome",
+        context={"user": user},
+        user=user,
+    )
+
+
+def send_admin_organizer_pending_email(profile: OrganizerProfile) -> None:
+    # Get all superusers or a configured admin email
+    admin_emails = User.objects.filter(is_superuser=True, is_active=True).values_list("email", flat=True)
+    if not admin_emails:
+        admin_emails = [settings.DEFAULT_FROM_EMAIL]
+    
+    for admin_email in admin_emails:
+        send_email(
+            to=admin_email,
+            subject="New Organizer Application Pending",
+            template_prefix="emails/admin_organizer_pending",
+            context={"profile": profile},
+            user=profile.user,
+        )
+
+
+def send_password_reset_email(user: User, otp: EmailOTP) -> None:
+    send_email(
+        to=user.email,
+        subject="Reset your Karyakram password",
+        template_prefix="emails/password_reset",
+        context={
+            "user": user,
+            "otp_code": otp.code,
+            "valid_minutes": EmailOTP.OTP_VALIDITY_MINUTES,
+        },
+        user=user,
+    )
+
+
+def send_password_reset_success_email(user: User) -> None:
+    send_email(
+        to=user.email,
+        subject="Your Karyakram password was changed",
+        template_prefix="emails/password_reset_success",
+        context={"user": user},
+        user=user,
+    )
+
+
 def send_ticket_email(user: User, *, event_name: str, ticket_pdf_bytes: bytes, ticket_filename: str) -> None:
     """
     Deliver a ticket after successful payment. Kept here (rather than in a
@@ -120,6 +170,9 @@ def register_organizer(*, validated_data: dict, profile_data: dict) -> User:
     transaction.on_commit(
         lambda: send_otp_email(user, otp)
     )
+    transaction.on_commit(
+        lambda: send_admin_organizer_pending_email(profile)
+    )
 
     return user
 
@@ -168,13 +221,11 @@ def resend_otp(user: User, *, purpose: str) -> EmailOTP:
     return otp
 
 
-@transaction.atomic
-def verify_otp(user: User, *, code: str, purpose: str) -> OTPVerificationResult:
+def _validate_otp(user: User, *, code: str, purpose: str) -> EmailOTP:
     """
-    Validate the submitted code. On success: mark email verified, activate
-    USER accounts immediately (ORGANIZER accounts stay inactive pending
-    admin approval — see `is_pending_organizer_approval`), and delete the
-    OTP row so it cannot be reused, per requirement #11.
+    Core validation logic: fetches the row with row-level lock, checks
+    expiration, checks attempts, and matches the code. Returns the OTP row
+    if valid so the caller can decide when/if to delete it.
     """
     try:
         otp = EmailOTP.objects.select_for_update().get(user=user, purpose=purpose)
@@ -195,6 +246,17 @@ def verify_otp(user: User, *, code: str, purpose: str) -> OTPVerificationResult:
         raise ValidationError(
             {"code": f"Incorrect code. {otp.attempts_remaining} attempt(s) remaining."}
         )
+    return otp
+
+
+@transaction.atomic
+def verify_email_otp(user: User, *, code: str) -> OTPVerificationResult:
+    """
+    Validate the submitted code for email verification. On success: mark email
+    verified, activate USER accounts immediately (ORGANIZER accounts stay inactive
+    pending admin approval), and delete the OTP row.
+    """
+    otp = _validate_otp(user, code=code, purpose=EmailOTP.Purpose.EMAIL_VERIFICATION)
 
     user.is_email_verified = True
     activated = False
@@ -205,7 +267,79 @@ def verify_otp(user: User, *, code: str, purpose: str) -> OTPVerificationResult:
     user.save(update_fields=["is_email_verified", "is_active"])
     otp.delete()
 
+    if activated:
+        # Only send welcome email to normal users or upon full activation
+        # For organizers, the organizer_approved email acts as the welcome.
+        send_welcome_email(user)
+
     return OTPVerificationResult(user=user, activated=activated)
+
+
+# ==================== PASSWORD RESET ====================
+
+
+def request_password_reset(*, email: str) -> None:
+    """
+    Request a password reset OTP. Fails silently if the user doesn't exist
+    or isn't active, to prevent email enumeration.
+    """
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return
+
+    if not user.is_active:
+        return
+
+    # Check cooldown
+    try:
+        existing = EmailOTP.objects.get(user=user, purpose=EmailOTP.Purpose.PASSWORD_RESET)
+        if existing.seconds_until_resend_allowed > 0:
+            return  # Fail silently if they are spamming it
+    except EmailOTP.DoesNotExist:
+        pass
+
+    otp = issue_otp(user, purpose=EmailOTP.Purpose.PASSWORD_RESET)
+    send_password_reset_email(user, otp)
+
+
+@transaction.atomic
+def verify_password_reset_code(*, email: str, code: str) -> None:
+    """
+    Check if a password reset code is valid without consuming it.
+    Useful for the frontend to validate the code before showing the password form.
+    """
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        raise ValidationError({"code": "Invalid request."})
+
+    if not user.is_active:
+        raise ValidationError({"code": "Invalid request."})
+
+    _validate_otp(user, code=code, purpose=EmailOTP.Purpose.PASSWORD_RESET)
+
+
+@transaction.atomic
+def confirm_password_reset(*, email: str, code: str, new_password: str) -> None:
+    """
+    Validates the code and changes the user's password.
+    """
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        raise ValidationError({"code": "Invalid request."})
+
+    if not user.is_active:
+        raise ValidationError({"code": "Invalid request."})
+
+    otp = _validate_otp(user, code=code, purpose=EmailOTP.Purpose.PASSWORD_RESET)
+
+    user.set_password(new_password)
+    user.save(update_fields=["password"])
+    otp.delete()
+
+    send_password_reset_success_email(user)
 
 
 # ==================== LOGIN GATING ====================
