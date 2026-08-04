@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,8 +16,12 @@ class UserTicketListView(generics.ListAPIView):
     """
     permission_classes = [IsAuthenticated]
     serializer_class = TicketSerializer
+    queryset = Ticket.objects.none()
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Ticket.objects.none()
+            
         return Ticket.objects.filter(
             booking__user=self.request.user
         ).select_related("booking", "booking_item__ticket_tier")
@@ -29,6 +34,7 @@ class CheckInView(APIView):
     """
     permission_classes = [IsAuthenticated, IsOrganizer]
 
+    @extend_schema(request=CheckInSerializer, responses={200: TicketSerializer})
     def post(self, request, event_id):
         # Verify the organizer owns this event
         try:

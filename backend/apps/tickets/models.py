@@ -19,6 +19,7 @@ class Ticket(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.VALID)
     
     qr_code_payload = models.TextField(help_text="Signed JWT for the QR code", blank=True)
+    qr_code_image = models.ImageField(upload_to="tickets/qrcodes/", blank=True, null=True)
     
     checked_in_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

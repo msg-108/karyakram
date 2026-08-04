@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Booking, BookingItem, BookingPayment
+from .models import Booking, BookingItem
 
 
 class BookingItemInline(admin.TabularInline):
@@ -25,16 +25,3 @@ class BookingItemAdmin(admin.ModelAdmin):
     list_display = ("booking", "ticket_tier", "quantity", "price_at_purchase")
     search_fields = ("booking__id", "ticket_tier__name")
     readonly_fields = ("created_at",)
-
-
-@admin.register(BookingPayment)
-class BookingPaymentAdmin(admin.ModelAdmin):
-    """
-    Registered now for consistency even though nothing creates
-    BookingPayment rows yet — see the model's own docstring for why it
-    exists as a placeholder.
-    """
-
-    list_display = ("booking", "provider", "status", "amount", "created_at")
-    list_filter = ("status", "provider")
-    readonly_fields = ("created_at", "updated_at")
