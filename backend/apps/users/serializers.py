@@ -105,14 +105,12 @@ class OrganizerRegisterSerializer(serializers.Serializer):
     citizenship_number = serializers.CharField(
         max_length=150,
         validators=[
-            UniqueValidator(queryset=OrganizerProfile.objects.all()),
             validate_citizenship_number,
         ]
     )
     pan_number = serializers.CharField(
         write_only=True,
         validators=[
-            UniqueValidator(queryset=OrganizerProfile.objects.all()),
             validate_pan_number,
         ]
     )
@@ -121,7 +119,6 @@ class OrganizerRegisterSerializer(serializers.Serializer):
     bank_account_number = serializers.CharField(
         write_only=True,
         validators=[
-            UniqueValidator(queryset=OrganizerProfile.objects.all()),
             validate_bank_account_number,
         ]
     )

@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 
 from . import services
 from .models import Booking
-from .permissions import IsBookingOwner, IsPlainUser
+from apps.common.permissions import IsBookingOwner, IsPlainUser
 from .serializers import BookingCreateSerializer, BookingDetailSerializer, BookingListSerializer
 
 

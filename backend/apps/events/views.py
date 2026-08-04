@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 
 from . import services
 from .models import Event, EventCategory, TicketTier
-from .permissions import CanApproveEvent, IsApprovedOrganizer, IsEventOwner, IsOrganizer
+from apps.common.permissions import CanApproveEvent, IsApprovedOrganizer, IsEventOwner, IsOrganizer
 from .serializers import (
     AdminEventReviewSerializer,
     EventApprovalActionSerializer,

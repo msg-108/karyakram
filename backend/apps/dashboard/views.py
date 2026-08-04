@@ -9,13 +9,11 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from .permissions import IsOrganizer, IsPlainUser
-
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from . import services
-from .permissions import IsOrganizer
+from apps.common.permissions import IsOrganizer, IsPlainUser
 from .serializers import (
     ActivityItemSerializer,
     AttendeeSummarySerializer,
@@ -221,7 +219,6 @@ class NotificationListView(APIView):
 
     permission_classes = [
     IsAuthenticated,
-    IsPlainUser,
 ]
 
     @extend_schema(

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Booking Confirmation — Karyakram</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0c1c30 0%,#1a3a5c 100%);padding:36px 40px;text-align:center;">
+              <h1 style="margin:0;font-size:28px;color:#1abc9c;letter-spacing:2px;font-weight:800;">KARYAKRAM</h1>
+              <p style="margin:8px 0 0;color:#a0b4c8;font-size:14px;letter-spacing:1px;">YOUR BOOKING IS CONFIRMED</p>
+            </td>
+          </tr>
+
+          <!-- Greeting -->
+          <tr>
+            <td style="padding:36px 40px 0;">
+              <h2 style="margin:0 0 8px;font-size:22px;color:#1a2e44;">
+                Hello, {{ user.first_name|default:user.username }}! 🎉
+              </h2>
+              <p style="margin:0;color:#555;font-size:15px;line-height:1.6;">
+                Your booking has been confirmed. Below are your full ticket details. Please keep this email safe as your booking reference.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Booking ID Badge -->
+          <tr>
+            <td style="padding:24px 40px 0;">
+              <div style="background:#f0faf7;border:2px solid #1abc9c;border-radius:8px;padding:16px 24px;display:inline-block;width:100%;box-sizing:border-box;">
+                <p style="margin:0;font-size:13px;color:#777;text-transform:uppercase;letter-spacing:1px;">Booking Reference</p>
+                <p style="margin:4px 0 0;font-size:26px;font-weight:800;color:#0c1c30;letter-spacing:2px;">#{{ booking.id }}</p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Event Details -->
+          <tr>
+            <td style="padding:28px 40px 0;">
+              <h3 style="margin:0 0 16px;font-size:16px;color:#0c1c30;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #e8edf2;padding-bottom:8px;">
+                Event Details
+              </h3>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:6px 0;color:#888;font-size:13px;width:100px;">Event</td>
+                  <td style="padding:6px 0;color:#1a2e44;font-size:15px;font-weight:700;">{{ event.title }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#888;font-size:13px;">Venue</td>
+                  <td style="padding:6px 0;color:#1a2e44;font-size:15px;">{{ event.venue }}, {{ event.city }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#888;font-size:13px;">Date</td>
+                  <td style="padding:6px 0;color:#1a2e44;font-size:15px;">{{ event.start_datetime|date:"D, N j, Y - g:i A" }}</td>
+                </tr>
+                {% if event.end_datetime %}
+                <tr>
+                  <td style="padding:6px 0;color:#888;font-size:13px;">Ends</td>
+                  <td style="padding:6px 0;color:#1a2e44;font-size:15px;">{{ event.end_datetime|date:"D, N j, Y - g:i A" }}</td>
+                </tr>
+                {% endif %}
+                {% if event.address %}
+                <tr>
+                  <td style="padding:6px 0;color:#888;font-size:13px;">Address</td>
+                  <td style="padding:6px 0;color:#1a2e44;font-size:15px;">{{ event.address }}</td>
+                </tr>
+                {% endif %}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Ticket Line Items -->
+          <tr>
+            <td style="padding:28px 40px 0;">
+              <h3 style="margin:0 0 16px;font-size:16px;color:#0c1c30;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #e8edf2;padding-bottom:8px;">
+                Tickets Purchased
+              </h3>
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                <thead>
+                  <tr style="background:#f8f9fa;">
+                    <th style="padding:10px 12px;text-align:left;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e8edf2;">Ticket Type</th>
+                    <th style="padding:10px 12px;text-align:center;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e8edf2;">Qty</th>
+                    <th style="padding:10px 12px;text-align:right;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e8edf2;">Unit Price</th>
+                    <th style="padding:10px 12px;text-align:right;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e8edf2;">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in items %}
+                  <tr style="{% if forloop.even %}background:#fafafa;{% endif %}">
+                    <td style="padding:12px 12px;font-size:14px;color:#1a2e44;font-weight:600;border-bottom:1px solid #f0f0f0;">{{ item.ticket_tier.name }}</td>
+                    <td style="padding:12px 12px;font-size:14px;color:#555;text-align:center;border-bottom:1px solid #f0f0f0;">{{ item.quantity }}</td>
+                    <td style="padding:12px 12px;font-size:14px;color:#555;text-align:right;border-bottom:1px solid #f0f0f0;">Rs. {{ item.price_at_purchase }}</td>
+                    <td style="padding:12px 12px;font-size:14px;color:#1a2e44;font-weight:700;text-align:right;border-bottom:1px solid #f0f0f0;">Rs. {{ item.line_total }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+                <tfoot>
+                  <tr style="background:#0c1c30;">
+                    <td colspan="3" style="padding:14px 12px;font-size:15px;color:#a0b4c8;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Total Paid</td>
+                    <td style="padding:14px 12px;font-size:18px;color:#1abc9c;font-weight:800;text-align:right;">Rs. {{ booking.total_amount }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer note -->
+          <tr>
+            <td style="padding:32px 40px;">
+              <p style="margin:0;font-size:13px;color:#999;line-height:1.7;">
+                If you have any questions about your booking, please reply to this email or contact the event organiser directly. This is an automated confirmation — please save it for your records.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer brand -->
+          <tr>
+            <td style="background:#f8f9fa;padding:24px 40px;text-align:center;border-top:1px solid #e8edf2;">
+              <p style="margin:0;font-size:13px;color:#1abc9c;font-weight:700;letter-spacing:1px;">KARYAKRAM</p>
+              <p style="margin:6px 0 0;font-size:12px;color:#bbb;">Nepal's Event Discovery & Ticketing Platform</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

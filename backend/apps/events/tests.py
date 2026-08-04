@@ -1,3 +1,1 @@
-from django.test import TestCase
-
-# Create your tests here.
+# Tests are defined in test_events.py to avoid namespace collisions.

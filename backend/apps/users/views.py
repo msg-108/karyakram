@@ -19,7 +19,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.dashboard.permissions import IsOrganizer
+from apps.common.permissions import IsOrganizer
 from . import services
 from .models import EmailOTP, OrganizerProfile, User
 from .serializers import (

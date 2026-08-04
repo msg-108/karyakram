@@ -16,6 +16,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from apps.common.email import send_email
 from .models import EmailOTP, OrganizerProfile, User, generate_otp
 
 logger = logging.getLogger(__name__)
@@ -24,42 +25,8 @@ logger = logging.getLogger(__name__)
 # ==================== EMAIL SENDING ====================
 
 
-def _send_email(*, to: str, subject: str, template_prefix: str, context: dict, user=User) -> None:
-    """
-    Render `{template_prefix}.txt` (and `.html` if present) and send via
-    the configured EMAIL_BACKEND (Gmail SMTP — see settings). Errors are
-    logged and re-raised: silently swallowing a failed OTP/notification
-    email would leave the user stuck with no way to proceed, which is
-    worse than a loud 500.
-    """
-    text_body = render_to_string(f"{template_prefix}.txt", context)
-    message = EmailMultiAlternatives(
-        subject=subject,
-        body=text_body,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[to],
-    )
-    try:
-        html_body = render_to_string(f"{template_prefix}.html", context)
-        message.attach_alternative(html_body, "text/html")
-    except Exception:  # noqa: BLE001 - HTML variant is optional
-        pass
-
-    try:
-        message.send(fail_silently=False)
-    except Exception:
-        logger.exception(
-            "Failed to send email",
-            extra={
-                "user_id": user.pk,
-                "email": user.email,
-            },
-        )
-        raise
-
-
 def send_otp_email(user: User, otp: EmailOTP) -> None:
-    _send_email(
+    send_email(
         to=user.email,
         subject="Your Karyakram verification code",
         template_prefix="emails/otp_verification",
@@ -69,24 +36,27 @@ def send_otp_email(user: User, otp: EmailOTP) -> None:
             "valid_minutes": EmailOTP.OTP_VALIDITY_MINUTES,
             "resend_seconds": settings.OTP_RESEND_COOLDOWN_SECONDS,
         },
+        user=user,
     )
 
 
 def send_organizer_approved_email(user: User) -> None:
-    _send_email(
+    send_email(
         to=user.email,
         subject="Your organizer account has been approved",
         template_prefix="emails/organizer_approved",
         context={"user": user},
+        user=user,
     )
 
 
 def send_organizer_rejected_email(user: User, reason: str) -> None:
-    _send_email(
+    send_email(
         to=user.email,
         subject="Update on your organizer application",
         template_prefix="emails/organizer_rejected",
         context={"user": user, "reason": reason},
+        user=user,
     )
 
 
@@ -97,27 +67,14 @@ def send_ticket_email(user: User, *, event_name: str, ticket_pdf_bytes: bytes, t
     email sending" as a users-app responsibility; the tickets/payments apps
     themselves are explicitly deferred.
     """
-    text_body = render_to_string(
-        "emails/ticket_delivery.txt", {"user": user, "event_name": event_name}
-    )
-    message = EmailMultiAlternatives(
+    send_email(
+        to=user.email,
         subject=f"Your ticket for {event_name}",
-        body=text_body,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[user.email],
+        template_prefix="emails/ticket_delivery",
+        context={"user": user, "event_name": event_name},
+        attachments=[(ticket_filename, ticket_pdf_bytes, "application/pdf")],
+        user=user,
     )
-    message.attach(ticket_filename, ticket_pdf_bytes, "application/pdf")
-    try:
-        message.send(fail_silently=False)
-    except Exception:
-        logger.exception(
-            "Failed to send ticket",
-            extra={
-                "user_id": user.pk,
-                "email": user.email,
-            },
-        )
-        raise
 
 
 # ==================== REGISTRATION ====================

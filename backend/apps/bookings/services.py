@@ -18,7 +18,6 @@ from __future__ import annotations
 import logging
 from decimal import Decimal
 
-from django.core.mail import send_mail
 from django.conf import settings
 from django.db import transaction
 from django.db.models import QuerySet
@@ -55,19 +54,64 @@ def _normalize_items(items: list[dict]) -> dict[int, int]:
     return normalized
 
 
-def send_booking_email(booking: Booking):
-    subject = f"Booking Confirmation: {booking.event.title} (Booking #{booking.id})"
-    message = f"Hello {booking.user.first_name or booking.user.username},\n\nYour booking for the event '{booking.event.title}' has been confirmed!\n\nBooking ID: #{booking.id}\nVenue: {booking.event.venue}, {booking.event.city}\nDate & Time: {booking.event.start_datetime}\n\nTotal Paid: Rs. {booking.total_amount}\n\nThank you for using Karyakram!"
+def send_booking_email(booking: Booking) -> None:
+    """
+    Send a styled HTML + plain-text booking confirmation email.
+    Wrapped entirely in try/except so a failure never bubbles out
+    of the on_commit callback and kills unrelated request handling.
+    """
     try:
-        send_mail(
+        from django.core.mail import EmailMultiAlternatives
+        from django.template.loader import render_to_string
+
+        # Annotate each item with its computed line_total for the template
+        items = booking.items.select_related("ticket_tier").all()
+        annotated_items = []
+        for item in items:
+            item.line_total = item.price_at_purchase * item.quantity
+            annotated_items.append(item)
+
+        context = {
+            "user": booking.user,
+            "booking": booking,
+            "event": booking.event,
+            "items": annotated_items,
+        }
+
+        subject = f"Booking Confirmed - {booking.event.title} (#{booking.id})"
+        text_body = render_to_string("emails/booking_confirmation.txt", context)
+        html_body = render_to_string("emails/booking_confirmation.html", context)
+
+        msg = EmailMultiAlternatives(
             subject=subject,
-            message=message,
+            body=text_body,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[booking.user.email],
-            fail_silently=False,
+            to=[booking.user.email],
         )
-    except Exception as e:
-        logger.exception("Failed to send booking confirmation email")
+        msg.attach_alternative(html_body, "text/html")
+        msg.send(fail_silently=False)
+        logger.info(
+            "Booking confirmation email sent",
+            extra={"booking_id": booking.id, "email": booking.user.email},
+        )
+    except Exception:
+        logger.exception(
+            "Failed to send booking confirmation email",
+            extra={"booking_id": booking.id, "user_id": booking.user_id},
+        )
+
+
+def send_booking_email_by_id(booking_id: int) -> None:
+    """
+    Re-fetch the booking fresh from DB and send the confirmation email.
+    Called from on_commit so the in-memory booking object is never stale.
+    """
+    try:
+        booking = Booking.objects.select_related("user", "event").get(pk=booking_id)
+    except Booking.DoesNotExist:
+        logger.warning("send_booking_email_by_id: booking %s not found", booking_id)
+        return
+    send_booking_email(booking)
 
 
 @transaction.atomic
@@ -126,8 +170,8 @@ def create_booking(*, user: User, event: Event, items: list[dict]) -> Booking:
     if not items:
         raise ValidationError({"items": "At least one item is required to create a booking."})
 
-    if event.status not in [Event.Status.APPROVED, Event.Status.PUBLISHED]:
-        raise ValidationError({"detail": "Tickets can only be booked for an approved or published event."})
+    if event.status != Event.Status.PUBLISHED:
+        raise ValidationError({"detail": "Tickets can only be booked for a published event."})
 
     if event.registration_deadline is not None and timezone.now() > event.registration_deadline:
         raise ValidationError({"detail": "The registration deadline for this event has passed."})
@@ -196,7 +240,7 @@ def create_booking(*, user: User, event: Event, items: list[dict]) -> Booking:
     booking.save(update_fields=["total_amount", "updated_at"])
 
     transaction.on_commit(
-        lambda: send_booking_email(booking)
+        lambda _id=booking.id: send_booking_email_by_id(_id)
     )
 
     return booking

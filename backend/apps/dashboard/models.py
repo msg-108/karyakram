@@ -17,6 +17,3 @@ of model instances wherever the underlying domain has no model yet. See
 services.py for the shapes and the TODOs marking where a real queryset
 will eventually replace a placeholder.
 """
-
-
-from django.db import models

@@ -23,7 +23,7 @@ from django.utils.text import slugify
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.users.models import OrganizerProfile, User
-from apps.users.services import _send_email
+from apps.common.email import send_email
 
 from .models import Event, EventCategory, EventImage, TicketTier
 from .validators import validate_event_schedule, validate_remaining_quantity
@@ -106,7 +106,6 @@ def create_event(*, organizer: OrganizerProfile, validated_data: dict) -> Event:
         raise ValidationError({
             "ticket_tiers": "At least one ticket tier is required when creating an event."
         })
-    print("🔥 ticket_tiers_data:", ticket_tiers_data)
 
     validate_event_schedule(
         start_datetime=validated_data["start_datetime"],
@@ -120,9 +119,8 @@ def create_event(*, organizer: OrganizerProfile, validated_data: dict) -> Event:
     event.full_clean()
     event.save()
 
-    if ticket_tiers_data:
-        for tier_data in ticket_tiers_data:
-            _create_ticket_tier_for_event(event, validated_data=tier_data)
+    for tier_data in ticket_tiers_data:
+        _create_ticket_tier_for_event(event, validated_data=tier_data)
 
     return event
 
@@ -208,7 +206,7 @@ def submit_event_for_review(event: Event, *, organizer: OrganizerProfile) -> Eve
 
 
 def send_event_approved_email(event: Event) -> None:
-    _send_email(
+    send_email(
         to=event.organizer.user.email,
         subject="Your event has been approved",
         template_prefix="emails/event_approved",
@@ -218,7 +216,7 @@ def send_event_approved_email(event: Event) -> None:
 
 
 def send_event_rejected_email(event: Event, reason: str) -> None:
-    _send_email(
+    send_email(
         to=event.organizer.user.email,
         subject="Update on your event submission",
         template_prefix="emails/event_rejected",
@@ -307,7 +305,7 @@ def list_public_events() -> QuerySet[Event]:
     """Base queryset for anything public-facing: approved/published + public visibility only."""
     return (
         Event.objects.filter(
-            status__in=[Event.Status.APPROVED, Event.Status.PUBLISHED],
+            status=Event.Status.PUBLISHED,
             visibility=Event.Visibility.PUBLIC,
         )
         .select_related("organizer", "category")
