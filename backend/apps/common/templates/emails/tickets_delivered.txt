@@ -1,0 +1,7 @@
+Your Tickets Are Ready!
+
+Hello {{ user.username }},
+
+Your tickets for {{ event.title }} are attached to this email. Please present the QR codes at the entrance for scanning.
+
+You can also view and download your tickets at any time from your dashboard.

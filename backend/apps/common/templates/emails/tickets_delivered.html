@@ -1,0 +1,10 @@
+{% extends "emails/base.html" %}
+{% block subject %}Your Tickets for {{ event.title }}{% endblock %}
+{% block content %}
+<h2>Your Tickets Are Ready!</h2>
+<p>Hello {{ user.username }},</p>
+<p>Your tickets for <strong>{{ event.title }}</strong> are attached to this email.</p>
+<p>Please present the QR codes at the entrance for scanning.</p>
+<p>You can also view and download your tickets at any time from your dashboard.</p>
+<a href="{{ settings.FRONTEND_URL }}/dashboard/tickets" class="btn">View My Tickets</a>
+{% endblock %}

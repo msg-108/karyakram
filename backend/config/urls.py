@@ -31,6 +31,7 @@ urlpatterns = [
     path('api/events/', include('apps.events.urls')),
     path('api/bookings/', include('apps.bookings.urls')),
     path('api/', include('apps.payments.urls')),
+    path('api/', include('apps.tickets.urls')),
 ]
 
 # Serve media files in development

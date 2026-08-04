@@ -328,6 +328,10 @@ def confirm_booking(booking: Booking) -> Booking:
     booking.status = Booking.Status.CONFIRMED
     booking.hold_expires_at = None
     booking.save(update_fields=["status", "hold_expires_at", "updated_at"])
+    
+    # Generate tickets
+    from apps.tickets.services import generate_tickets_for_booking
+    generate_tickets_for_booking(booking)
 
     transaction.on_commit(
         lambda _id=booking.id: send_booking_email_by_id(_id, action="confirmed")
