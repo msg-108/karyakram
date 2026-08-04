@@ -223,3 +223,8 @@ backend/staticfiles/
 backend/media/
 .idea/
 
+# Archive files
+*.zip
+
+# Stale migration backups
+*.py.save

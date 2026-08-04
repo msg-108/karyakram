@@ -1,22 +1,27 @@
-from .base import *
+from .base import *  # noqa: F401,F403
 from decouple import config
 
 DEBUG = True
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "karyakram_db",
-        "USER": "karyakram_user",
-        "PASSWORD": "karyakram",
-        "HOST": "localhost",
-        "PORT": "5432",
+
+import sys
+if "test" in sys.argv:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config("DB_NAME", default="karyakram_db"),
+            "USER": config("DB_USER", default="karyakram_user"),
+            "PASSWORD": config("DB_PASSWORD", default="karyakram"),
+            "HOST": config("DB_HOST", default="localhost"),
+            "PORT": config("DB_PORT", default="5432"),
+        }
+    }
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
-
-# Media Files Configuration
-from pathlib import Path
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'

@@ -23,7 +23,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Safe default: overridden to True in development.py
+DEBUG = False
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 
@@ -90,18 +91,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "karyakram_db",
-        "USER": "karyakram_user",
-        "PASSWORD": "karyakram",
-        "HOST": "localhost",
-        "PORT": "5432",
-    }
-}
+# Database — defined per-environment in development.py / production.py.
+# No default here to avoid leaking credentials in the base config.
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -131,11 +122,6 @@ TIME_ZONE = 'Asia/Kathmandu'
 USE_I18N = True
 
 USE_TZ = True
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
-
-STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -202,7 +188,18 @@ OTP_MAX_ATTEMPTS = 5
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'madhusudhangharti.108@gmail.com'
-EMAIL_HOST_PASSWORD = 'ptdsgelcvvfvxsnh'
+EMAIL_PORT = 465
+EMAIL_USE_SSL = True
+EMAIL_USE_TLS = False
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER', default='noreply@karyakram.com')
+
+# Site URL (used in email templates for links)
+SITE_URL = config('SITE_URL', default='http://localhost:5173')
+
+# Static & Media files
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
