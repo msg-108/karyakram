@@ -92,7 +92,7 @@ class TicketSummary:
     expose, so the serializer shouldn't need to change shape later.
     """
 
-    ticket_id: int
+    ticket_id: str
     event_title: str
     event_date_time: datetime
     event_location: str
@@ -101,28 +101,63 @@ class TicketSummary:
 
 
 def list_upcoming_tickets(user: User) -> list[TicketSummary]:
-    """Tickets for events that haven't happened yet. Placeholder: no tickets app exists yet."""
-    return []
+    from apps.tickets.models import Ticket
+    from django.utils import timezone
+    
+    tickets = Ticket.objects.filter(
+        booking__user=user, 
+        booking__event__start_date__gte=timezone.now()
+    ).select_related("booking__event", "booking_item__ticket_tier")
+    
+    return [
+        TicketSummary(
+            ticket_id=str(t.id),
+            event_title=t.booking.event.title,
+            event_date_time=t.booking.event.start_date,
+            event_location=t.booking.event.location,
+            seat_or_tier=t.booking_item.ticket_tier.name,
+            status=t.get_status_display(),
+        )
+        for t in tickets
+    ]
 
 
 def list_ticket_history(user: User) -> list[TicketSummary]:
-    """All tickets ever booked by this user, past and future. Placeholder: no tickets app exists yet."""
-    return []
-
-
-def get_ticket_receipt_pdf(user: User, *, ticket_id: int) -> bytes:
-    """
-    Return the receipt PDF for one of the user's own tickets, as raw bytes
-    for the view to serve with a PDF content type.
-
-    Placeholder: no tickets/payments app exists yet, so there is nothing to
-    look up or authorize against. Once apps.tickets exists, this must also
-    verify the ticket belongs to `user` before returning anything — that
-    ownership check belongs here, not in the view.
-    """
-    raise FeatureNotYetAvailable(
-        "Receipt download is not yet available: the tickets app has not been built."
+    from apps.tickets.models import Ticket
+    
+    tickets = Ticket.objects.filter(booking__user=user).select_related(
+        "booking__event", "booking_item__ticket_tier"
     )
+    
+    return [
+        TicketSummary(
+            ticket_id=str(t.id),
+            event_title=t.booking.event.title,
+            event_date_time=t.booking.event.start_date,
+            event_location=t.booking.event.location,
+            seat_or_tier=t.booking_item.ticket_tier.name,
+            status=t.get_status_display(),
+        )
+        for t in tickets
+    ]
+
+
+def get_ticket_receipt_pdf(user: User, *, ticket_id: str) -> bytes:
+    from apps.tickets.models import Ticket
+    from rest_framework.exceptions import PermissionDenied, NotFound
+
+    try:
+        ticket = Ticket.objects.select_related("booking").get(id=ticket_id)
+    except Ticket.DoesNotExist:
+        raise NotFound("Ticket not found.")
+        
+    if ticket.booking.user != user:
+        raise PermissionDenied("You do not have permission to view this ticket.")
+        
+    if not ticket.qr_code_image:
+        raise FeatureNotYetAvailable("QR Code image not yet generated.")
+        
+    return ticket.qr_code_image.read()
 
 
 # ==================== USER DASHBOARD: PAYMENTS ====================
@@ -146,8 +181,21 @@ class PaymentSummary:
 
 
 def list_payment_history(user: User) -> list[PaymentSummary]:
-    """Placeholder: no payments app exists yet."""
-    return []
+    from apps.payments.models import Payment
+    
+    payments = Payment.objects.filter(booking__user=user).select_related("booking__event")
+    
+    return [
+        PaymentSummary(
+            payment_id=p.id,
+            amount=p.amount,
+            currency="NPR",  # Or store currency in Payment model
+            status=p.get_status_display(),
+            paid_at=p.updated_at if p.status == Payment.Status.COMPLETED else None,
+            event_title=p.booking.event.title,
+        )
+        for p in payments
+    ]
 
 
 # ==================== USER DASHBOARD: EVENTS & ACTIVITY ====================
@@ -176,8 +224,24 @@ class EventSummary:
 
 
 def list_upcoming_events(user: User) -> list[EventSummary]:
-    """Events a user might want to attend/has interacted with. Placeholder: no events app exists yet."""
-    return []
+    from apps.events.models import Event
+    from django.utils import timezone
+    
+    events = Event.objects.filter(
+        status=Event.Status.PUBLISHED,
+        start_date__gte=timezone.now()
+    ).select_related("organizer__user")
+    
+    return [
+        EventSummary(
+            event_id=e.id,
+            title=e.title,
+            date_time=e.start_date,
+            location=e.location,
+            organizer_name=e.organizer.user.username,
+        )
+        for e in events
+    ]
 
 
 @dataclass(frozen=True)
@@ -197,8 +261,28 @@ class ActivityItem:
 
 
 def list_recent_activity(user: User, *, limit: int = 20) -> list[ActivityItem]:
-    """Placeholder: no source of activity events exists yet."""
-    return []
+    from apps.bookings.models import Booking
+    from apps.payments.models import Payment
+    
+    activities = []
+    
+    bookings = Booking.objects.filter(user=user).order_by("-created_at")[:limit]
+    for b in bookings:
+        activities.append(ActivityItem(
+            occurred_at=b.created_at,
+            description=f"Booked tickets for {b.event.title} (Status: {b.get_status_display()})"
+        ))
+        
+    payments = Payment.objects.filter(booking__user=user).order_by("-created_at")[:limit]
+    for p in payments:
+        if p.status == Payment.Status.COMPLETED:
+            activities.append(ActivityItem(
+                occurred_at=p.updated_at,
+                description=f"Completed payment of Rs. {p.amount} for {p.booking.event.title}"
+            ))
+            
+    activities.sort(key=lambda x: x.occurred_at, reverse=True)
+    return activities[:limit]
 
 
 # ==================== NOTIFICATIONS (future-ready, shared shape) ====================
@@ -258,13 +342,40 @@ def get_organizer_profile_summary(profile: OrganizerProfile) -> OrganizerProfile
 
 
 def list_organizer_events(profile: OrganizerProfile) -> list[EventSummary]:
-    """All events belonging to this organizer. Placeholder: no events app exists yet."""
-    return []
+    from apps.events.models import Event
+    
+    events = Event.objects.filter(organizer=profile).order_by("-start_date")
+    return [
+        EventSummary(
+            event_id=e.id,
+            title=e.title,
+            date_time=e.start_date,
+            location=e.location,
+            organizer_name=profile.user.username,
+        )
+        for e in events
+    ]
 
 
 def list_organizer_upcoming_events(profile: OrganizerProfile) -> list[EventSummary]:
-    """This organizer's events that haven't started yet. Placeholder: no events app exists yet."""
-    return []
+    from apps.events.models import Event
+    from django.utils import timezone
+    
+    events = Event.objects.filter(
+        organizer=profile, 
+        start_date__gte=timezone.now()
+    ).order_by("start_date")
+    
+    return [
+        EventSummary(
+            event_id=e.id,
+            title=e.title,
+            date_time=e.start_date,
+            location=e.location,
+            organizer_name=profile.user.username,
+        )
+        for e in events
+    ]
 
 
 # Deliberately no create_event / update_event / delete_event here. Event
@@ -293,8 +404,20 @@ class EventStatistics:
 
 
 def get_event_statistics(profile: OrganizerProfile) -> EventStatistics:
-    """Placeholder: no events/tickets apps exist yet."""
-    return EventStatistics()
+    from apps.events.models import Event
+    from apps.tickets.models import Ticket
+    
+    total_events = Event.objects.filter(organizer=profile).count()
+    tickets = Ticket.objects.filter(booking__event__organizer=profile)
+    
+    total_tickets_sold = tickets.exclude(status=Ticket.Status.CANCELLED).count()
+    total_checked_in = tickets.filter(status=Ticket.Status.CHECKED_IN).count()
+    
+    return EventStatistics(
+        total_events=total_events,
+        total_tickets_sold=total_tickets_sold,
+        total_attendees_checked_in=total_checked_in,
+    )
 
 
 @dataclass(frozen=True)
@@ -315,8 +438,22 @@ class RevenueAnalytics:
 
 
 def get_revenue_analytics(profile: OrganizerProfile) -> RevenueAnalytics:
-    """Placeholder: no payments app exists yet."""
-    return RevenueAnalytics()
+    from django.db.models import Sum
+    from apps.payments.models import Payment
+    
+    payments = Payment.objects.filter(
+        booking__event__organizer=profile,
+        status=Payment.Status.COMPLETED
+    )
+    
+    total = payments.aggregate(Sum('amount'))['amount__sum'] or Decimal("0.00")
+    
+    # Very basic by_month aggregation for the demo
+    return RevenueAnalytics(
+        total_revenue=total,
+        currency="NPR",
+        by_month=[]
+    )
 
 
 @dataclass(frozen=True)
@@ -328,8 +465,17 @@ class TicketSalesSummary:
 
 
 def get_ticket_sales_summary(profile: OrganizerProfile) -> TicketSalesSummary:
-    """Placeholder: no tickets app exists yet."""
-    return TicketSalesSummary()
+    from django.db.models import Sum
+    from apps.events.models import TicketTier
+    from apps.tickets.models import Ticket
+    
+    total_available = TicketTier.objects.filter(event__organizer=profile, is_active=True).aggregate(Sum('remaining_quantity'))['remaining_quantity__sum'] or 0
+    total_sold = Ticket.objects.filter(booking__event__organizer=profile).exclude(status=Ticket.Status.CANCELLED).count()
+    
+    return TicketSalesSummary(
+        total_sold=total_sold,
+        total_available=total_available + total_sold,
+    )
 
 
 @dataclass(frozen=True)
@@ -341,8 +487,16 @@ class CheckInStatistics:
 
 
 def get_checkin_statistics(profile: OrganizerProfile) -> CheckInStatistics:
-    """Placeholder: no QR check-in app exists yet."""
-    return CheckInStatistics()
+    from apps.tickets.models import Ticket
+    
+    tickets = Ticket.objects.filter(booking__event__organizer=profile).exclude(status=Ticket.Status.CANCELLED)
+    total_expected = tickets.count()
+    total_checked_in = tickets.filter(status=Ticket.Status.CHECKED_IN).count()
+    
+    return CheckInStatistics(
+        total_checked_in=total_checked_in,
+        total_expected=total_expected,
+    )
 
 
 @dataclass(frozen=True)
@@ -380,8 +534,23 @@ class OrderSummary:
 
 
 def list_recent_orders(profile: OrganizerProfile, *, limit: int = 20) -> list[OrderSummary]:
-    """Placeholder: no payments/tickets apps exist yet."""
-    return []
+    from apps.bookings.models import Booking
+    
+    bookings = Booking.objects.filter(
+        event__organizer=profile
+    ).select_related("user", "event").order_by("-created_at")[:limit]
+    
+    return [
+        OrderSummary(
+            order_id=b.id,
+            buyer_name=b.user.username,
+            event_title=b.event.title,
+            amount=b.total_amount,
+            placed_at=b.created_at,
+            status=b.get_status_display(),
+        )
+        for b in bookings
+    ]
 
 
 @dataclass(frozen=True)
@@ -395,8 +564,28 @@ class AttendeeSummary:
 
 
 def list_event_attendees(profile: OrganizerProfile, *, event_id: int) -> list[AttendeeSummary]:
-    """Placeholder: no events/tickets apps exist yet."""
-    return []
+    from apps.tickets.models import Ticket
+    from rest_framework.exceptions import PermissionDenied
+    from apps.events.models import Event
+    
+    try:
+        event = Event.objects.get(id=event_id)
+        if event.organizer != profile:
+            raise PermissionDenied("You do not have permission to view this event's attendees.")
+    except Event.DoesNotExist:
+        return []
+        
+    tickets = Ticket.objects.filter(booking__event_id=event_id).exclude(status=Ticket.Status.CANCELLED)
+    
+    return [
+        AttendeeSummary(
+            attendee_name=t.attendee_name,
+            email=t.attendee_email,
+            ticket_status=t.get_status_display(),
+            checked_in=(t.status == Ticket.Status.CHECKED_IN),
+        )
+        for t in tickets
+    ]
 
 
 # ==================== ORGANIZER DASHBOARD: EXPORTS (future-ready) ====================

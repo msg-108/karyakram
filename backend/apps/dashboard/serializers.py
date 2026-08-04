@@ -29,7 +29,7 @@ class UserProfileSummarySerializer(serializers.Serializer):
 
 
 class TicketSummarySerializer(serializers.Serializer):
-    ticket_id = serializers.IntegerField()
+    ticket_id = serializers.UUIDField()
     event_title = serializers.CharField()
     event_date_time = serializers.DateTimeField()
     event_location = serializers.CharField()

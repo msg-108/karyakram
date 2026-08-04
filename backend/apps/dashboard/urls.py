@@ -31,7 +31,7 @@ urlpatterns = [
     path("user/tickets/upcoming/", UpcomingTicketsView.as_view(), name="user-tickets-upcoming"),
     path("user/tickets/history/", TicketHistoryView.as_view(), name="user-tickets-history"),
     path(
-        "user/tickets/<int:ticket_id>/receipt/",
+        "user/tickets/<uuid:ticket_id>/receipt/",
         TicketReceiptDownloadView.as_view(),
         name="user-ticket-receipt",
     ),
