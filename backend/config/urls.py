@@ -30,6 +30,7 @@ urlpatterns = [
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('api/events/', include('apps.events.urls')),
     path('api/bookings/', include('apps.bookings.urls')),
+    path('api/', include('apps.payments.urls')),
 ]
 
 # Serve media files in development

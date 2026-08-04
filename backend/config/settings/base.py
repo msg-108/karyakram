@@ -54,11 +54,23 @@ LOCAL_APPS = [
     'apps.dashboard',
     'apps.events',
     'apps.bookings',
+    'apps.payments',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 FIELD_ENCRYPTION_KEY = config('FIELD_ENCRYPTION_KEY', default=None)
+
+# ==================== PAYMENT GATEWAYS ====================
+ESEWA_MERCHANT_CODE = config("ESEWA_MERCHANT_CODE", default="EPAYTEST")
+ESEWA_SECRET_KEY = config("ESEWA_SECRET_KEY", default="8gBm/:&EnhH.1/q")
+ESEWA_URL = config("ESEWA_URL", default="https://rc-epay.esewa.com.np/api/epay/main/v2/form")
+ESEWA_STATUS_URL = config("ESEWA_STATUS_URL", default="https://rc-epay.esewa.com.np/api/epay/transaction/status/")
+
+KHALTI_PUBLIC_KEY = config("KHALTI_PUBLIC_KEY", default="")
+KHALTI_SECRET_KEY = config("KHALTI_SECRET_KEY", default="")
+KHALTI_URL = config("KHALTI_URL", default="https://a.khalti.com/api/v2/epayment/initiate/")
+KHALTI_LOOKUP_URL = config("KHALTI_LOOKUP_URL", default="https://a.khalti.com/api/v2/epayment/lookup/")
 if not FIELD_ENCRYPTION_KEY:
     raise ValueError("FIELD_ENCRYPTION_KEY is not set in environment")
 

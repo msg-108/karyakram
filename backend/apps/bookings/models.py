@@ -57,6 +57,7 @@ class Booking(models.Model):
         PENDING = "PENDING", "Pending"
         CONFIRMED = "CONFIRMED", "Confirmed"
         CANCELLED = "CANCELLED", "Cancelled"
+        EXPIRED = "EXPIRED", "Expired"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -88,6 +89,7 @@ class Booking(models.Model):
     )
 
     cancelled_at = models.DateTimeField(null=True, blank=True)
+    hold_expires_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -169,49 +171,3 @@ class BookingItem(models.Model):
     @property
     def subtotal(self) -> Decimal:
         return self.price_at_purchase * self.quantity
-
-
-class BookingPayment(models.Model):
-    """
-    Placeholder only — not created, read, or referenced anywhere in
-    services.py/views.py yet. Included now purely so the FK target exists
-    and the migration history doesn't need a disruptive schema change the
-    day a real payments app lands, matching how apps.events already left
-    TicketTier.remaining_quantity in place for this app to use rather than
-    inventing it later.
-
-    Deliberately minimal: no gateway-specific fields (Stripe payment
-    intent IDs, Khalti/eSewa transaction refs, webhook payloads) since
-    guessing that shape now is more likely to be wrong and need reworking
-    than to save real effort later. A real payments app should most
-    plausibly own its own richer model and may replace this one entirely
-    rather than extend it — this is a reservation of intent, not a
-    committed design.
-    """
-
-    class Status(models.TextChoices):
-        PENDING = "PENDING", "Pending"
-        SUCCEEDED = "SUCCEEDED", "Succeeded"
-        FAILED = "FAILED", "Failed"
-        REFUNDED = "REFUNDED", "Refunded"
-
-    booking = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name="payment")
-
-    provider = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text="e.g. 'stripe', 'khalti', 'esewa'. Blank until a real payments app sets it.",
-    )
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = "booking_payments"
-        verbose_name = "Booking Payment"
-        verbose_name_plural = "Booking Payments"
-
-    def __str__(self) -> str:
-        return f"Payment for Booking #{self.booking_id} ({self.get_status_display()})"

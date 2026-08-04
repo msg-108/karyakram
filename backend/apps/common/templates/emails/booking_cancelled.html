@@ -1,0 +1,9 @@
+{% extends "emails/base.html" %}
+{% block subject %}Booking Cancelled - {{ event.title }} (#{{ booking.id }}){% endblock %}
+{% block content %}
+<h2>Booking Cancelled</h2>
+<p>Hello {{ user.username }},</p>
+<p>Your booking (#{{ booking.id }}) for <strong>{{ event.title }}</strong> has been cancelled.</p>
+<p>This may be because you manually cancelled it, or the payment window expired.</p>
+<p>If you still wish to attend, you can create a new booking from the event page.</p>
+{% endblock %}

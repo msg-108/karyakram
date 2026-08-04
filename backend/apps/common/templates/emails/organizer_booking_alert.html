@@ -1,0 +1,14 @@
+{% extends "emails/base.html" %}
+{% block subject %}New Ticket Sold! {{ event.title }}{% endblock %}
+{% block content %}
+<h2>New Confirmed Booking</h2>
+<p>Hello {{ event.organizer.user.username }},</p>
+<p>You have sold new tickets for <strong>{{ event.title }}</strong>!</p>
+<h3>Booking Details:</h3>
+<ul>
+    <li><strong>Attendee:</strong> {{ booking.user.email }}</li>
+    <li><strong>Booking ID:</strong> #{{ booking.id }}</li>
+    <li><strong>Total Amount:</strong> Rs. {{ booking.total_amount }}</li>
+</ul>
+<p>Log in to your dashboard to view the full attendee list.</p>
+{% endblock %}

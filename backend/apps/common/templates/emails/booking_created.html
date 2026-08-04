@@ -1,0 +1,16 @@
+{% extends "emails/base.html" %}
+{% block subject %}Booking Created - Action Required - {{ event.title }} (#{{ booking.id }}){% endblock %}
+{% block content %}
+<h2>Action Required: Complete Your Payment</h2>
+<p>Hello {{ user.username }},</p>
+<p>You have successfully reserved tickets for <strong>{{ event.title }}</strong>.</p>
+<p>Your seats are locked for <strong>10 minutes</strong>. Please complete the payment to confirm your booking.</p>
+<h3>Order Summary:</h3>
+<ul>
+{% for item in items %}
+    <li>{{ item.quantity }}x {{ item.ticket_tier.name }} @ Rs. {{ item.price_at_purchase }} = Rs. {{ item.line_total }}</li>
+{% endfor %}
+</ul>
+<p><strong>Total Amount:</strong> Rs. {{ booking.total_amount }}</p>
+<a href="{{ settings.FRONTEND_URL }}/bookings/{{ booking.id }}/checkout" class="btn">Pay Now</a>
+{% endblock %}

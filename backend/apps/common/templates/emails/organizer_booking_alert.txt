@@ -1,0 +1,12 @@
+New Confirmed Booking
+
+Hello {{ event.organizer.user.username }},
+
+You have sold new tickets for {{ event.title }}!
+
+Booking Details:
+- Attendee: {{ booking.user.email }}
+- Booking ID: #{{ booking.id }}
+- Total Amount: Rs. {{ booking.total_amount }}
+
+Log in to your dashboard to view the full attendee list.

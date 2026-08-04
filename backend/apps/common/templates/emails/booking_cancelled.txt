@@ -1,0 +1,7 @@
+Booking Cancelled
+
+Hello {{ user.username }},
+
+Your booking (#{{ booking.id }}) for {{ event.title }} has been cancelled. This may be because you manually cancelled it, or the payment window expired.
+
+If you still wish to attend, you can create a new booking from the event page.
