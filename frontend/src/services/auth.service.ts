@@ -1,4 +1,4 @@
-import { api } from '../lib/api';
+import { api, setAccessToken } from '../lib/api';
 import {
   LoginFormData,
   RegisterUserFormData,
@@ -14,6 +14,7 @@ import { DetailResponse } from '../types/common.types';
 export const authService = {
   async login(data: LoginFormData): Promise<LoginResponse> {
     const res = await api.post<LoginResponse>('/auth/login/', data);
+    setAccessToken(res.data.access);
     return res.data;
   },
 
