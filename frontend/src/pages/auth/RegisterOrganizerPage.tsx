@@ -34,43 +34,47 @@ export const RegisterOrganizerPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-3xl lg:max-w-4xl mx-auto py-6">
+    <div className="space-y-6 w-full py-2 text-slate-100">
       <div className="space-y-2 text-center">
-        <h2 className="text-3xl sm:text-4xl font-black text-slate-900 font-heading tracking-tight">
-          Register as <span className="text-indigo-600">Organizer</span>
+        <h2 className="text-3xl sm:text-4xl font-black text-white font-heading tracking-tight">
+          Register as <span className="text-gradient">Organizer</span>
         </h2>
-        <p className="text-sm text-slate-500 max-w-lg mx-auto">
+        <p className="text-sm text-slate-300 max-w-xl mx-auto">
           Provide organization and legal verification details to host and publish events across Nepal
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl space-y-3">
-          <h3 className="text-xs font-bold text-indigo-900 uppercase tracking-wider">1. Account Details</h3>
-          <div className="grid grid-cols-2 gap-3">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="p-5 sm:p-6 bg-slate-900/90 border border-indigo-500/30 rounded-2xl space-y-4 shadow-xl">
+          <h3 className="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+            1. Account Details
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="First Name" placeholder="Aman" {...register('first_name')} error={errors.first_name?.message} />
             <FormField label="Last Name" placeholder="Shrestha" {...register('last_name')} error={errors.last_name?.message} />
           </div>
           <FormField label="Username" placeholder="amanorg" {...register('username')} error={errors.username?.message} />
           <FormField label="Email Address" type="email" placeholder="aman@org.com" {...register('email')} error={errors.email?.message} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Password" type="password" placeholder="••••••••" {...register('password')} error={errors.password?.message} />
             <FormField label="Confirm Password" type="password" placeholder="••••••••" {...register('password_confirm')} error={errors.password_confirm?.message} />
           </div>
         </div>
 
-        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">2. Organization & Verification</h3>
+        <div className="p-5 sm:p-6 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-4 shadow-xl">
+          <h3 className="text-xs font-extrabold text-purple-400 uppercase tracking-wider flex items-center gap-2">
+            2. Organization & Verification
+          </h3>
           <FormField label="Organization Name" placeholder="TechEvents Nepal Ltd" {...register('organization_name')} error={errors.organization_name?.message} />
           <FormField label="Description" as="textarea" rows={2} placeholder="Brief details about your organization" {...register('organization_description')} />
           <FormField label="Website URL (Optional)" placeholder="https://example.com" {...register('website_url')} error={errors.website_url?.message} />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Citizenship Number" placeholder="12-01-78-0012" {...register('citizenship_number')} error={errors.citizenship_number?.message} />
             <FormField label="PAN Number" placeholder="600123456" {...register('pan_number')} error={errors.pan_number?.message} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <Controller
               name="citizenship_document"
               control={control}
@@ -99,15 +103,17 @@ export const RegisterOrganizerPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">3. Bank Account (For Ticket Payouts)</h3>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="p-5 sm:p-6 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-4 shadow-xl">
+          <h3 className="text-xs font-extrabold text-pink-400 uppercase tracking-wider flex items-center gap-2">
+            3. Bank Account (For Ticket Payouts)
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Bank Name" placeholder="Nabil Bank" {...register('bank_name')} error={errors.bank_name?.message} />
             <FormField label="Account Number" placeholder="01201017500001" {...register('bank_account_number')} error={errors.bank_account_number?.message} />
           </div>
         </div>
 
-        <Button type="submit" isLoading={isSubmitting} className="w-full py-3 text-base">
+        <Button type="submit" isLoading={isSubmitting} className="w-full py-4 text-base font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 text-white rounded-2xl shadow-xl shadow-indigo-500/25 border-0">
           Submit Organizer Application
         </Button>
       </form>
