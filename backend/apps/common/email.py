@@ -30,6 +30,7 @@ def send_email(
     attachments: list[tuple[str, bytes, str]] | None = None,
     reply_to: list[str] | None = None,
     user=None,
+    fail_silently: bool = False,
 ) -> None:
     """
     Render {template_prefix}.txt (required) and {template_prefix}.html
@@ -73,13 +74,14 @@ def send_email(
             message.attach(filename, content, mime_type)
 
     try:
-        message.send(fail_silently=False)
+        message.send(fail_silently=fail_silently)
     except Exception:
         log_extra = {}
         if user is not None:
             log_extra = {"user_id": getattr(user, "pk", None), "email": getattr(user, "email", None)}
         logger.exception("Failed to send email to %s", to, extra=log_extra)
-        raise
+        if not fail_silently:
+            raise
 
 
 def send_email_to_staff(*, subject: str, template_prefix: str, context: dict) -> None:

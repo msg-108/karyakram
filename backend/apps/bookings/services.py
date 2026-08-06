@@ -25,6 +25,7 @@ from django.db.models import QuerySet
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from apps.common.email import send_email
 from apps.events.models import Event, TicketTier
 from apps.users.models import User
 
@@ -57,9 +58,6 @@ def _normalize_items(items: list[dict]) -> dict[int, int]:
 
 def send_booking_created_email(booking: Booking) -> None:
     try:
-        from django.core.mail import EmailMultiAlternatives
-        from django.template.loader import render_to_string
-
         items = booking.items.select_related("ticket_tier").all()
         for item in items:
             item.line_total = item.price_at_purchase * item.quantity
@@ -69,30 +67,20 @@ def send_booking_created_email(booking: Booking) -> None:
             "booking": booking,
             "event": booking.event,
             "items": items,
-            "settings": settings,
         }
-
-        subject = f"Booking Created - Action Required - {booking.event.title} (#{booking.id})"
-        text_body = render_to_string("emails/booking_created.txt", context)
-        html_body = render_to_string("emails/booking_created.html", context)
-
-        msg = EmailMultiAlternatives(
-            subject=subject,
-            body=text_body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[booking.user.email],
+        send_email(
+            to=booking.user.email,
+            subject=f"Booking Created - Action Required - {booking.event.title} (#{booking.id})",
+            template_prefix="emails/booking_created",
+            context=context,
+            fail_silently=True,
         )
-        msg.attach_alternative(html_body, "text/html")
-        msg.send(fail_silently=False)
     except Exception:
         logger.exception("Failed to send booking created email")
 
 
 def send_booking_confirmed_email(booking: Booking) -> None:
     try:
-        from django.core.mail import EmailMultiAlternatives
-        from django.template.loader import render_to_string
-
         items = booking.items.select_related("ticket_tier").all()
         for item in items:
             item.line_total = item.price_at_purchase * item.quantity
@@ -103,62 +91,42 @@ def send_booking_confirmed_email(booking: Booking) -> None:
             "event": booking.event,
             "items": items,
         }
-
-        subject = f"Booking Confirmed - {booking.event.title} (#{booking.id})"
-        text_body = render_to_string("emails/booking_confirmation.txt", context)
-        html_body = render_to_string("emails/booking_confirmation.html", context)
-
-        msg = EmailMultiAlternatives(
-            subject=subject,
-            body=text_body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[booking.user.email],
+        send_email(
+            to=booking.user.email,
+            subject=f"Booking Confirmed - {booking.event.title} (#{booking.id})",
+            template_prefix="emails/booking_confirmation",
+            context=context,
+            fail_silently=True,
         )
-        msg.attach_alternative(html_body, "text/html")
-        msg.send(fail_silently=False)
     except Exception:
         logger.exception("Failed to send booking confirmation email")
 
 
 def send_booking_cancelled_email(booking: Booking) -> None:
     try:
-        from django.core.mail import EmailMultiAlternatives
-        from django.template.loader import render_to_string
-
-        context = {
-            "user": booking.user,
-            "booking": booking,
-            "event": booking.event,
-            "settings": settings,
-        }
-        subject = f"Booking Cancelled - {booking.event.title} (#{booking.id})"
-        text_body = render_to_string("emails/booking_cancelled.txt", context)
-        html_body = render_to_string("emails/booking_cancelled.html", context)
-        msg = EmailMultiAlternatives(subject, text_body, settings.DEFAULT_FROM_EMAIL, [booking.user.email])
-        msg.attach_alternative(html_body, "text/html")
-        msg.send(fail_silently=False)
+        send_email(
+            to=booking.user.email,
+            subject=f"Booking Cancelled - {booking.event.title} (#{booking.id})",
+            template_prefix="emails/booking_cancelled",
+            context={"user": booking.user, "booking": booking, "event": booking.event},
+            fail_silently=True,
+        )
     except Exception:
         logger.exception("Failed to send booking cancelled email")
 
 
 def send_organizer_booking_alert(booking: Booking) -> None:
     try:
-        from django.core.mail import EmailMultiAlternatives
-        from django.template.loader import render_to_string
-
-        context = {
-            "event": booking.event,
-            "booking": booking,
-            "settings": settings,
-        }
-        subject = f"New Ticket Sold! {booking.event.title}"
-        text_body = render_to_string("emails/organizer_booking_alert.txt", context)
-        html_body = render_to_string("emails/organizer_booking_alert.html", context)
-        msg = EmailMultiAlternatives(subject, text_body, settings.DEFAULT_FROM_EMAIL, [booking.event.organizer.user.email])
-        msg.attach_alternative(html_body, "text/html")
-        msg.send(fail_silently=False)
+        send_email(
+            to=booking.event.organizer.user.email,
+            subject=f"New Ticket Sold! {booking.event.title}",
+            template_prefix="emails/organizer_booking_alert",
+            context={"event": booking.event, "booking": booking},
+            fail_silently=True,
+        )
     except Exception:
         logger.exception("Failed to send organizer booking alert email")
+
 
 
 def send_booking_email_by_id(booking_id: int, action: str = "created") -> None:
@@ -233,6 +201,14 @@ def create_booking(*, user: User, event: Event, items: list[dict]) -> Booking:
 
     if event.status != Event.Status.PUBLISHED:
         raise ValidationError({"detail": "Tickets can only be booked for a published event."})
+
+    # Idempotency guard: prevent duplicate active bookings for the same user and event
+    if Booking.objects.filter(
+        user=user, 
+        event=event, 
+        status__in=[Booking.Status.PENDING, Booking.Status.CONFIRMED]
+    ).exists():
+        raise ValidationError({"detail": "You already have an active booking for this event."})
 
     if event.registration_deadline is not None and timezone.now() > event.registration_deadline:
         raise ValidationError({"detail": "The registration deadline for this event has passed."})
@@ -359,6 +335,9 @@ def cancel_booking(booking: Booking, *, user: User) -> Booking:
 
     if booking.status not in (Booking.Status.CONFIRMED, Booking.Status.PENDING):
         raise ValidationError({"detail": "Only pending or confirmed bookings can be cancelled."})
+
+    if booking.event.start_datetime <= timezone.now():
+        raise ValidationError({"detail": "Cannot cancel a booking after the event has started."})
 
     item_tier_ids_sorted = sorted(
         booking.items.values_list("ticket_tier_id", flat=True)
