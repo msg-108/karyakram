@@ -12,22 +12,22 @@ import { PaginatedResponse } from '../types/common.types';
 
 export const bookingService = {
   async createBooking(data: BookingCreateRequest): Promise<BookingDetail> {
-    const res = await api.post<BookingDetail>('/bookings/bookings/', data);
+    const res = await api.post<BookingDetail>('/bookings/', data);
     return res.data;
   },
 
   async listUserBookings(): Promise<BookingList[]> {
-    const res = await api.get<BookingList[]>('/bookings/bookings/');
+    const res = await api.get<BookingList[]>('/bookings/');
     return res.data;
   },
 
   async getBooking(id: number): Promise<BookingDetail> {
-    const res = await api.get<BookingDetail>(`/bookings/bookings/${id}/`);
+    const res = await api.get<BookingDetail>(`/bookings/${id}/`);
     return res.data;
   },
 
   async cancelBooking(id: number): Promise<BookingDetail> {
-    const res = await api.post<BookingDetail>(`/bookings/bookings/${id}/cancel/`);
+    const res = await api.post<BookingDetail>(`/bookings/${id}/cancel/`);
     return res.data;
   },
 

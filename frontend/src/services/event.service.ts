@@ -20,22 +20,22 @@ export const eventService = {
   },
 
   async listPublicEvents(params?: EventFilterParams): Promise<PaginatedResponse<PublicEventList>> {
-    const res = await api.get<PaginatedResponse<PublicEventList>>('/events/events/', { params });
+    const res = await api.get<PaginatedResponse<PublicEventList>>('/events/', { params });
     return res.data;
   },
 
   async getPublicEvent(slug: string): Promise<PublicEventDetail> {
-    const res = await api.get<PublicEventDetail>(`/events/events/${slug}/`);
+    const res = await api.get<PublicEventDetail>(`/events/${slug}/`);
     return res.data;
   },
 
   async listOrganizerEvents(): Promise<OrganizerEventList[]> {
-    const res = await api.get<OrganizerEventList[]>('/events/organizer/events/');
+    const res = await api.get<OrganizerEventList[]>('/events/organizer/');
     return res.data;
   },
 
   async getOrganizerEvent(id: number): Promise<OrganizerEventDetail> {
-    const res = await api.get<OrganizerEventDetail>(`/events/organizer/events/${id}/`);
+    const res = await api.get<OrganizerEventDetail>(`/events/organizer/${id}/`);
     return res.data;
   },
 
@@ -51,47 +51,47 @@ export const eventService = {
       }
     });
 
-    const res = await api.post<OrganizerEventDetail>('/events/organizer/events/', formData, {
+    const res = await api.post<OrganizerEventDetail>('/events/organizer/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return res.data;
   },
 
   async updateOrganizerEvent(id: number, data: Partial<CreateEventFormData>): Promise<OrganizerEventDetail> {
-    const res = await api.patch<OrganizerEventDetail>(`/events/organizer/events/${id}/`, data);
+    const res = await api.patch<OrganizerEventDetail>(`/events/organizer/${id}/`, data);
     return res.data;
   },
 
   async deleteOrganizerEvent(id: number): Promise<void> {
-    await api.delete(`/events/organizer/events/${id}/`);
+    await api.delete(`/events/organizer/${id}/`);
   },
 
   async submitEventForReview(id: number): Promise<OrganizerEventDetail> {
-    const res = await api.post<OrganizerEventDetail>(`/events/organizer/events/${id}/submit/`);
+    const res = await api.post<OrganizerEventDetail>(`/events/organizer/${id}/submit/`);
     return res.data;
   },
 
   async listTicketTiers(eventId: number): Promise<TicketTier[]> {
-    const res = await api.get<TicketTier[]>(`/events/organizer/events/${eventId}/tiers/`);
+    const res = await api.get<TicketTier[]>(`/events/organizer/${eventId}/tiers/`);
     return res.data;
   },
 
   async createTicketTier(eventId: number, data: TicketTierInputData): Promise<TicketTier> {
-    const res = await api.post<TicketTier>(`/events/organizer/events/${eventId}/tiers/`, data);
+    const res = await api.post<TicketTier>(`/events/organizer/${eventId}/tiers/`, data);
     return res.data;
   },
 
-  async updateTicketTier(tierId: number, data: Partial<TicketTierInputData>): Promise<TicketTier> {
-    const res = await api.patch<TicketTier>(`/events/organizer/ticket-tiers/${tierId}/`, data);
+  async updateTicketTier(eventId: number, tierId: number, data: Partial<TicketTierInputData>): Promise<TicketTier> {
+    const res = await api.patch<TicketTier>(`/events/organizer/${eventId}/tiers/${tierId}/`, data);
     return res.data;
   },
 
-  async deleteTicketTier(tierId: number): Promise<void> {
-    await api.delete(`/events/organizer/ticket-tiers/${tierId}/`);
+  async deleteTicketTier(eventId: number, tierId: number): Promise<void> {
+    await api.delete(`/events/organizer/${eventId}/tiers/${tierId}/`);
   },
 
   async listGalleryImages(eventId: number): Promise<EventImage[]> {
-    const res = await api.get<EventImage[]>(`/events/organizer/events/${eventId}/images/`);
+    const res = await api.get<EventImage[]>(`/events/organizer/${eventId}/images/`);
     return res.data;
   },
 
@@ -100,7 +100,7 @@ export const eventService = {
     formData.append('image', file);
     if (caption) formData.append('caption', caption);
 
-    const res = await api.post<EventImage>(`/events/organizer/events/${eventId}/images/`, formData, {
+    const res = await api.post<EventImage>(`/events/organizer/${eventId}/images/`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return res.data;
@@ -108,17 +108,17 @@ export const eventService = {
 
   // Admin endpoints
   async listPendingEvents(): Promise<AdminEventReview[]> {
-    const res = await api.get<AdminEventReview[]>('/events/admin/events/pending/');
+    const res = await api.get<AdminEventReview[]>('/admin/events/pending/');
     return res.data;
   },
 
   async approveOrRejectEvent(id: number, data: ApprovalActionFormData): Promise<AdminEventReview> {
-    const res = await api.post<AdminEventReview>(`/events/admin/events/${id}/approve/`, data);
+    const res = await api.post<AdminEventReview>(`/admin/events/${id}/approve/`, data);
     return res.data;
   },
 
   async publishEvent(id: number): Promise<AdminEventReview> {
-    const res = await api.post<AdminEventReview>(`/events/admin/events/${id}/publish/`);
+    const res = await api.post<AdminEventReview>(`/admin/events/${id}/publish/`);
     return res.data;
   },
 };
