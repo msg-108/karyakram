@@ -79,3 +79,19 @@ class PaymentVerifyView(APIView):
             return Response({"detail": "Payment verified successfully."})
         else:
             return Response({"detail": "Payment failed or still pending."}, status=400)
+
+
+class PaymentDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        operation_id="getPaymentStatus",
+        summary="Check payment status",
+        tags=["Payments"],
+        responses={200: PaymentSerializer}
+    )
+    def get(self, request, reference_id):
+        payment = get_object_or_404(Payment, reference_id=reference_id, booking__user=request.user)
+        from .serializers import PaymentSerializer
+        return Response(PaymentSerializer(payment).data)
+

@@ -353,6 +353,17 @@ def cancel_booking(booking: Booking, *, user: User) -> Booking:
     booking.cancelled_at = timezone.now()
     booking.save(update_fields=["status", "cancelled_at", "updated_at"])
 
+    # If the booking had a completed payment, initiate a refund
+    if hasattr(booking, "payment"):
+        if booking.payment.status == "COMPLETED":
+            from apps.payments.services import initiate_esewa_refund, initiate_khalti_refund
+            from apps.payments.models import Payment
+            
+            if booking.payment.provider == Payment.Provider.ESEWA:
+                initiate_esewa_refund(booking.payment)
+            elif booking.payment.provider == Payment.Provider.KHALTI:
+                initiate_khalti_refund(booking.payment)
+
     transaction.on_commit(
         lambda _id=booking.id: send_booking_email_by_id(_id, action="cancelled")
     )

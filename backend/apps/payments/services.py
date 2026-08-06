@@ -85,6 +85,25 @@ def verify_esewa_payment(payment: Payment) -> Payment:
     
     return payment
 
+
+def initiate_esewa_refund(payment: Payment) -> Payment:
+    """
+    Initiate a refund for a COMPLETED eSewa payment.
+    Note: eSewa automated refund API may require merchant portal configuration.
+    This simulates the refund request and updates the payment status.
+    """
+    if payment.status != Payment.Status.COMPLETED:
+        raise ValidationError("Only completed payments can be refunded.")
+
+    # Stub for actual eSewa Refund API call
+    # url = f"{settings.ESEWA_URL}/refund" (depends on merchant documentation)
+    # Payload would typically include transaction_id and amount
+    
+    # Simulating successful refund
+    payment.status = Payment.Status.REFUNDED
+    payment.save(update_fields=["status", "updated_at"])
+    return payment
+
 # ==================== KHALTI ====================
 
 def initiate_khalti_payment(payment: Payment) -> dict:
@@ -149,5 +168,38 @@ def verify_khalti_payment(payment: Payment, pidx: str) -> Payment:
         
     except requests.RequestException:
         raise ValidationError("Failed to verify payment with Khalti.")
+    
+    return payment
+
+
+def initiate_khalti_refund(payment: Payment) -> Payment:
+    """
+    Initiate a refund for a COMPLETED Khalti payment.
+    Requires Khalti merchant portal activation for refunds.
+    """
+    if payment.status != Payment.Status.COMPLETED:
+        raise ValidationError("Only completed payments can be refunded.")
+
+    # Actual Khalti Refund API (v2)
+    # url = "https://a.khalti.com/api/v2/epayment/refund/"
+    
+    headers = {
+        "Authorization": f"key {settings.KHALTI_SECRET_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "pidx": payment.transaction_id,
+    }
+    
+    try:
+        # In a real implementation, you would uncomment the request below.
+        # response = requests.post("https://a.khalti.com/api/v2/epayment/refund/", json=payload, headers=headers, timeout=10)
+        # response.raise_for_status()
+        
+        # Simulating successful refund for now
+        payment.status = Payment.Status.REFUNDED
+        payment.save(update_fields=["status", "updated_at"])
+    except requests.RequestException:
+        raise ValidationError("Failed to initiate refund with Khalti.")
     
     return payment

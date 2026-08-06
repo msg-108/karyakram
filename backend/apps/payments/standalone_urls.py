@@ -14,5 +14,9 @@ Next route to add here once PaymentDetailView is built:
 The Payment model uses reference_id (UUIDField) as the public identifier
 for status checks, receipts, and webhook reconciliation.
 """
+from django.urls import path
+from .views import PaymentDetailView
 
-urlpatterns = []
+urlpatterns = [
+    path("<uuid:reference_id>/", PaymentDetailView.as_view(), name="payment-detail"),
+]
