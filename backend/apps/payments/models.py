@@ -6,7 +6,6 @@ from apps.bookings.models import Booking
 class Payment(models.Model):
     class Provider(models.TextChoices):
         ESEWA = "ESEWA", "eSewa"
-        KHALTI = "KHALTI", "Khalti"
 
     class Status(models.TextChoices):
         PENDING = "PENDING", "Pending"
@@ -27,7 +26,7 @@ class Payment(models.Model):
     transaction_id = models.CharField(
         max_length=255,
         blank=True,
-        help_text="ID returned from the payment gateway (eSewa refId / Khalti idx)",
+        help_text="ID returned from the payment gateway (eSewa refId)",
     )
     reference_id = models.UUIDField(
         default=uuid.uuid4,

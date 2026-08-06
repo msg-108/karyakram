@@ -6,7 +6,10 @@ from django.db import transaction
 
 from apps.bookings.models import Booking
 from apps.events.models import TicketTier
-from apps.bookings.services import send_booking_email_by_id
+from apps.bookings.services import send_booking_email_by_id, confirm_booking
+from apps.payments.models import Payment
+from apps.payments.services import verify_esewa_payment
+from rest_framework.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -22,16 +25,31 @@ def cancel_expired_bookings_task():
         status=Booking.Status.PENDING, hold_expires_at__lt=now
     )
 
-    count = 0
+    count_expired = 0
+    count_reconciled = 0
     for booking in expired_bookings:
         try:
+            # Automatic Reconciliation: Check if they actually paid before expiring!
+            if hasattr(booking, "payment") and booking.payment.status == Payment.Status.PENDING:
+                if booking.payment.provider == Payment.Provider.ESEWA:
+                    try:
+                        # This will raise ValidationError if eSewa status is not COMPLETE
+                        verified_payment = verify_esewa_payment(booking.payment)
+                        if verified_payment.status == Payment.Status.COMPLETED:
+                            logger.info(f"Auto-reconciled dropped callback for booking {booking.id}")
+                            confirm_booking(booking)
+                            count_reconciled += 1
+                            continue # Skip expiration
+                    except ValidationError:
+                        pass # eSewa says it's not paid, proceed to expire
+
             _expire_booking(booking)
-            count += 1
+            count_expired += 1
             logger.info(f"Expired booking {booking.id}")
         except Exception as e:
-            logger.error(f"Failed to expire booking {booking.id}: {str(e)}")
+            logger.error(f"Failed to process expired booking {booking.id}: {str(e)}")
 
-    return f"Successfully expired {count} bookings."
+    return f"Successfully expired {count_expired} bookings and auto-reconciled {count_reconciled} payments."
 
 
 @transaction.atomic

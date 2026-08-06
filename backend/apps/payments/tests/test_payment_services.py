@@ -4,9 +4,7 @@ from apps.payments.models import Payment
 from apps.payments.services import (
     create_payment,
     get_esewa_payment_data,
-    initiate_khalti_payment,
     verify_esewa_payment,
-    verify_khalti_payment,
 )
 from apps.bookings.services import create_booking
 from apps.common.tests.factories import UserFactory, EventFactory, TicketTierFactory
@@ -42,21 +40,6 @@ class PaymentServicesTest(TransactionTestCase):
         self.assertIn("signature", data)
         self.assertEqual(data["transaction_uuid"], str(payment.reference_id))
 
-    @patch("apps.payments.services.requests.post")
-    def test_initiate_khalti_payment(self, mock_post):
-        payment = create_payment(booking=self.booking, provider=Payment.Provider.KHALTI)
-
-        mock_response = mock_post.return_value
-        mock_response.json.return_value = {
-            "payment_url": "https://khalti.com/pay/123",
-            "pidx": "test-pidx-123",
-        }
-
-        result = initiate_khalti_payment(payment)
-
-        self.assertEqual(result["payment_url"], "https://khalti.com/pay/123")
-        payment.refresh_from_db()
-        self.assertEqual(payment.transaction_id, "test-pidx-123")
 
     @patch("apps.payments.services.requests.get")
     def test_verify_esewa_payment_success(self, mock_get):
@@ -72,12 +55,3 @@ class PaymentServicesTest(TransactionTestCase):
         self.assertEqual(verified_payment.status, Payment.Status.COMPLETED)
         self.assertEqual(verified_payment.transaction_id, "esewa-tx-123")
 
-    @patch("apps.payments.services.requests.post")
-    def test_verify_khalti_payment_success(self, mock_post):
-        payment = create_payment(booking=self.booking, provider=Payment.Provider.KHALTI)
-
-        mock_response = mock_post.return_value
-        mock_response.json.return_value = {"status": "Completed"}
-
-        verified_payment = verify_khalti_payment(payment, "test-pidx-123")
-        self.assertEqual(verified_payment.status, Payment.Status.COMPLETED)

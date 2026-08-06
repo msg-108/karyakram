@@ -1,4 +1,5 @@
 from django.test import TransactionTestCase
+from unittest.mock import patch
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from apps.bookings.models import Booking
@@ -87,3 +88,36 @@ class BookingServicesTest(TransactionTestCase):
         # Inventory restored
         tier.refresh_from_db()
         self.assertEqual(tier.remaining_quantity, 10)
+
+    @patch("apps.bookings.tasks.verify_esewa_payment")
+    def test_cancel_expired_bookings_reconciles_esewa_payment(self, mock_verify):
+        from apps.payments.models import Payment
+        from apps.payments.services import create_payment
+        
+        user = UserFactory()
+        event = EventFactory()
+        tier = TicketTierFactory(event=event, quantity=10, remaining_quantity=10)
+
+        booking = create_booking(
+            user=user, event=event, items=[{"ticket_tier_id": tier.id, "quantity": 1}]
+        )
+        # Attach a pending eSewa payment
+        payment = create_payment(booking, Payment.Provider.ESEWA)
+
+        # Fast forward expiration
+        booking.hold_expires_at = timezone.now() - timezone.timedelta(minutes=1)
+        booking.save()
+
+        # Mock that eSewa actually completed this payment
+        mock_verify.return_value.status = Payment.Status.COMPLETED
+
+        cmd = CancelExpiredCommand()
+        cmd.handle()
+
+        booking.refresh_from_db()
+        # Booking should NOT be expired, it should be CONFIRMED!
+        self.assertEqual(booking.status, Booking.Status.CONFIRMED)
+        self.assertEqual(booking.tickets.count(), 1)
+        
+        # Payment verification should have been called
+        mock_verify.assert_called_once()

@@ -40,9 +40,6 @@ class PaymentInitiateView(APIView):
         if provider == Payment.Provider.ESEWA:
             data = services.get_esewa_payment_data(payment)
             return Response(data)
-        elif provider == Payment.Provider.KHALTI:
-            data = services.initiate_khalti_payment(payment)
-            return Response(data)
 
 
 class PaymentVerifyView(APIView):
@@ -74,11 +71,6 @@ class PaymentVerifyView(APIView):
 
         if provider == Payment.Provider.ESEWA:
             payment = services.verify_esewa_payment(payment)
-        elif provider == Payment.Provider.KHALTI:
-            pidx = serializer.validated_data.get("pidx")
-            if not pidx:
-                raise ValidationError({"pidx": "Required for Khalti verification."})
-            payment = services.verify_khalti_payment(payment, pidx)
 
         if payment.status == Payment.Status.COMPLETED:
             # We will refactor this in Part 6 to call bookings.services.confirm_booking
