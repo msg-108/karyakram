@@ -409,16 +409,13 @@ def list_pending_events() -> QuerySet[Event]:
 
 def search_events(queryset: QuerySet[Event], *, query: str) -> QuerySet[Event]:
     """
-    Free-text search over title and short_description.
-    Ensures precise title matching when searching queries like 'ai'.
+    Free-text search strictly over event title only.
     """
     if not query:
         return queryset
 
     clean_query = query.strip()
-    return queryset.filter(
-        Q(title__icontains=clean_query) | Q(short_description__icontains=clean_query)
-    )
+    return queryset.filter(title__icontains=clean_query)
 
 
 def filter_events(
