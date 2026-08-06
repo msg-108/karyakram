@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, Ticket, LogOut, Menu, X, PlusCircle } from 'lucide-react';
+import { Calendar, Ticket, LogOut, Menu, X, PlusCircle, Search } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
 
 export const PublicNavbar: React.FC = () => {
   const { user, isAuthenticated, logout, isStaff } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [navSearch, setNavSearch] = useState('');
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -14,11 +15,19 @@ export const PublicNavbar: React.FC = () => {
     navigate('/login');
   };
 
+  const handleNavSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (navSearch.trim()) {
+      navigate(`/events?q=${encodeURIComponent(navSearch.trim())}`);
+      setNavSearch('');
+    }
+  };
+
   return (
-    <nav className="sticky top-0 z-[100] bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/80 transition-all">
-      <div className="container-app h-16 flex items-center justify-between">
+    <nav className="sticky top-0 z-[100] bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/80 transition-all">
+      <div className="container-app h-16 flex items-center justify-between gap-4">
         {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-2.5 group">
+        <Link to="/" className="flex items-center gap-2.5 group shrink-0">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-all">
             <Calendar className="w-5 h-5 text-white" />
           </div>
@@ -26,6 +35,18 @@ export const PublicNavbar: React.FC = () => {
             Karya<span className="text-gradient">kram</span>
           </span>
         </Link>
+
+        {/* Search Bar in Navbar */}
+        <form onSubmit={handleNavSearchSubmit} className="hidden sm:flex items-center relative max-w-sm w-full mx-4">
+          <input
+            type="text"
+            placeholder="Search events, venues, concerts..."
+            value={navSearch}
+            onChange={(e) => setNavSearch(e.target.value)}
+            className="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all font-medium"
+          />
+          <Search className="w-3.5 h-3.5 text-indigo-400 absolute left-3 pointer-events-none" />
+        </form>
 
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-6">

@@ -42,6 +42,24 @@ export const HomePage: React.FC = () => {
     }
   };
 
+  const getEventBannerImage = (evt: any) => {
+    if (evt?.banner) return evt.banner;
+    const title = (evt?.title || '').toLowerCase();
+    if (title.includes('music') || title.includes('fest') || title.includes('sound')) {
+      return 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1600&q=80';
+    }
+    if (title.includes('ai') || title.includes('tech') || title.includes('summit')) {
+      return 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1600&q=80';
+    }
+    if (title.includes('food') || title.includes('culinary')) {
+      return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1600&q=80';
+    }
+    if (title.includes('run') || title.includes('marathon') || title.includes('sport')) {
+      return 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1600&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1600&q=80';
+  };
+
   return (
     <div className="space-y-16 pb-24 overflow-hidden bg-slate-950 text-slate-100 min-h-screen">
       {/* 1. FMovies Style Sliding Hero Banner Section */}
@@ -55,17 +73,11 @@ export const HomePage: React.FC = () => {
                 idx === currentSlide ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 z-0 pointer-events-none'
               }`}
             >
-              {evt.banner ? (
-                <img
-                  src={evt.banner}
-                  alt={evt.title}
-                  className="w-full h-full object-cover object-center scale-105 blur-[1px] opacity-75"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 relative flex items-center justify-center">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/30 via-purple-500/15 to-transparent" />
-                </div>
-              )}
+              <img
+                src={getEventBannerImage(evt)}
+                alt={evt.title}
+                className="w-full h-full object-cover object-center scale-105 blur-[0.5px] opacity-75"
+              />
 
               {/* Vignette Gradients */}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />

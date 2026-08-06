@@ -84,90 +84,93 @@ export const EventDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen pb-24 overflow-hidden bg-slate-950 text-slate-100">
-      {/* 1. Full-Bleed Cinematic Hero Banner (Movie Style Background) */}
-      <div className="absolute top-0 left-0 right-0 h-[550px] sm:h-[650px] lg:h-[720px] w-full overflow-hidden pointer-events-none z-0">
+    <div className="container-app py-8 space-y-8 min-h-screen text-slate-100">
+      {/* 1. Top Banner Container (Below Nav) */}
+      <div className="w-full h-72 sm:h-96 lg:h-[450px] rounded-3xl overflow-hidden shadow-2xl relative bg-slate-900 border border-slate-800">
         {event.banner ? (
-          <img
-            src={event.banner}
-            alt={event.title}
-            className="w-full h-full object-cover object-center scale-105 blur-[1px] opacity-75"
-          />
+          <img src={event.banner} alt={event.title} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 relative flex items-center justify-center">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/30 via-purple-500/15 to-transparent" />
+          <div className="w-full h-full bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 relative flex items-center justify-center p-8 text-center">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/25 via-purple-500/10 to-transparent" />
+            <div className="relative z-10 space-y-2">
+              <span className="text-4xl sm:text-6xl font-black text-white font-heading tracking-tight drop-shadow-md">
+                {event.title}
+              </span>
+              {event.organizer_name && (
+                <p className="text-sm sm:text-base text-indigo-300 font-medium">Organized by {event.organizer_name}</p>
+              )}
+            </div>
           </div>
         )}
-
-        {/* Multi-Layered Cinematic Vignette Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/40 to-slate-950" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
       </div>
 
-      {/* 2. Overlapping Hero Header Content (Cinematic Title & Meta Strip) */}
-      <div className="container-app relative z-10 pt-20 sm:pt-28 lg:pt-36">
-        <div className="max-w-4xl space-y-6">
-          {/* Badges */}
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="px-4 py-1.5 text-xs font-extrabold rounded-full bg-indigo-600/90 text-white border border-indigo-400/40 shadow-lg shadow-indigo-600/30 backdrop-blur-md font-heading uppercase tracking-wider">
-              {event.category?.name || 'Live Event'}
-            </span>
-            <span className="px-3.5 py-1.5 text-xs font-bold rounded-full bg-slate-900/80 text-slate-200 border border-slate-700/80 backdrop-blur-md">
-              📍 {event.city}
-            </span>
+      {/* 2. Title & Metadata Section (Below Banner) */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-10 space-y-6 shadow-xl">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="px-4 py-1.5 text-xs font-extrabold rounded-full bg-indigo-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-400/30 font-heading uppercase tracking-wider">
+            {event.category?.name || 'General Event'}
+          </span>
+          <span className="px-3.5 py-1.5 text-xs font-bold rounded-full bg-slate-800 text-slate-200 border border-slate-700">
+            📍 {event.city}
+          </span>
+        </div>
+
+        <h1 className="text-3xl sm:text-5xl font-black text-white font-heading tracking-tight leading-tight">
+          {event.title}
+        </h1>
+
+        <p className="text-sm sm:text-base text-slate-300 max-w-4xl leading-relaxed font-sans font-medium">
+          {event.short_description}
+        </p>
+
+        {/* Quick Info Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t border-slate-800 text-xs sm:text-sm text-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-bold text-white">{formatDate(event.start_datetime)}</p>
+              <p className="text-xs text-slate-400">{formatTime(event.start_datetime)}</p>
+            </div>
           </div>
 
-          {/* Cinematic Large Title */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white font-heading tracking-tight leading-[1.05] drop-shadow-2xl">
-            {event.title}
-          </h1>
-
-          <p className="text-base sm:text-xl text-slate-200/90 max-w-3xl leading-relaxed font-sans font-medium drop-shadow-md">
-            {event.short_description}
-          </p>
-
-          {/* Quick Info Strip */}
-          <div className="pt-4 flex flex-wrap items-center gap-6 sm:gap-10 text-xs sm:text-sm font-semibold text-slate-200">
-            <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-800">
-              <Calendar className="w-5 h-5 text-indigo-400 shrink-0" />
-              <div>
-                <p className="font-bold text-white">{formatDate(event.start_datetime)}</p>
-                <p className="text-[11px] text-slate-400">{formatTime(event.start_datetime)}</p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+              <MapPin className="w-5 h-5" />
             </div>
-
-            <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-800">
-              <MapPin className="w-5 h-5 text-purple-400 shrink-0" />
-              <div>
-                <p className="font-bold text-white">{event.venue}</p>
-                <p className="text-[11px] text-slate-400">{event.address}, {event.city}</p>
-              </div>
+            <div>
+              <p className="font-bold text-white">{event.venue}</p>
+              <p className="text-xs text-slate-400">{event.address}, {event.city}</p>
             </div>
+          </div>
 
-            <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-800">
-              <Building className="w-5 h-5 text-pink-400 shrink-0" />
-              <div>
-                <p className="font-bold text-white">Organized by</p>
-                <p className="text-[11px] text-slate-400">{event.organizer_name}</p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center shrink-0">
+              <Building className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-bold text-white">Organized by</p>
+              <p className="text-xs text-slate-400">{event.organizer_name}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. Overlapping Content & Ticket Purchasing Grid */}
-      <div className="container-app relative z-10 pt-12 sm:pt-16 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Event Overview */}
-        <div className="lg:col-span-7 space-y-8">
-          <div className="glass-panel rounded-3xl p-6 sm:p-10 border border-slate-800 shadow-2xl space-y-4">
-            <h2 className="text-2xl font-extrabold text-white font-heading">About The Event</h2>
+      {/* 3. Detailed Overview & Ticket Purchase Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-2">
+        {/* Left Column: Full Description & Terms */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">
+            <h2 className="text-xl font-bold text-white font-heading">About The Event</h2>
             <div className="prose prose-invert max-w-none text-sm text-slate-300 leading-relaxed whitespace-pre-line font-sans">
               {event.description}
             </div>
           </div>
 
           {event.terms_and_conditions && (
-            <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl space-y-3">
+            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-3 shadow-xl">
               <h3 className="text-base font-bold text-white font-heading">Terms & Conditions</h3>
               <p className="text-xs text-slate-400 whitespace-pre-line leading-relaxed font-sans">
                 {event.terms_and_conditions}
@@ -178,7 +181,7 @@ export const EventDetailPage: React.FC = () => {
 
         {/* Right Column: Ticket Purchase Card */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-slate-900/95 border border-slate-700/80 rounded-3xl p-6 sm:p-8 space-y-6 sticky top-24 shadow-2xl backdrop-blur-xl">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl p-6 sm:p-8 space-y-6 sticky top-24 shadow-2xl">
             <div className="flex items-center gap-2.5 pb-4 border-b border-slate-800">
               <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
                 <Ticket className="w-4 h-4" />
