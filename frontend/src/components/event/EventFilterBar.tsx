@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import { EventCategory } from '../../types/event.types';
 import { Input } from '../ui/Input';
@@ -7,16 +7,28 @@ import { Button } from '../ui/Button';
 
 export interface EventFilterBarProps {
   categories?: EventCategory[];
+  initialQ?: string;
+  initialCategory?: string;
+  initialCity?: string;
   onFilterChange: (filters: { q?: string; category?: string; city?: string }) => void;
 }
 
 export const EventFilterBar: React.FC<EventFilterBarProps> = ({
   categories = [],
+  initialQ = '',
+  initialCategory = '',
+  initialCity = '',
   onFilterChange,
 }) => {
-  const [q, setQ] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [city, setCity] = useState('');
+  const [q, setQ] = useState(initialQ);
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [city, setCity] = useState(initialCity);
+
+  useEffect(() => {
+    setQ(initialQ);
+    setSelectedCategory(initialCategory);
+    setCity(initialCity);
+  }, [initialQ, initialCategory, initialCity]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

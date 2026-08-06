@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, Ticket, LogOut, Menu, X, PlusCircle, Search } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
@@ -9,6 +9,9 @@ export const PublicNavbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [navSearch, setNavSearch] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isEventsListingPage = location.pathname === '/events';
 
   const handleLogout = () => {
     logout();
@@ -36,17 +39,19 @@ export const PublicNavbar: React.FC = () => {
           </span>
         </Link>
 
-        {/* Enlarge Search Bar in Navbar */}
-        <form onSubmit={handleNavSearchSubmit} className="hidden sm:flex items-center relative max-w-md lg:max-w-xl w-full mx-2 sm:mx-6">
-          <input
-            type="text"
-            placeholder="Search events, concerts, tech summits, or cities..."
-            value={navSearch}
-            onChange={(e) => setNavSearch(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700/90 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all font-medium shadow-inner"
-          />
-          <Search className="w-4 h-4 text-indigo-400 absolute left-3.5 pointer-events-none" />
-        </form>
+        {/* Enlarge Search Bar in Navbar (Hidden on /events search page) */}
+        {!isEventsListingPage && (
+          <form onSubmit={handleNavSearchSubmit} className="hidden sm:flex items-center relative max-w-md lg:max-w-xl w-full mx-2 sm:mx-6">
+            <input
+              type="text"
+              placeholder="Search events, concerts, tech summits, or cities..."
+              value={navSearch}
+              onChange={(e) => setNavSearch(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-700/90 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all font-medium shadow-inner"
+            />
+            <Search className="w-4 h-4 text-indigo-400 absolute left-3.5 pointer-events-none" />
+          </form>
+        )}
 
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-6">
