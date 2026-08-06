@@ -34,10 +34,14 @@ export const RegisterOrganizerPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-xl mx-auto">
-      <div className="space-y-1 text-center">
-        <h2 className="text-2xl font-black text-slate-900">Register as Organizer</h2>
-        <p className="text-xs text-slate-500">Provide legal details to host & publish events in Nepal</p>
+    <div className="space-y-8 max-w-3xl lg:max-w-4xl mx-auto py-6">
+      <div className="space-y-2 text-center">
+        <h2 className="text-3xl sm:text-4xl font-black text-slate-900 font-heading tracking-tight">
+          Register as <span className="text-indigo-600">Organizer</span>
+        </h2>
+        <p className="text-sm text-slate-500 max-w-lg mx-auto">
+          Provide organization and legal verification details to host and publish events across Nepal
+        </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -67,25 +67,25 @@ export const EventListingPage: React.FC = () => {
         {filters.q ? (
           <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading tracking-tight">
-              Search Results for <span className="text-gradient">"{filters.q}"</span>
+              Search Results for <span className="text-indigo-400 font-black">"{filters.q}"</span>
             </h1>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-300 font-medium">
               Showing matching events, venues, and concerts across Nepal ({totalCount} found)
             </p>
           </div>
         ) : activeCategoryObj ? (
           <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading tracking-tight">
-              <span className="text-gradient">{activeCategoryObj.name}</span> Events
+              <span className="text-indigo-400 font-black">{activeCategoryObj.name}</span> Events
             </h1>
-            <p className="text-sm text-slate-400">Showing top events in {activeCategoryObj.name}</p>
+            <p className="text-sm text-slate-300 font-medium">Showing top events in {activeCategoryObj.name}</p>
           </div>
         ) : (
           <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading tracking-tight">
-              Explore <span className="text-gradient">Events</span>
+              Explore <span className="text-indigo-400 font-black">Events</span>
             </h1>
-            <p className="text-sm text-slate-400">Discover and book verified live events across Nepal</p>
+            <p className="text-sm text-slate-300 font-medium">Discover and book verified live events across Nepal</p>
           </div>
         )}
       </div>
