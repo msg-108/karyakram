@@ -17,6 +17,7 @@ from rest_framework.generics import RetrieveAPIView
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -50,6 +51,8 @@ class UserRegisterView(APIView):
     """Register a standard USER account. Inactive until email is verified."""
 
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_burst"
 
     @extend_schema(
         operation_id="registerUser",
@@ -92,6 +95,8 @@ class OrganizerRegisterView(APIView):
     """Register an ORGANIZER account. Inactive until email is verified AND admin-approved."""
 
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_burst"
     # Explicit, since this endpoint accepts file uploads (citizenship/PAN
     # documents) alongside regular form fields — JSONParser alone can't
     # handle multipart bodies.
@@ -128,6 +133,8 @@ class VerifyEmailOTPView(APIView):
     immediately; ORGANIZER accounts remain inactive pending admin approval."""
 
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_burst"
 
     @extend_schema(
         operation_id="verifyEmailOTP",
@@ -164,9 +171,11 @@ class VerifyEmailOTPView(APIView):
 
 
 class ResendOTPView(APIView):
-    """Resend the email-verification OTP, subject to a cooldown."""
+    """Resend a 6-digit verification code. Subject to configured cooldown."""
 
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_burst"
 
     @extend_schema(
         operation_id="resendVerificationOTP",
@@ -203,6 +212,8 @@ class LoginView(TokenObtainPairView):
     """
 
     serializer_class = UserTokenObtainPairSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_burst"
 
     @extend_schema(
         operation_id="login",
@@ -349,7 +360,9 @@ class OrganizerApprovalView(APIView):
 class PasswordResetRequestView(APIView):
     """Request a password reset code to be sent via email."""
 
-    permission_classes = []
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth_burst"
 
     @extend_schema(
         operation_id="requestPasswordReset",

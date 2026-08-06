@@ -140,7 +140,7 @@ def list_ticket_history(user: User) -> list[TicketSummary]:
     ]
 
 
-def get_ticket_receipt_pdf(user: User, *, ticket_id: str) -> bytes:
+def get_ticket_receipt_image(user: User, *, ticket_id: str) -> bytes:
     from apps.tickets.models import Ticket
     from rest_framework.exceptions import PermissionDenied, NotFound
 

@@ -114,8 +114,8 @@ class TicketReceiptDownloadView(APIView):
         },
     )
     def get(self, request, ticket_id: int):
-        pdf_bytes = services.get_ticket_receipt_pdf(request.user, ticket_id=ticket_id)
-        return HttpResponse(pdf_bytes, content_type="application/pdf")
+        image_bytes = services.get_ticket_receipt_image(request.user, ticket_id=ticket_id)
+        return HttpResponse(image_bytes, content_type="image/png")
 
 
 # ==================== USER DASHBOARD: PAYMENTS ====================

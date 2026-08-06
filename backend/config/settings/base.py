@@ -73,10 +73,20 @@ ESEWA_STATUS_URL = config(
     "ESEWA_STATUS_URL",
     default="https://rc-epay.esewa.com.np/api/epay/transaction/status/",
 )
+ESEWA_REFUND_URL = config(
+    "ESEWA_REFUND_URL",
+    default="https://rc-epay.esewa.com.np/api/epay/transaction/refund/",
+)
 
+
+QR_JWT_SECRET_KEY = config("QR_JWT_SECRET_KEY", default="")
+QR_KEY_ROLLOUT_DATE = config("QR_KEY_ROLLOUT_DATE", default="2026-08-06T00:00:00Z")
 
 if not FIELD_ENCRYPTION_KEY:
     raise ValueError("FIELD_ENCRYPTION_KEY is not set in environment")
+
+if not QR_JWT_SECRET_KEY:
+    raise ValueError("QR_JWT_SECRET_KEY is not set in environment")
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -153,6 +163,17 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/day",
+        "user": "1000/day",
+        "auth_burst": "5/min",
+        "auth_sustained": "100/hour",
+    },
 }
 
 # JWT Configuration
