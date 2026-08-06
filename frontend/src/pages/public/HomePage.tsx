@@ -1,24 +1,34 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, Ticket, ShieldCheck, Zap, Sparkles, Flame, ThumbsUp } from 'lucide-react';
+import { Calendar, Ticket, ShieldCheck, Zap, Sparkles, Flame, ThumbsUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePublicEvents, usePublicCategories } from '../../hooks/useEvents';
-import { EventGrid } from '../../components/event/EventGrid';
+import { EventCard } from '../../components/event/EventCard';
 import { Button } from '../../components/ui/Button';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const trendingRowRef = useRef<HTMLDivElement>(null);
+  const recommendedRowRef = useRef<HTMLDivElement>(null);
+
   const { data: eventsData, isLoading: eventsLoading } = usePublicEvents({ page: 1 });
   const { data: categories = [] } = usePublicCategories();
 
   const allEvents = eventsData?.results || [];
 
-  // Trending Logic: Events sorted by start date / upcoming proximity (Top 4)
-  const trendingEvents = [...allEvents]
-    .sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime())
-    .slice(0, 4);
+  // Trending Logic: Events sorted by start date / upcoming proximity
+  const trendingEvents = [...allEvents].sort(
+    (a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime()
+  );
 
-  // Recommended Logic: Events with available tickets / remaining capacity or category diversity (Next 4)
-  const recommendedEvents = allEvents.length > 4 ? allEvents.slice(4, 8) : allEvents.slice(0, 4);
+  // Recommended Logic: Secondary selection or category diversity
+  const recommendedEvents = allEvents.length > 3 ? allEvents.slice(2) : allEvents;
+
+  const scrollRow = (ref: React.RefObject<HTMLDivElement | null>, direction: 'left' | 'right') => {
+    if (ref.current) {
+      const scrollAmount = direction === 'left' ? -360 : 360;
+      ref.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="space-y-16 pb-24 overflow-hidden bg-slate-950 text-slate-100 min-h-screen">
@@ -89,8 +99,8 @@ export const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* 3. 🔥 Trending Events Section */}
-      <section className="container-app space-y-6">
+      {/* 3. 🔥 Trending Events Section (Single Sliding Row with Arrows) */}
+      <section className="container-app space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading flex items-center gap-2">
@@ -98,18 +108,50 @@ export const HomePage: React.FC = () => {
             </h2>
             <p className="text-xs sm:text-sm text-slate-400">Handpicked upcoming events with highest interest across Nepal</p>
           </div>
-          <Link to="/events">
-            <Button variant="outline" size="sm" className="bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl">
-              View All →
-            </Button>
-          </Link>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => scrollRow(trendingRowRef, 'left')}
+              aria-label="Previous Trending"
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition-all cursor-pointer shadow-md"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => scrollRow(trendingRowRef, 'right')}
+              aria-label="Next Trending"
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition-all cursor-pointer shadow-md"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+            <Link to="/events" className="hidden sm:inline-block ml-2">
+              <Button variant="outline" size="sm" className="bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl">
+                See All →
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        <EventGrid events={trendingEvents} isLoading={eventsLoading} />
+        {/* Single Horizontal Sliding Row */}
+        {eventsLoading ? (
+          <div className="flex gap-6 overflow-hidden py-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="w-[300px] sm:w-[350px] h-[340px] skeleton shrink-0" />
+            ))}
+          </div>
+        ) : (
+          <div ref={trendingRowRef} className="flex overflow-x-auto scroll-smooth gap-6 py-2 scrollbar-none">
+            {trendingEvents.map((evt) => (
+              <div key={evt.id} className="w-[300px] sm:w-[350px] shrink-0">
+                <EventCard event={evt} />
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* 4. ✨ Recommended Events Section */}
-      <section className="container-app space-y-6 pt-4">
+      {/* 4. ✨ Recommended Events Section (Single Sliding Row with Arrows) */}
+      <section className="container-app space-y-4 pt-2">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading flex items-center gap-2">
@@ -117,14 +159,46 @@ export const HomePage: React.FC = () => {
             </h2>
             <p className="text-xs sm:text-sm text-slate-400">Specially curated events based on top categories and venues</p>
           </div>
-          <Link to="/events">
-            <Button variant="outline" size="sm" className="bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl">
-              Explore More →
-            </Button>
-          </Link>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => scrollRow(recommendedRowRef, 'left')}
+              aria-label="Previous Recommended"
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition-all cursor-pointer shadow-md"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => scrollRow(recommendedRowRef, 'right')}
+              aria-label="Next Recommended"
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition-all cursor-pointer shadow-md"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+            <Link to="/events" className="hidden sm:inline-block ml-2">
+              <Button variant="outline" size="sm" className="bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl">
+                Explore All →
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        <EventGrid events={recommendedEvents} isLoading={eventsLoading} />
+        {/* Single Horizontal Sliding Row */}
+        {eventsLoading ? (
+          <div className="flex gap-6 overflow-hidden py-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="w-[300px] sm:w-[350px] h-[340px] skeleton shrink-0" />
+            ))}
+          </div>
+        ) : (
+          <div ref={recommendedRowRef} className="flex overflow-x-auto scroll-smooth gap-6 py-2 scrollbar-none">
+            {recommendedEvents.map((evt) => (
+              <div key={evt.id} className="w-[300px] sm:w-[350px] shrink-0">
+                <EventCard event={evt} />
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* 5. Features Callout */}

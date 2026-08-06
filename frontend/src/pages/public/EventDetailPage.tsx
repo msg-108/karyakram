@@ -85,15 +85,15 @@ export const EventDetailPage: React.FC = () => {
 
   return (
     <div className="container-app py-8 space-y-8 min-h-screen text-slate-100">
-      {/* 1. Top Banner Container (Below Nav) */}
-      <div className="w-full h-72 sm:h-96 lg:h-[450px] rounded-3xl overflow-hidden shadow-2xl relative bg-slate-900 border border-slate-800">
+      {/* 1. Top Banner Container (Enlarged Height) */}
+      <div className="w-full h-[400px] sm:h-[520px] lg:h-[600px] rounded-3xl overflow-hidden shadow-2xl relative bg-slate-900 border border-slate-800">
         {event.banner ? (
           <img src={event.banner} alt={event.title} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 relative flex items-center justify-center p-8 text-center">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/25 via-purple-500/10 to-transparent" />
             <div className="relative z-10 space-y-2">
-              <span className="text-4xl sm:text-6xl font-black text-white font-heading tracking-tight drop-shadow-md">
+              <span className="text-3xl sm:text-5xl font-black text-white font-heading tracking-tight drop-shadow-md">
                 {event.title}
               </span>
               {event.organizer_name && (
@@ -105,54 +105,56 @@ export const EventDetailPage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
       </div>
 
-      {/* 2. Title & Metadata Section (Below Banner) */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-10 space-y-6 shadow-xl">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="px-4 py-1.5 text-xs font-extrabold rounded-full bg-indigo-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-400/30 font-heading uppercase tracking-wider">
+      {/* 2. Title & Metadata Section (Compact Size) */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="px-3.5 py-1 text-xs font-bold rounded-full bg-indigo-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-400/30 font-heading uppercase tracking-wider">
             {event.category?.name || 'General Event'}
           </span>
-          <span className="px-3.5 py-1.5 text-xs font-bold rounded-full bg-slate-800 text-slate-200 border border-slate-700">
+          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-slate-800 text-slate-200 border border-slate-700">
             📍 {event.city}
           </span>
         </div>
 
-        <h1 className="text-3xl sm:text-5xl font-black text-white font-heading tracking-tight leading-tight">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading tracking-tight leading-snug">
           {event.title}
         </h1>
 
-        <p className="text-sm sm:text-base text-slate-300 max-w-4xl leading-relaxed font-sans font-medium">
-          {event.short_description}
-        </p>
+        {event.short_description && (
+          <p className="text-xs sm:text-sm text-slate-300 max-w-4xl leading-relaxed font-sans">
+            {event.short_description}
+          </p>
+        )}
 
         {/* Quick Info Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t border-slate-800 text-xs sm:text-sm text-slate-200">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-              <Calendar className="w-5 h-5" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-800 text-xs sm:text-sm text-slate-200">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+              <Calendar className="w-4 h-4" />
             </div>
             <div>
               <p className="font-bold text-white">{formatDate(event.start_datetime)}</p>
-              <p className="text-xs text-slate-400">{formatTime(event.start_datetime)}</p>
+              <p className="text-[11px] text-slate-400">{formatTime(event.start_datetime)}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
-              <MapPin className="w-5 h-5" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+              <MapPin className="w-4 h-4" />
             </div>
             <div>
               <p className="font-bold text-white">{event.venue}</p>
-              <p className="text-xs text-slate-400">{event.address}, {event.city}</p>
+              <p className="text-[11px] text-slate-400">{event.address}, {event.city}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center shrink-0">
-              <Building className="w-5 h-5" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center shrink-0">
+              <Building className="w-4 h-4" />
             </div>
             <div>
               <p className="font-bold text-white">Organized by</p>
-              <p className="text-xs text-slate-400">{event.organizer_name}</p>
+              <p className="text-[11px] text-slate-400">{event.organizer_name}</p>
             </div>
           </div>
         </div>
