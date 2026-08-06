@@ -22,11 +22,21 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const MAX_FILE_SIZE_MB = 5;
+
+  const validateAndSelectFile = (selectedFile: File) => {
+    if (selectedFile.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      alert(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit. Please choose a smaller file.`);
+      return;
+    }
+    onChange(selectedFile);
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      onChange(e.dataTransfer.files[0]);
+      validateAndSelectFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -77,7 +87,7 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({
             className="hidden"
             onChange={(e) => {
               if (e.target.files && e.target.files[0]) {
-                onChange(e.target.files[0]);
+                validateAndSelectFile(e.target.files[0]);
               }
             }}
           />
