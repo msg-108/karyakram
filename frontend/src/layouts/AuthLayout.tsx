@@ -4,22 +4,28 @@ import { Calendar } from 'lucide-react';
 
 export const AuthLayout: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-slate-50 p-4 sm:p-6">
+    <div className="min-h-screen relative flex flex-col justify-center items-center bg-slate-950 p-4 sm:p-6 overflow-hidden">
+      {/* Background Glowing Ambient Orbs */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-[350px] h-[350px] bg-purple-600/15 rounded-full blur-[100px] pointer-events-none" />
+
       {/* Brand Header */}
-      <Link to="/" className="mb-6 flex items-center gap-2.5 group">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-200 group-hover:scale-105 transition-transform">
-          <Calendar className="w-5 h-5" />
+      <Link to="/" className="mb-8 flex items-center gap-2.5 group relative z-10">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-all">
+          <Calendar className="w-6 h-6 text-white" />
         </div>
-        <span className="text-2xl font-black text-slate-900 tracking-tight">Karyakram</span>
+        <span className="text-3xl font-black text-white tracking-tight font-heading">
+          Karya<span className="text-gradient">kram</span>
+        </span>
       </Link>
 
       {/* Auth Card Container */}
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200/80 p-6 sm:p-8 animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-md glass-panel rounded-3xl border border-slate-800 shadow-2xl p-6 sm:p-10 relative z-10 transition-all">
         <Outlet />
       </div>
 
       {/* Footer copyright */}
-      <p className="mt-8 text-xs text-slate-400">
+      <p className="mt-8 text-xs text-slate-500 relative z-10 font-medium">
         © {new Date().getFullYear()} Karyakram Inc. All rights reserved.
       </p>
     </div>

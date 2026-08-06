@@ -53,15 +53,17 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1 text-center">
-        <h2 className="text-2xl font-black text-slate-900">Sign in to Karyakram</h2>
-        <p className="text-xs text-slate-500">Enter your username and password to continue</p>
+      <div className="space-y-1.5 text-center">
+        <h2 className="text-3xl font-extrabold text-white font-heading">
+          Sign in to Karya<span className="text-gradient">kram</span>
+        </h2>
+        <p className="text-xs text-slate-400">Enter your username and password to continue</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           label="Username"
-          placeholder="e.g. sitagharti"
+          placeholder="e.g. ktmlive or aaravsharma"
           {...register('username')}
           error={errors.username?.message}
         />
@@ -75,26 +77,26 @@ export const LoginPage: React.FC = () => {
         />
 
         <div className="flex items-center justify-between text-xs">
-          <Link to="/forgot-password" className="font-semibold text-indigo-600 hover:underline">
+          <Link to="/forgot-password" className="font-semibold text-indigo-400 hover:text-indigo-300 hover:underline">
             Forgot password?
           </Link>
         </div>
 
-        <Button type="submit" isLoading={isSubmitting} className="w-full py-3 text-base">
+        <Button type="submit" isLoading={isSubmitting} className="w-full py-3.5 text-base font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white shadow-lg shadow-indigo-500/25 border-0 rounded-xl">
           Sign In
         </Button>
       </form>
 
-      <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-500 space-y-2">
+      <div className="pt-4 border-t border-slate-800 text-center text-xs text-slate-400 space-y-2">
         <p>
           Don't have an account?{' '}
-          <Link to="/register" className="font-bold text-indigo-600 hover:underline">
+          <Link to="/register" className="font-bold text-indigo-400 hover:text-indigo-300 hover:underline">
             Register as Attendee
           </Link>
         </p>
         <p>
           Want to host events?{' '}
-          <Link to="/register/organizer" className="font-bold text-indigo-600 hover:underline">
+          <Link to="/register/organizer" className="font-bold text-indigo-400 hover:text-indigo-300 hover:underline">
             Register as Organizer
           </Link>
         </p>

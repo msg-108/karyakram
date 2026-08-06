@@ -15,19 +15,21 @@ export const PublicNavbar: React.FC = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-[100] bg-white/80 backdrop-blur-md border-b border-slate-200/80">
+    <nav className="sticky top-0 z-[100] bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/80 transition-all">
       <div className="container-app h-16 flex items-center justify-between">
         {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-200 group-hover:scale-105 transition-transform">
-            <Calendar className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-all">
+            <Calendar className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-black text-slate-900 tracking-tight">Karyakram</span>
+          <span className="text-2xl font-black text-white tracking-tight font-heading">
+            Karya<span className="text-gradient">kram</span>
+          </span>
         </Link>
 
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-6">
-          <Link to="/events" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
+          <Link to="/events" className="text-sm font-semibold text-slate-300 hover:text-indigo-400 transition-colors">
             Browse Events
           </Link>
 
@@ -35,7 +37,7 @@ export const PublicNavbar: React.FC = () => {
             <div className="flex items-center gap-3">
               {user?.role === 'ORGANIZER' && (
                 <Link to="/organizer/events/new">
-                  <Button size="sm" variant="outline" className="gap-1.5 border-indigo-200 text-indigo-600 hover:bg-indigo-50">
+                  <Button size="sm" className="gap-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-md shadow-indigo-600/20 border-0">
                     <PlusCircle className="w-4 h-4" />
                     Create Event
                   </Button>
@@ -43,26 +45,26 @@ export const PublicNavbar: React.FC = () => {
               )}
 
               {user?.role === 'USER' && (
-                <Link to="/my-tickets" className="text-sm font-medium text-slate-600 hover:text-indigo-600 flex items-center gap-1.5">
-                  <Ticket className="w-4 h-4 text-indigo-600" />
+                <Link to="/my-tickets" className="text-sm font-semibold text-slate-300 hover:text-indigo-400 flex items-center gap-1.5 transition-colors">
+                  <Ticket className="w-4 h-4 text-indigo-400" />
                   My Tickets
                 </Link>
               )}
 
               <Link
                 to={isStaff ? '/admin/dashboard' : user?.role === 'ORGANIZER' ? '/organizer/dashboard' : '/dashboard'}
-                className="flex items-center gap-2 pl-3 border-l border-slate-200"
+                className="flex items-center gap-2.5 pl-3 border-l border-slate-800"
               >
-                <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold">
                   {user?.first_name?.[0] || 'U'}
                 </div>
-                <span className="text-sm font-semibold text-slate-800">{user?.first_name}</span>
+                <span className="text-sm font-semibold text-slate-200 hover:text-white transition-colors">{user?.first_name}</span>
               </Link>
 
               <button
                 onClick={handleLogout}
                 title="Log out"
-                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+                className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-900 rounded-xl transition-colors"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -70,12 +72,14 @@ export const PublicNavbar: React.FC = () => {
           ) : (
             <div className="flex items-center gap-3">
               <Link to="/login">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-900">
                   Sign In
                 </Button>
               </Link>
               <Link to="/register">
-                <Button size="sm">Get Started</Button>
+                <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white border-0 shadow-lg shadow-indigo-500/25">
+                  Get Started
+                </Button>
               </Link>
             </div>
           )}
@@ -84,7 +88,7 @@ export const PublicNavbar: React.FC = () => {
         {/* Mobile menu trigger */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100"
+          className="md:hidden p-2 rounded-xl text-slate-400 hover:bg-slate-900 hover:text-white"
         >
           {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
