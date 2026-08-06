@@ -44,18 +44,23 @@ export const EventFilterBar: React.FC<EventFilterBarProps> = ({
     { value: 'Chitwan', label: 'Chitwan' },
   ];
 
+  const handleQueryChange = (val: string) => {
+    setQ(val);
+    onFilterChange({ q: val, category: selectedCategory, city });
+  };
+
   return (
-    <form onSubmit={handleSearchSubmit} className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4 mb-8">
-      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+    <form onSubmit={handleSearchSubmit} className="bg-slate-900/90 border border-slate-800 p-4 sm:p-5 rounded-2xl shadow-xl space-y-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
         {/* Search input */}
         <div className="sm:col-span-5 relative">
           <Input
-            placeholder="Search events by title or venue..."
+            placeholder="Search events by title, venue, or artist..."
             value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="pl-10"
+            onChange={(e) => handleQueryChange(e.target.value)}
+            className="pl-11 bg-slate-950/80 border-slate-800 text-white placeholder:text-slate-500"
           />
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+          <Search className="w-4 h-4 text-indigo-400 absolute left-4 top-4 pointer-events-none" />
         </div>
 
         {/* Category select */}
@@ -67,6 +72,7 @@ export const EventFilterBar: React.FC<EventFilterBarProps> = ({
               setSelectedCategory(e.target.value);
               onFilterChange({ q, category: e.target.value, city });
             }}
+            className="bg-slate-950/80 border-slate-800 text-white"
           />
         </div>
 
@@ -79,16 +85,17 @@ export const EventFilterBar: React.FC<EventFilterBarProps> = ({
               setCity(e.target.value);
               onFilterChange({ q, category: selectedCategory, city: e.target.value });
             }}
+            className="bg-slate-950/80 border-slate-800 text-white"
           />
         </div>
 
         {/* Actions */}
         <div className="sm:col-span-2 flex items-center gap-2">
-          <Button type="submit" className="w-full">
-            Filter
+          <Button type="submit" className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white border-0 shadow-md shadow-indigo-600/20">
+            Search
           </Button>
           {(q || selectedCategory || city) && (
-            <Button type="button" variant="outline" onClick={handleReset} className="p-2.5">
+            <Button type="button" variant="outline" onClick={handleReset} className="p-3 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800">
               <X className="w-4 h-4" />
             </Button>
           )}

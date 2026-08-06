@@ -84,49 +84,75 @@ export const EventDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 pb-16">
-      {/* Banner Header */}
-      <div className="relative bg-slate-900 text-white">
-        <div className="aspect-[21/9] max-h-96 w-full overflow-hidden opacity-60">
-          {event.banner ? (
-            <img src={event.banner} alt={event.title} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-r from-indigo-900 to-slate-900 flex items-center justify-center font-black text-4xl">
-              {event.title[0]}
+    <div className="space-y-10 pb-20 overflow-hidden">
+      {/* Banner Header Section */}
+      <div className="container-app pt-6">
+        <div className="relative rounded-3xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl">
+          {/* Banner Aspect Container */}
+          <div className="relative h-72 sm:h-96 lg:h-[420px] w-full overflow-hidden">
+            {event.banner ? (
+              <img src={event.banner} alt={event.title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full relative flex flex-col items-center justify-center bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 p-8 text-center">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/25 via-purple-500/10 to-transparent" />
+                <div className="relative z-10 space-y-2 max-w-2xl">
+                  <span className="text-4xl sm:text-6xl font-black text-white font-heading tracking-tight drop-shadow-lg">
+                    {event.title}
+                  </span>
+                  {event.organizer_name && (
+                    <p className="text-sm sm:text-base text-indigo-300 font-medium">Organized by {event.organizer_name}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+          </div>
+
+          {/* Event Header Info Card */}
+          <div className="relative z-10 p-6 sm:p-10 -mt-20 bg-slate-950/90 backdrop-blur-xl border-t border-slate-800 space-y-6">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="px-3.5 py-1 text-xs font-bold rounded-full bg-indigo-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-400/30">
+                {event.category?.name || 'General Event'}
+              </span>
+              <span className="px-3.5 py-1 text-xs font-bold rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                {event.city}
+              </span>
             </div>
-          )}
-        </div>
 
-        <div className="container-app relative z-10 -mt-24 sm:-mt-32 pb-8">
-          <div className="bg-white text-slate-900 rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-200/80 space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="indigo">{event.category?.name || 'General'}</Badge>
-            </div>
+            <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight font-heading leading-tight">
+              {event.title}
+            </h1>
 
-            <h1 className="text-2xl sm:text-4xl font-black tracking-tight">{event.title}</h1>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-100 text-xs sm:text-sm text-slate-600">
-              <div className="flex items-center gap-2.5">
-                <Calendar className="w-4 h-4 text-indigo-600 shrink-0" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t border-slate-800/80 text-xs sm:text-sm text-slate-300">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                  <Calendar className="w-5 h-5" />
+                </div>
                 <div>
-                  <p className="font-semibold text-slate-900">{formatDate(event.start_datetime)}</p>
-                  <p className="text-xs text-slate-500">{formatTime(event.start_datetime)}</p>
+                  <p className="font-bold text-white">{formatDate(event.start_datetime)}</p>
+                  <p className="text-xs text-slate-400">{formatTime(event.start_datetime)}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5">
-                <MapPin className="w-4 h-4 text-indigo-600 shrink-0" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+                  <MapPin className="w-5 h-5" />
+                </div>
                 <div>
-                  <p className="font-semibold text-slate-900">{event.venue}</p>
-                  <p className="text-xs text-slate-500">{event.address}, {event.city}</p>
+                  <p className="font-bold text-white">{event.venue}</p>
+                  <p className="text-xs text-slate-400">{event.address}, {event.city}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5">
-                <Building className="w-4 h-4 text-indigo-600 shrink-0" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center shrink-0">
+                  <Building className="w-5 h-5" />
+                </div>
                 <div>
-                  <p className="font-semibold text-slate-900">Organized by</p>
-                  <p className="text-xs text-slate-500">{event.organizer_name}</p>
+                  <p className="font-bold text-white">Organized by</p>
+                  <p className="text-xs text-slate-400">{event.organizer_name}</p>
                 </div>
               </div>
             </div>
@@ -138,76 +164,68 @@ export const EventDetailPage: React.FC = () => {
       <div className="container-app grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Info Column */}
         <div className="lg:col-span-7 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>About This Event</CardTitle>
-            </CardHeader>
-            <CardContent className="prose prose-slate max-w-none text-sm leading-relaxed whitespace-pre-line">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4">
+            <h2 className="text-xl font-bold text-white font-heading">About This Event</h2>
+            <div className="prose prose-invert max-w-none text-sm text-slate-300 leading-relaxed whitespace-pre-line">
               {event.description}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {event.terms_and_conditions && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Terms & Conditions</CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-slate-500 whitespace-pre-line leading-relaxed">
+            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-3">
+              <h3 className="text-base font-bold text-white font-heading">Terms & Conditions</h3>
+              <p className="text-xs text-slate-400 whitespace-pre-line leading-relaxed">
                 {event.terms_and_conditions}
-              </CardContent>
-            </Card>
+              </p>
+            </div>
           )}
         </div>
 
         {/* Right Ticket Purchasing Column */}
         <div className="lg:col-span-5 space-y-6">
-          <Card className="sticky top-20">
-            <CardHeader className="bg-slate-50">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Ticket className="w-5 h-5 text-indigo-600" />
-                Select Tickets
-              </CardTitle>
-            </CardHeader>
+          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 sticky top-20 shadow-2xl">
+            <div className="flex items-center gap-2 pb-4 border-b border-slate-800">
+              <Ticket className="w-5 h-5 text-indigo-400" />
+              <h3 className="text-lg font-bold text-white font-heading">Select Tickets</h3>
+            </div>
 
-            <CardContent className="space-y-6">
-              <TicketSelector
-                tiers={event.ticket_tiers}
-                selectedTiers={selectedTiers}
-                onChange={handleQuantityChange}
-              />
+            <TicketSelector
+              tiers={event.ticket_tiers}
+              selectedTiers={selectedTiers}
+              onChange={handleQuantityChange}
+            />
 
-              {/* Total & Checkout Button */}
-              <div className="pt-4 border-t border-slate-200 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-slate-500 font-semibold">Total ({totalSelectedTickets} tickets)</p>
-                    <p className="text-2xl font-black text-indigo-600">NPR {totalCost.toLocaleString()}</p>
-                  </div>
-
-                  <Button
-                    size="lg"
-                    disabled={totalSelectedTickets === 0}
-                    isLoading={createBookingMutation.isPending}
-                    onClick={handleBookNow}
-                    className="px-6"
-                  >
-                    Book Now
-                  </Button>
+            {/* Total & Checkout Button */}
+            <div className="pt-6 border-t border-slate-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-slate-400 font-semibold">Total ({totalSelectedTickets} tickets)</p>
+                  <p className="text-3xl font-extrabold text-emerald-400 font-heading">NPR {totalCost.toLocaleString()}</p>
                 </div>
 
-                {!isAuthenticated && (
-                  <p className="text-[11px] text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-center">
-                    You'll be asked to log in or register before completing checkout.
-                  </p>
-                )}
-
-                <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Atomic quantity reservation prevents overselling</span>
-                </div>
+                <Button
+                  size="lg"
+                  disabled={totalSelectedTickets === 0}
+                  isLoading={createBookingMutation.isPending}
+                  onClick={handleBookNow}
+                  className="px-8 py-3.5 text-base font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white shadow-xl shadow-indigo-600/25 border-0 rounded-2xl"
+                >
+                  Book Now
+                </Button>
               </div>
-            </CardContent>
-          </Card>
+
+              {!isAuthenticated && (
+                <p className="text-xs text-amber-300 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 text-center font-medium">
+                  You'll be asked to log in or register before completing checkout.
+                </p>
+              )}
+
+              <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 pt-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>Instant eSewa payment & QR pass delivery</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

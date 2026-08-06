@@ -25,10 +25,12 @@ export const EventListingPage: React.FC = () => {
   };
 
   return (
-    <div className="container-app py-10 space-y-8">
+    <div className="container-app py-12 space-y-8">
       <div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Explore Events</h1>
-        <p className="text-sm text-slate-500">Find and book upcoming events near you</p>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading tracking-tight">
+          Explore <span className="text-gradient">Events</span>
+        </h1>
+        <p className="text-sm text-slate-400">Discover and book verified live events across Nepal</p>
       </div>
 
       <EventFilterBar categories={categories} onFilterChange={handleFilterChange} />

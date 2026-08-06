@@ -79,7 +79,7 @@ class PublicEventListView(ListAPIView):
     def get_queryset(self):
         queryset = services.list_public_events()
 
-        query = self.request.query_params.get("q")
+        query = self.request.query_params.get("q") or self.request.query_params.get("search")
         if query:
             queryset = services.search_events(queryset, query=query)
 
