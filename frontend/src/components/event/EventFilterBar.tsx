@@ -50,7 +50,7 @@ export const EventFilterBar: React.FC<EventFilterBarProps> = ({
   };
 
   return (
-    <form onSubmit={handleSearchSubmit} className="bg-slate-900/90 border border-slate-800 p-4 sm:p-5 rounded-2xl shadow-xl space-y-4 mb-8">
+    <form onSubmit={handleSearchSubmit} className="bg-slate-900 border border-slate-700/80 p-5 rounded-2xl shadow-xl space-y-4 mb-8">
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
         {/* Search input */}
         <div className="sm:col-span-5 relative">
@@ -58,7 +58,7 @@ export const EventFilterBar: React.FC<EventFilterBarProps> = ({
             placeholder="Search events by title, venue, or artist..."
             value={q}
             onChange={(e) => handleQueryChange(e.target.value)}
-            className="pl-11 bg-slate-950/80 border-slate-800 text-white placeholder:text-slate-500"
+            className="pl-11 bg-slate-950 border-slate-700 text-white placeholder:text-slate-400 font-medium"
           />
           <Search className="w-4 h-4 text-indigo-400 absolute left-4 top-4 pointer-events-none" />
         </div>
@@ -72,7 +72,7 @@ export const EventFilterBar: React.FC<EventFilterBarProps> = ({
               setSelectedCategory(e.target.value);
               onFilterChange({ q, category: e.target.value, city });
             }}
-            className="bg-slate-950/80 border-slate-800 text-white"
+            className="bg-slate-950 border-slate-700 text-white font-medium"
           />
         </div>
 
@@ -85,7 +85,7 @@ export const EventFilterBar: React.FC<EventFilterBarProps> = ({
               setCity(e.target.value);
               onFilterChange({ q, category: selectedCategory, city: e.target.value });
             }}
-            className="bg-slate-950/80 border-slate-800 text-white"
+            className="bg-slate-950 border-slate-700 text-white font-medium"
           />
         </div>
 
