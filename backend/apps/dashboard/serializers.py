@@ -159,3 +159,18 @@ class AttendeeSummarySerializer(serializers.Serializer):
     email = serializers.EmailField(read_only=True)
     ticket_status = serializers.CharField(read_only=True)
     checked_in = serializers.BooleanField(read_only=True)
+
+
+# ==================== ADMIN DASHBOARD ====================
+
+class AdminPlatformStatisticsSerializer(serializers.Serializer):
+    total_users = serializers.IntegerField(read_only=True)
+    total_organizers = serializers.IntegerField(read_only=True)
+    pending_events = serializers.IntegerField(read_only=True)
+    active_events = serializers.IntegerField(read_only=True)
+
+
+class AdminRevenueStatisticsSerializer(serializers.Serializer):
+    total_revenue = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    total_successful_payments = serializers.IntegerField(read_only=True)
+    total_refunds = serializers.IntegerField(read_only=True)

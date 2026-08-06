@@ -14,7 +14,10 @@ from .views import (
     ReportExportView,
     RevenueAnalyticsView,
     TicketSalesSummaryView,
+    TicketSalesSummaryView,
     UserDashboardSummaryView,
+    AdminDashboardSummaryView,
+    AdminRevenueAnalyticsView,
 )
 
 # Mounted at api/dashboard/ in config/urls.py.
@@ -56,4 +59,8 @@ urlpatterns = [
 
     # Organizer dashboard: exports
     path("organizer/reports/<str:report_type>/export/", ReportExportView.as_view(), name="organizer-report-export"),
+    
+    # Admin dashboard
+    path("admin/summary/", AdminDashboardSummaryView.as_view(), name="admin-summary"),
+    path("admin/revenue/", AdminRevenueAnalyticsView.as_view(), name="admin-revenue"),
 ]

@@ -602,3 +602,50 @@ def export_report(profile: OrganizerProfile, *, report_type: str) -> bytes:
     raise FeatureNotYetAvailable(
         "Report export is not yet available: the underlying analytics data sources have not been built."
     )
+
+
+# ==================== ADMIN DASHBOARD: ANALYTICS ====================
+
+@dataclass(frozen=True)
+class AdminPlatformStatistics:
+    """Platform-wide metrics for super admins."""
+    total_users: int
+    total_organizers: int
+    pending_events: int
+    active_events: int
+
+
+def get_admin_platform_statistics(user: User) -> AdminPlatformStatistics:
+    """Return platform-wide user and event counts."""
+    from apps.users.models import User as AppUser
+    from apps.events.models import Event
+
+    return AdminPlatformStatistics(
+        total_users=AppUser.objects.filter(role=AppUser.Role.USER).count(),
+        total_organizers=AppUser.objects.filter(role=AppUser.Role.ORGANIZER).count(),
+        pending_events=Event.objects.filter(status=Event.Status.PENDING).count(),
+        active_events=Event.objects.filter(status=Event.Status.PUBLISHED).count(),
+    )
+
+
+@dataclass(frozen=True)
+class AdminRevenueStatistics:
+    """Platform-wide revenue metrics for super admins."""
+    total_revenue: Decimal
+    total_successful_payments: int
+    total_refunds: int
+
+
+def get_admin_revenue_statistics(user: User) -> AdminRevenueStatistics:
+    """Return platform-wide revenue and payment counts."""
+    from apps.payments.models import Payment
+    from django.db.models import Sum
+    
+    completed_payments = Payment.objects.filter(status=Payment.Status.COMPLETED)
+    total_rev = completed_payments.aggregate(Sum("amount"))["amount__sum"] or Decimal("0.00")
+    
+    return AdminRevenueStatistics(
+        total_revenue=total_rev,
+        total_successful_payments=completed_payments.count(),
+        total_refunds=Payment.objects.filter(status=Payment.Status.REFUNDED).count(),
+    )

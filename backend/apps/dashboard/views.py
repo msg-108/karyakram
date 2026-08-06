@@ -7,7 +7,7 @@ from __future__ import annotations
 from django.http import HttpResponse
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.generics import RetrieveAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -508,3 +508,33 @@ class ReportExportView(APIView):
         profile = request.user.organizer_profile
         report_bytes = services.export_report(profile, report_type=report_type)
         return HttpResponse(report_bytes, content_type="application/octet-stream")
+
+
+# ==================== ADMIN DASHBOARD ====================
+
+class AdminDashboardSummaryView(APIView):
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(
+        operation_id="getAdminDashboardSummary",
+        summary="Admin platform-wide metrics",
+        tags=["Dashboard: Admin"],
+        responses={200: serializers.AdminPlatformStatisticsSerializer}
+    )
+    def get(self, request):
+        stats = services.get_admin_platform_statistics(request.user)
+        return Response(serializers.AdminPlatformStatisticsSerializer(stats).data)
+
+
+class AdminRevenueAnalyticsView(APIView):
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(
+        operation_id="getAdminRevenueAnalytics",
+        summary="Admin platform-wide revenue",
+        tags=["Dashboard: Admin"],
+        responses={200: serializers.AdminRevenueStatisticsSerializer}
+    )
+    def get(self, request):
+        stats = services.get_admin_revenue_statistics(request.user)
+        return Response(serializers.AdminRevenueStatisticsSerializer(stats).data)
