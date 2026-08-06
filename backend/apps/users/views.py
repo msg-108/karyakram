@@ -19,7 +19,7 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.common.permissions import IsOrganizer
 from . import services
@@ -211,6 +211,7 @@ class LoginView(TokenObtainPairView):
     UserTokenObtainPairSerializer.validate() via services.assert_can_login.
     """
 
+    permission_classes = [AllowAny]
     serializer_class = UserTokenObtainPairSerializer
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "auth_burst"
@@ -234,6 +235,13 @@ class LoginView(TokenObtainPairView):
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+
+class CustomTokenRefreshView(TokenRefreshView):
+    """Refresh JWT access token using a valid refresh token."""
+
+    permission_classes = [AllowAny]
+
 
 
 # ==================== PROFILE ====================

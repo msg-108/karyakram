@@ -363,6 +363,27 @@ def archive_event(event: Event) -> Event:
     return event
 
 
+@transaction.atomic
+def auto_archive_ended_events() -> int:
+    """
+    Finds all PUBLISHED events whose end_datetime is in the past
+    and bulk updates their status to ARCHIVED. Returns the count of archived events.
+    """
+    now = timezone.now()
+    ended_events = Event.objects.filter(
+        status=Event.Status.PUBLISHED,
+        end_datetime__lt=now,
+    )
+    count = ended_events.update(
+        status=Event.Status.ARCHIVED,
+        updated_at=now,
+    )
+    if count > 0:
+        logger.info(f"Auto-archived {count} ended event(s).")
+    return count
+
+
+
 # ==================== EVENT: LISTING & DISCOVERY ====================
 
 

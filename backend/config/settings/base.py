@@ -254,4 +254,8 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.bookings.tasks.cancel_expired_bookings_task",
         "schedule": crontab(minute="*/5"),
     },
+    "auto-archive-ended-events-every-15-minutes": {
+        "task": "apps.events.tasks.auto_archive_ended_events_task",
+        "schedule": crontab(minute="*/15"),
+    },
 }

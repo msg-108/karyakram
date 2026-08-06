@@ -127,3 +127,34 @@ class EventServicesTest(TransactionTestCase):
         reject_event(event, admin=self.admin, reason="Needs more details.")
         self.assertEqual(event.status, Event.Status.REJECTED)
         self.assertEqual(event.rejection_reason, "Needs more details.")
+
+    def test_auto_archive_ended_events(self):
+        from apps.events.services import auto_archive_ended_events
+
+        category = create_category(validated_data={"name": "Past Category"})
+        past_start = timezone.now() - timezone.timedelta(days=2)
+        past_end = timezone.now() - timezone.timedelta(days=1)
+
+        event_data = {
+            "title": "Past Event",
+            "short_description": "Ended event",
+            "description": "Desc",
+            "venue": "Venue",
+            "address": "Address",
+            "city": "Pokhara",
+            "capacity": 500,
+            "category": category,
+            "start_datetime": past_start,
+            "end_datetime": past_end,
+            "ticket_tiers": [{"name": "Standard", "price": "50", "quantity": 100}],
+        }
+        event = create_event(organizer=self.organizer, validated_data=event_data)
+        event.status = Event.Status.PUBLISHED
+        event.save()
+
+        count = auto_archive_ended_events()
+        self.assertEqual(count, 1)
+
+        event.refresh_from_db()
+        self.assertEqual(event.status, Event.Status.ARCHIVED)
+
