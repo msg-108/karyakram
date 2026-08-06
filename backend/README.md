@@ -59,4 +59,4 @@ python manage.py test apps
 - `apps/payments`: Payment initiation and verification webhooks.
 - `apps/tickets`: QR code generation and validation.
 
-For more deep-dive technical details, read `ARCHITECTURE.md`.
+For more deep-dive technical details, read `../documentation/backend/architecture.md`.
