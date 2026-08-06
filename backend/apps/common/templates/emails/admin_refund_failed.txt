@@ -1,0 +1,9 @@
+ADMIN ALERT: eSewa Refund Failed
+
+Payment Reference: {{ payment.reference_id }}
+Booking ID: {{ payment.booking_id }}
+Amount: Rs. {{ payment.amount }}
+Status: {{ payment.refund_status }}
+Reason: {{ reason }}
+
+Please review this transaction manually on the eSewa merchant portal.

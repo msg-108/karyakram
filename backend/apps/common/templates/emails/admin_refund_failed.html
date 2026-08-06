@@ -1,0 +1,14 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<h2 style="color: #d9534f;">ADMIN ALERT: eSewa Refund Failed</h2>
+<p>An automated refund operation failed and requires manual administrator review.</p>
+<ul>
+    <li><strong>Payment Ref:</strong> {{ payment.reference_id }}</li>
+    <li><strong>Booking ID:</strong> #{{ payment.booking_id }}</li>
+    <li><strong>Amount:</strong> Rs. {{ payment.amount }}</li>
+    <li><strong>Refund Status:</strong> {{ payment.refund_status }}</li>
+    <li><strong>Failure Reason:</strong> {{ reason }}</li>
+</ul>
+<p>Please log in to the eSewa merchant portal to inspect and resolve this transaction manually.</p>
+{% endblock %}

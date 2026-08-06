@@ -1,12 +1,17 @@
 import base64
 import hashlib
 import hmac
+from decimal import Decimal
+import logging
 import requests
 from django.conf import settings
+from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
 from apps.bookings.models import Booking
 from .models import Payment
+
+logger = logging.getLogger(__name__)
 
 
 def create_payment(booking: Booking, provider: str) -> Payment:
@@ -89,20 +94,74 @@ def verify_esewa_payment(payment: Payment) -> Payment:
     return payment
 
 
-def initiate_esewa_refund(payment: Payment) -> Payment:
+@transaction.atomic
+def initiate_esewa_refund(
+    payment: Payment, amount: Decimal | str | float | None = None
+) -> Payment:
     """
-    Initiate a refund for a COMPLETED eSewa payment.
-    Note: eSewa automated refund API may require merchant portal configuration.
-    This simulates the refund request and updates the payment status.
+    Initiate a refund for a COMPLETED eSewa payment using eSewa's Merchant Refund API.
+    Idempotent, atomic, and validates transaction record & amount.
     """
+    # 1. Idempotency check: If already refunded or refund is in progress (PENDING), return existing record without making HTTP call
+    if (
+        payment.status == Payment.Status.REFUNDED
+        or payment.refund_status == Payment.RefundStatus.SUCCESS
+        or payment.refund_status == Payment.RefundStatus.PENDING
+    ):
+        return payment
+
+    # 2. Check original transaction exists and was completed
     if payment.status != Payment.Status.COMPLETED:
         raise ValidationError("Only completed payments can be refunded.")
 
-    # Stub for actual eSewa Refund API call
-    # url = f"{settings.ESEWA_URL}/refund" (depends on merchant documentation)
-    # Payload would typically include transaction_id and amount
+    if not payment.transaction_id and not payment.reference_id:
+        raise ValidationError("Original transaction details missing for refund.")
 
-    # Simulating successful refund
-    payment.status = Payment.Status.REFUNDED
-    payment.save(update_fields=["status", "updated_at"])
+    # 3. Verify refund amount matches original payment amount exactly
+    if amount is not None:
+        try:
+            expected_amount = Decimal(str(payment.amount))
+            supplied_amount = Decimal(str(amount))
+            if supplied_amount != expected_amount:
+                raise ValidationError("Refund amount does not match original payment amount.")
+        except Exception as e:
+            if isinstance(e, ValidationError):
+                raise e
+            raise ValidationError("Invalid refund amount format.")
+
+    # 4. Mark status as PENDING before making the HTTP call
+    payment.refund_status = Payment.RefundStatus.PENDING
+    payment.save(update_fields=["refund_status", "updated_at"])
+
+    # 5. Build refund request payload for eSewa Refund API
+    payload = {
+        "product_code": settings.ESEWA_MERCHANT_CODE,
+        "total_amount": str(payment.amount),
+        "transaction_uuid": str(payment.reference_id),
+        "ref_id": payment.transaction_id,
+    }
+
+    try:
+        response = requests.post(
+            settings.ESEWA_REFUND_URL, json=payload, timeout=10
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        status_text = str(data.get("status", "")).upper()
+        if status_text in ["COMPLETE", "COMPLETED", "SUCCESS"]:
+            payment.status = Payment.Status.REFUNDED
+            payment.refund_status = Payment.RefundStatus.SUCCESS
+            payment.save(update_fields=["status", "refund_status", "updated_at"])
+        else:
+            payment.refund_status = Payment.RefundStatus.FAILED
+            payment.save(update_fields=["refund_status", "updated_at"])
+            raise ValidationError(
+                f"eSewa refund request rejected: {data.get('message', 'Unknown error')}"
+            )
+    except requests.RequestException as exc:
+        # Network/server transient failure — re-raise so Celery task can retry with backoff
+        logger.error(f"Transient failure contacting eSewa refund API for payment {payment.id}: {exc}")
+        raise exc
+
     return payment
