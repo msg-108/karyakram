@@ -6,9 +6,9 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.common.permissions import IsOrganizer
 from apps.events.models import Event
+from . import services
 from .models import Ticket
 from .serializers import TicketSerializer, CheckInSerializer
-from .services import check_in_ticket
 
 
 class UserTicketListView(generics.ListAPIView):
@@ -24,9 +24,7 @@ class UserTicketListView(generics.ListAPIView):
         if getattr(self, "swagger_fake_view", False):
             return Ticket.objects.none()
 
-        return Ticket.objects.filter(booking__user=self.request.user).select_related(
-            "booking", "booking_item__ticket_tier"
-        )
+        return services.list_user_tickets(self.request.user)
 
 
 class CheckInView(APIView):
@@ -58,7 +56,7 @@ class CheckInView(APIView):
         serializer = CheckInSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        ticket = check_in_ticket(
+        ticket = services.check_in_ticket(
             qr_payload=serializer.validated_data["qr_payload"], event_id=event.id
         )
 

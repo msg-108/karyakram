@@ -15,6 +15,13 @@ from .tasks import generate_ticket_qr_code
 logger = logging.getLogger(__name__)
 
 
+def list_user_tickets(user):
+    """Return all tickets owned by the given user with select_related optimization."""
+    return Ticket.objects.filter(booking__user=user).select_related(
+        "booking", "booking_item__ticket_tier"
+    )
+
+
 def send_tickets_delivered_email(booking: Booking, tickets: list[Ticket]) -> None:
     try:
         from django.core.mail import EmailMultiAlternatives
@@ -58,7 +65,7 @@ def generate_qr_jwt(ticket: Ticket) -> str:
         "attendee_email": ticket.attendee_email,
         "iat": timezone.now().timestamp(),
     }
-    return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+    return jwt.encode(payload, settings.QR_JWT_SECRET_KEY, algorithm="HS256")
 
 
 def generate_qr_image(ticket: Ticket) -> ContentFile:
@@ -136,8 +143,27 @@ def check_in_ticket(qr_payload: str, event_id: int) -> Ticket:
     and hasn't been checked in already or cancelled.
     """
     try:
-        decoded = jwt.decode(qr_payload, settings.SECRET_KEY, algorithms=["HS256"])
+        decoded = jwt.decode(qr_payload, settings.QR_JWT_SECRET_KEY, algorithms=["HS256"])
         ticket_id = decoded["ticket_id"]
+    except jwt.InvalidSignatureError:
+        try:
+            decoded = jwt.decode(qr_payload, settings.SECRET_KEY, algorithms=["HS256"])
+            ticket_id = decoded["ticket_id"]
+            try:
+                temp_ticket = Ticket.objects.select_related("booking__event").get(id=ticket_id)
+                logger.warning(
+                    "Legacy QR key fallback used during check-in: "
+                    "ticket_id=%s, event_id=%s, event_title='%s', event_start='%s', scanned_at='%s'",
+                    temp_ticket.id,
+                    temp_ticket.booking.event_id,
+                    temp_ticket.booking.event.title,
+                    temp_ticket.booking.event.start_datetime.isoformat(),
+                    timezone.now().isoformat(),
+                )
+            except Ticket.DoesNotExist:
+                pass
+        except jwt.PyJWTError:
+            raise ValidationError("Invalid or corrupted ticket QR code.")
     except jwt.PyJWTError:
         raise ValidationError("Invalid or corrupted ticket QR code.")
 
