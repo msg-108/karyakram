@@ -224,6 +224,7 @@ paths:
         required: true
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           description: If the email exists and is active, an OTP is sent.
@@ -2935,17 +2936,14 @@ components:
       type: object
       properties:
         provider:
-          $ref: '#/components/schemas/ProviderB75Enum'
+          $ref: '#/components/schemas/Provider1c3Enum'
       required:
       - provider
     PaymentProviderEnum:
       enum:
       - ESEWA
-      - KHALTI
       type: string
-      description: |-
-        * `ESEWA` - eSewa
-        * `KHALTI` - Khalti
+      description: '* `ESEWA` - eSewa'
     PaymentStatusEnum:
       enum:
       - PENDING
@@ -2994,21 +2992,14 @@ components:
       type: object
       properties:
         provider:
-          $ref: '#/components/schemas/ProviderB75Enum'
-        pidx:
-          type: string
-          minLength: 1
-          description: Required for Khalti
+          $ref: '#/components/schemas/Provider1c3Enum'
       required:
       - provider
-    ProviderB75Enum:
+    Provider1c3Enum:
       enum:
       - ESEWA
-      - KHALTI
       type: string
-      description: |-
-        * `ESEWA` - ESEWA
-        * `KHALTI` - KHALTI
+      description: '* `ESEWA` - ESEWA'
     PublicEventDetail:
       type: object
       description: Full public representation for a single event's detail page, by

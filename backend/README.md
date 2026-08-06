@@ -7,8 +7,8 @@ Karyakram is an event ticketing and management platform backend built with Djang
 - **Organizer Profiles**: Users can apply to be organizers. Applications require admin approval.
 - **Event Management**: Create, update, and manage events, including ticket tiers (e.g., VIP, General Admission), categorization, and limits.
 - **Booking Flow with Locking**: A reliable booking system that guarantees inventory via row-level database locking.
-- **Payment Integrations**: Handles PENDING, COMPLETED, and FAILED states for transactions (eSewa and Khalti simulated).
-- **QR Tickets**: JWT-based QR code generation for offline-verifiable ticketing. Tickets can only be checked in once.
+- **Payment Integrations**: Handles eSewa checkout initiation (HMAC-SHA256), verification, automatic background reconciliation for pending bookings, and idempotent merchant refunds.
+- **QR Tickets**: JWT-based QR code generation with dedicated key signing, dual-validation fallback check-in, and offline verification.
 
 ## Getting Started
 
@@ -59,4 +59,8 @@ python manage.py test apps
 - `apps/payments`: Payment initiation and verification webhooks.
 - `apps/tickets`: QR code generation and validation.
 
-For more deep-dive technical details, read `../documentation/backend/architecture.md`.
+## Deployment
+
+For step-by-step instructions on deploying the backend (Django + PostgreSQL + Redis + Celery) to Render.com, see the [Render Deployment Guide](../documentation/backend/render_deployment_guide.md).
+
+For more deep-dive technical details, read [Architecture Guide](../documentation/backend/architecture.md).
