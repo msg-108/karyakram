@@ -287,7 +287,7 @@ class PendingOrganizerListView(APIView):
                 "Return all organizer accounts that have verified "
                 "their email but are still waiting for administrator approval."
         ),
-        tags=["Admin"],
+        tags=["Admin: Organizers"],
         responses=OrganizerProfileSerializer(many=True),
     )
     def get(self, request):
@@ -312,7 +312,7 @@ class OrganizerApprovalView(APIView):
                 "Approving activates the account. Rejecting keeps the "
                 "account inactive and stores the rejection reason."
         ),
-        tags=["Admin"],
+        tags=["Admin: Organizers"],
         request=OrganizerApprovalActionSerializer,
         responses={
             200: OpenApiResponse(

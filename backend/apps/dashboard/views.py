@@ -80,7 +80,7 @@ class UpcomingTicketsView(APIView):
                 "Return the authenticated user's tickets for events that "
                 "haven't happened yet."
         ),
-        tags=["Dashboard: User"],
+        tags=["Me: Tickets"],
         responses=TicketSummarySerializer(many=True),
     )
     def get(self, request):
@@ -101,9 +101,11 @@ class TicketHistoryView(APIView):
         summary="List ticket history",
         description=(
                 "Return every ticket the authenticated user has ever "
-                "booked, regardless of event date."
+                "booked, regardless of event date. "
+                "Deprecated route — use GET /me/tickets/ (api/me/tickets/) instead, "
+                "which serves the same dataset."
         ),
-        tags=["Dashboard: User"],
+        tags=["Me: Tickets"],
         responses=TicketSummarySerializer(many=True),
     )
     def get(self, request):
@@ -127,7 +129,7 @@ class TicketReceiptDownloadView(APIView):
                 "authenticated user. Not yet available: returns 501 until "
                 "the tickets app exists."
         ),
-        tags=["Dashboard: User"],
+        tags=["Me: Tickets"],
         responses={
             200: OpenApiResponse(description="Receipt PDF bytes."),
             501: OpenApiResponse(description="Receipt download is not yet available."),
@@ -153,7 +155,7 @@ class PaymentHistoryView(APIView):
         operation_id="listPaymentHistory",
         summary="List payment history",
         description="Return every payment made by the authenticated user.",
-        tags=["Dashboard: User"],
+        tags=["Me: Payments"],
         responses=PaymentSummarySerializer(many=True),
     )
     def get(self, request):
@@ -176,7 +178,7 @@ class UpcomingEventsView(APIView):
         operation_id="listUserUpcomingEvents",
         summary="List upcoming events",
         description="Return upcoming events relevant to the authenticated user.",
-        tags=["Dashboard: User"],
+        tags=["Me: Events"],
         responses=EventSummarySerializer(many=True),
     )
     def get(self, request):
@@ -280,9 +282,9 @@ class OrganizerEventListView(APIView):
     ]
 
     @extend_schema(
-        operation_id="listOrganizerEvents",
-        summary="List organizer's events",
-        description="Return every event belonging to the authenticated organizer.",
+        operation_id="listDashboardOrganizerEvents",
+        summary="List organizer's events (dashboard)",
+        description="Return every event belonging to the authenticated organizer, for the dashboard event-list card.",
         tags=["Dashboard: Organizer"],
         responses=EventSummarySerializer(many=True),
     )

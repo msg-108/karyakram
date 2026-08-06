@@ -312,14 +312,19 @@ class OrganizerTicketTierDetailView(APIView):
 
     permission_classes = [IsAuthenticated, IsOrganizer]
 
-    def get_object(self, pk: int) -> TicketTier:
-        tier = get_object_or_404(TicketTier.objects.select_related("event"), pk=pk)
-        # IsEventOwner is written against an Event instance, so it's applied
-        # here to tier.event explicitly rather than added to permission_classes
-        # (which would receive the TicketTier, not its parent Event).
+    def get_object(self, event_id: int, tier_id: int) -> TicketTier:
+        # Scope the lookup by both event and tier so the URL structure (which
+        # carries event_id) is enforced at the query level, not just checked after.
+        # This also implicitly verifies organizer ownership via the event FK chain.
         organizer_profile = getattr(self.request.user, "organizer_profile", None)
-        if organizer_profile is None or tier.event.organizer_id != organizer_profile.id:
+        if organizer_profile is None:
             raise PermissionDenied("You do not have permission to modify this ticket tier.")
+        tier = get_object_or_404(
+            TicketTier.objects.select_related("event"),
+            pk=tier_id,
+            event__id=event_id,
+            event__organizer=organizer_profile,
+        )
         return tier
 
     @extend_schema(
@@ -333,8 +338,8 @@ class OrganizerTicketTierDetailView(APIView):
             400: OpenApiResponse(description="Validation error, or event is not a draft."),
         },
     )
-    def patch(self, request, pk: int):
-        tier = self.get_object(pk)
+    def patch(self, request, event_id: int, tier_id: int):
+        tier = self.get_object(event_id, tier_id)
         serializer = TicketTierSerializer(tier, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         tier = serializer.save()
@@ -350,8 +355,8 @@ class OrganizerTicketTierDetailView(APIView):
             400: OpenApiResponse(description="Event is not a draft."),
         },
     )
-    def delete(self, request, pk: int):
-        tier = self.get_object(pk)
+    def delete(self, request, event_id: int, tier_id: int):
+        tier = self.get_object(event_id, tier_id)
         services.delete_ticket_tier(tier)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -411,7 +416,7 @@ class AdminPendingEventListView(APIView):
         operation_id="listPendingEvents",
         summary="List pending events",
         description="Return all events currently awaiting admin review.",
-        tags=["Events: Admin"],
+        tags=["Admin: Events"],
         responses=AdminEventReviewSerializer(many=True),
     )
     def get(self, request):
@@ -432,7 +437,7 @@ class AdminEventApprovalView(APIView):
             "publishing is a separate admin action. Rejecting requires a reason and "
             "returns the event to the organizer for edits."
         ),
-        tags=["Events: Admin"],
+        tags=["Admin: Events"],
         request=EventApprovalActionSerializer,
         responses={
             200: OpenApiResponse(AdminEventReviewSerializer, description="Event review status updated."),
@@ -467,7 +472,7 @@ class AdminEventPublishView(APIView):
             "(subject to its visibility setting). Organizers cannot call this "
             "endpoint directly — only an admin can publish."
         ),
-        tags=["Events: Admin"],
+        tags=["Admin: Events"],
         request=None,
         responses={
             200: OpenApiResponse(AdminEventReviewSerializer, description="Event published."),
