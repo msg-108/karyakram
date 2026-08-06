@@ -7,7 +7,7 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from apps.bookings.models import Booking
 from .models import Payment
-from .serializers import PaymentInitiateSerializer, PaymentVerifySerializer
+from .serializers import PaymentInitiateSerializer, PaymentVerifySerializer, PaymentSerializer
 from . import services
 
 class PaymentInitiateView(APIView):
@@ -92,6 +92,5 @@ class PaymentDetailView(APIView):
     )
     def get(self, request, reference_id):
         payment = get_object_or_404(Payment, reference_id=reference_id, booking__user=request.user)
-        from .serializers import PaymentSerializer
         return Response(PaymentSerializer(payment).data)
 

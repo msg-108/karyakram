@@ -29,6 +29,8 @@ from .serializers import (
     TicketSalesSummarySerializer,
     TicketSummarySerializer,
     UserProfileSummarySerializer,
+    AdminPlatformStatisticsSerializer,
+    AdminRevenueStatisticsSerializer,
 )
 
 # ==================== USER DASHBOARD: PROFILE SUMMARY ====================
@@ -519,11 +521,11 @@ class AdminDashboardSummaryView(APIView):
         operation_id="getAdminDashboardSummary",
         summary="Admin platform-wide metrics",
         tags=["Dashboard: Admin"],
-        responses={200: serializers.AdminPlatformStatisticsSerializer}
+        responses={200: AdminPlatformStatisticsSerializer}
     )
     def get(self, request):
         stats = services.get_admin_platform_statistics(request.user)
-        return Response(serializers.AdminPlatformStatisticsSerializer(stats).data)
+        return Response(AdminPlatformStatisticsSerializer(stats).data)
 
 
 class AdminRevenueAnalyticsView(APIView):
@@ -533,8 +535,8 @@ class AdminRevenueAnalyticsView(APIView):
         operation_id="getAdminRevenueAnalytics",
         summary="Admin platform-wide revenue",
         tags=["Dashboard: Admin"],
-        responses={200: serializers.AdminRevenueStatisticsSerializer}
+        responses={200: AdminRevenueStatisticsSerializer}
     )
     def get(self, request):
         stats = services.get_admin_revenue_statistics(request.user)
-        return Response(serializers.AdminRevenueStatisticsSerializer(stats).data)
+        return Response(AdminRevenueStatisticsSerializer(stats).data)
