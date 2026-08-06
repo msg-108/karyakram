@@ -94,7 +94,7 @@ def send_booking_confirmed_email(booking: Booking) -> None:
         send_email(
             to=booking.user.email,
             subject=f"Booking Confirmed - {booking.event.title} (#{booking.id})",
-            template_prefix="emails/booking_confirmation",
+            template_prefix="emails/booking_created",
             context=context,
             fail_silently=True,
         )
