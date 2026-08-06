@@ -4,6 +4,7 @@ FileExtensionValidator, password validators configured in settings) are used
 directly on fields wherever they suffice — the functions below only cover
 formats Django has no built-in for.
 """
+
 from __future__ import annotations
 
 import re

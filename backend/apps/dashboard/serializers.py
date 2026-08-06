@@ -8,12 +8,12 @@ names and types are matched 1:1 against their dataclass so a future
 find-and-replace of a placeholder service body doesn't also require
 changing the serializer.
 """
+
 from __future__ import annotations
 
 from rest_framework import serializers
 
 from apps.users.serializers import OrganizerProfileSerializer, UserPublicSerializer
-
 
 # ==================== USER DASHBOARD: PROFILE SUMMARY ====================
 
@@ -107,7 +107,9 @@ class RevenueByMonthSerializer(serializers.Serializer):
 
 
 class RevenueAnalyticsSerializer(serializers.Serializer):
-    total_revenue = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    total_revenue = serializers.DecimalField(
+        max_digits=10, decimal_places=2, read_only=True
+    )
     currency = serializers.CharField(read_only=True)
     by_month = RevenueByMonthSerializer(many=True, read_only=True)
 
@@ -121,7 +123,8 @@ class RevenueAnalyticsSerializer(serializers.Serializer):
             "total_revenue": instance.total_revenue,
             "currency": instance.currency,
             "by_month": [
-                {"label": label, "amount": amount} for label, amount in instance.by_month
+                {"label": label, "amount": amount}
+                for label, amount in instance.by_month
             ],
         }
 
@@ -163,6 +166,7 @@ class AttendeeSummarySerializer(serializers.Serializer):
 
 # ==================== ADMIN DASHBOARD ====================
 
+
 class AdminPlatformStatisticsSerializer(serializers.Serializer):
     total_users = serializers.IntegerField(read_only=True)
     total_organizers = serializers.IntegerField(read_only=True)
@@ -171,6 +175,8 @@ class AdminPlatformStatisticsSerializer(serializers.Serializer):
 
 
 class AdminRevenueStatisticsSerializer(serializers.Serializer):
-    total_revenue = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    total_revenue = serializers.DecimalField(
+        max_digits=12, decimal_places=2, read_only=True
+    )
     total_successful_payments = serializers.IntegerField(read_only=True)
     total_refunds = serializers.IntegerField(read_only=True)

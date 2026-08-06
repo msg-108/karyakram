@@ -4,6 +4,7 @@ from decouple import config
 DEBUG = True
 
 import sys
+
 if "test" in sys.argv:
     DATABASES = {
         "default": {

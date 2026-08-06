@@ -16,6 +16,7 @@ apps that will each carry their own FK onto Event/TicketTier — this app
 does not anticipate their shape beyond leaving those two models in place
 for them to point at.
 """
+
 from __future__ import annotations
 
 from django.conf import settings
@@ -133,8 +134,12 @@ class Event(models.Model):
     city = models.CharField(max_length=150)
     district = models.CharField(max_length=150, blank=True)
     province = models.CharField(max_length=150, blank=True)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    longitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
 
     banner = models.ImageField(
         upload_to="events/banners/",
@@ -202,7 +207,10 @@ class Event(models.Model):
 
     @property
     def is_public(self) -> bool:
-        return self.status == self.Status.PUBLISHED and self.visibility == self.Visibility.PUBLIC
+        return (
+            self.status == self.Status.PUBLISHED
+            and self.visibility == self.Visibility.PUBLIC
+        )
 
     @property
     def is_editable(self) -> bool:
@@ -213,8 +221,12 @@ class Event(models.Model):
 class EventImage(models.Model):
     """Optional gallery image belonging to an Event, beyond its single banner."""
 
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="gallery_images")
-    image = models.ImageField(upload_to="events/gallery/", validators=[validate_event_image])
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="gallery_images"
+    )
+    image = models.ImageField(
+        upload_to="events/gallery/", validators=[validate_event_image]
+    )
     caption = models.CharField(max_length=255, blank=True)
     display_order = models.PositiveSmallIntegerField(default=0)
 
@@ -246,7 +258,9 @@ class TicketTier(models.Model):
     is also a legitimate real-world case this shouldn't block.
     """
 
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="ticket_tiers")
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, related_name="ticket_tiers"
+    )
 
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True)
@@ -281,7 +295,9 @@ class TicketTier(models.Model):
 
     def clean(self) -> None:
         super().clean()
-        validate_remaining_quantity(quantity=self.quantity, remaining_quantity=self.remaining_quantity)
+        validate_remaining_quantity(
+            quantity=self.quantity, remaining_quantity=self.remaining_quantity
+        )
 
     @property
     def is_sold_out(self) -> bool:

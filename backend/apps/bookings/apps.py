@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class BookingsConfig(AppConfig):
-    name = 'apps.bookings'
-    label = 'bookings'
+    name = "apps.bookings"
+    label = "bookings"

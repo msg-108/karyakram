@@ -26,24 +26,51 @@ urlpatterns = [
     path("", PublicEventListView.as_view(), name="public-event-list"),
     path("<slug:slug>/", PublicEventDetailView.as_view(), name="public-event-detail"),
     path("categories/", PublicCategoryListView.as_view(), name="public-category-list"),
-
     # Organizer: event CRUD
-    path("organizer/", OrganizerEventListCreateView.as_view(), name="organizer-event-list-create"),
-    path("organizer/<int:pk>/", OrganizerEventDetailView.as_view(), name="organizer-event-detail"),
-    path("organizer/<int:pk>/submit/", OrganizerEventSubmitView.as_view(), name="organizer-event-submit"),
-
+    path(
+        "organizer/",
+        OrganizerEventListCreateView.as_view(),
+        name="organizer-event-list-create",
+    ),
+    path(
+        "organizer/<int:pk>/",
+        OrganizerEventDetailView.as_view(),
+        name="organizer-event-detail",
+    ),
+    path(
+        "organizer/<int:pk>/submit/",
+        OrganizerEventSubmitView.as_view(),
+        name="organizer-event-submit",
+    ),
     # Organizer: ticket tiers (fully nested — tier only makes sense under its event)
-    path("organizer/<int:pk>/tiers/", OrganizerTicketTierListCreateView.as_view(), name="organizer-event-tier-list-create"),
-    path("organizer/<int:event_id>/tiers/<int:tier_id>/", OrganizerTicketTierDetailView.as_view(), name="organizer-ticket-tier-detail"),
-
+    path(
+        "organizer/<int:pk>/tiers/",
+        OrganizerTicketTierListCreateView.as_view(),
+        name="organizer-event-tier-list-create",
+    ),
+    path(
+        "organizer/<int:event_id>/tiers/<int:tier_id>/",
+        OrganizerTicketTierDetailView.as_view(),
+        name="organizer-ticket-tier-detail",
+    ),
     # Organizer: gallery images
-    path("organizer/<int:pk>/images/", OrganizerEventImageListCreateView.as_view(), name="organizer-event-image-list-create"),
+    path(
+        "organizer/<int:pk>/images/",
+        OrganizerEventImageListCreateView.as_view(),
+        name="organizer-event-image-list-create",
+    ),
 ]
 
 # Admin-only patterns — mounted separately at api/admin/events/ in config/urls.py
 # so all admin surfaces live under a single discoverable api/admin/ namespace.
 admin_urlpatterns = [
     path("pending/", AdminPendingEventListView.as_view(), name="admin-event-pending"),
-    path("<int:pk>/approve/", AdminEventApprovalView.as_view(), name="admin-event-approve"),
-    path("<int:pk>/publish/", AdminEventPublishView.as_view(), name="admin-event-publish"),
+    path(
+        "<int:pk>/approve/",
+        AdminEventApprovalView.as_view(),
+        name="admin-event-approve",
+    ),
+    path(
+        "<int:pk>/publish/", AdminEventPublishView.as_view(), name="admin-event-publish"
+    ),
 ]

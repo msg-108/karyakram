@@ -19,10 +19,9 @@ def cancel_expired_bookings_task():
     """
     now = timezone.now()
     expired_bookings = Booking.objects.filter(
-        status=Booking.Status.PENDING,
-        hold_expires_at__lt=now
+        status=Booking.Status.PENDING, hold_expires_at__lt=now
     )
-    
+
     count = 0
     for booking in expired_bookings:
         try:
@@ -31,7 +30,7 @@ def cancel_expired_bookings_task():
             logger.info(f"Expired booking {booking.id}")
         except Exception as e:
             logger.error(f"Failed to expire booking {booking.id}: {str(e)}")
-            
+
     return f"Successfully expired {count} bookings."
 
 

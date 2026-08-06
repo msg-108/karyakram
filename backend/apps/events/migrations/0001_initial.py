@@ -8,101 +8,220 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Event',
+            name="Event",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=255)),
-                ('slug', models.SlugField(blank=True, max_length=280, unique=True)),
-                ('short_description', models.CharField(help_text='Short summary shown in listing/search results.', max_length=300)),
-                ('description', models.TextField()),
-                ('terms_and_conditions', models.TextField(blank=True)),
-                ('venue', models.CharField(max_length=255)),
-                ('address', models.CharField(max_length=500)),
-                ('city', models.CharField(max_length=150)),
-                ('district', models.CharField(blank=True, max_length=150)),
-                ('province', models.CharField(blank=True, max_length=150)),
-                ('latitude', models.DecimalField(blank=True, decimal_places=6, max_digits=9, null=True)),
-                ('longitude', models.DecimalField(blank=True, decimal_places=6, max_digits=9, null=True)),
-                ('banner', models.ImageField(blank=True, null=True, upload_to='events/banners/', validators=[apps.events.validators.EventImageValidator()])),
-                ('start_datetime', models.DateTimeField()),
-                ('end_datetime', models.DateTimeField()),
-                ('registration_deadline', models.DateTimeField(blank=True, null=True)),
-                ('capacity', models.PositiveIntegerField(validators=[apps.events.validators.validate_capacity])),
-                ('visibility', models.CharField(choices=[('PUBLIC', 'Public'), ('UNLISTED', 'Unlisted')], default='PUBLIC', max_length=20)),
-                ('status', models.CharField(choices=[('DRAFT', 'Draft'), ('SUBMITTED', 'Submitted for Review'), ('APPROVED', 'Approved'), ('REJECTED', 'Rejected'), ('PUBLISHED', 'Published'), ('ARCHIVED', 'Archived')], default='DRAFT', max_length=20)),
-                ('approved_at', models.DateTimeField(blank=True, null=True)),
-                ('rejection_reason', models.TextField(blank=True)),
-                ('published_at', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=255)),
+                ("slug", models.SlugField(blank=True, max_length=280, unique=True)),
+                (
+                    "short_description",
+                    models.CharField(
+                        help_text="Short summary shown in listing/search results.",
+                        max_length=300,
+                    ),
+                ),
+                ("description", models.TextField()),
+                ("terms_and_conditions", models.TextField(blank=True)),
+                ("venue", models.CharField(max_length=255)),
+                ("address", models.CharField(max_length=500)),
+                ("city", models.CharField(max_length=150)),
+                ("district", models.CharField(blank=True, max_length=150)),
+                ("province", models.CharField(blank=True, max_length=150)),
+                (
+                    "latitude",
+                    models.DecimalField(
+                        blank=True, decimal_places=6, max_digits=9, null=True
+                    ),
+                ),
+                (
+                    "longitude",
+                    models.DecimalField(
+                        blank=True, decimal_places=6, max_digits=9, null=True
+                    ),
+                ),
+                (
+                    "banner",
+                    models.ImageField(
+                        blank=True,
+                        null=True,
+                        upload_to="events/banners/",
+                        validators=[apps.events.validators.EventImageValidator()],
+                    ),
+                ),
+                ("start_datetime", models.DateTimeField()),
+                ("end_datetime", models.DateTimeField()),
+                ("registration_deadline", models.DateTimeField(blank=True, null=True)),
+                (
+                    "capacity",
+                    models.PositiveIntegerField(
+                        validators=[apps.events.validators.validate_capacity]
+                    ),
+                ),
+                (
+                    "visibility",
+                    models.CharField(
+                        choices=[("PUBLIC", "Public"), ("UNLISTED", "Unlisted")],
+                        default="PUBLIC",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("DRAFT", "Draft"),
+                            ("SUBMITTED", "Submitted for Review"),
+                            ("APPROVED", "Approved"),
+                            ("REJECTED", "Rejected"),
+                            ("PUBLISHED", "Published"),
+                            ("ARCHIVED", "Archived"),
+                        ],
+                        default="DRAFT",
+                        max_length=20,
+                    ),
+                ),
+                ("approved_at", models.DateTimeField(blank=True, null=True)),
+                ("rejection_reason", models.TextField(blank=True)),
+                ("published_at", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Event',
-                'verbose_name_plural': 'Events',
-                'db_table': 'events',
-                'ordering': ['-start_datetime'],
+                "verbose_name": "Event",
+                "verbose_name_plural": "Events",
+                "db_table": "events",
+                "ordering": ["-start_datetime"],
             },
         ),
         migrations.CreateModel(
-            name='EventCategory',
+            name="EventCategory",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, unique=True)),
-                ('slug', models.SlugField(blank=True, max_length=120, unique=True)),
-                ('description', models.TextField(blank=True)),
-                ('icon', models.CharField(blank=True, help_text='Optional icon identifier (e.g. an icon-library key) for frontend display.', max_length=100)),
-                ('is_active', models.BooleanField(default=True, help_text="Inactive categories are hidden from public browsing/filtering but are kept rather than deleted so existing events don't lose their category.")),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=100, unique=True)),
+                ("slug", models.SlugField(blank=True, max_length=120, unique=True)),
+                ("description", models.TextField(blank=True)),
+                (
+                    "icon",
+                    models.CharField(
+                        blank=True,
+                        help_text="Optional icon identifier (e.g. an icon-library key) for frontend display.",
+                        max_length=100,
+                    ),
+                ),
+                (
+                    "is_active",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Inactive categories are hidden from public browsing/filtering but are kept rather than deleted so existing events don't lose their category.",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Event Category',
-                'verbose_name_plural': 'Event Categories',
-                'db_table': 'event_categories',
-                'ordering': ['name'],
+                "verbose_name": "Event Category",
+                "verbose_name_plural": "Event Categories",
+                "db_table": "event_categories",
+                "ordering": ["name"],
             },
         ),
         migrations.CreateModel(
-            name='EventImage',
+            name="EventImage",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('image', models.ImageField(upload_to='events/gallery/', validators=[apps.events.validators.EventImageValidator()])),
-                ('caption', models.CharField(blank=True, max_length=255)),
-                ('display_order', models.PositiveSmallIntegerField(default=0)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "image",
+                    models.ImageField(
+                        upload_to="events/gallery/",
+                        validators=[apps.events.validators.EventImageValidator()],
+                    ),
+                ),
+                ("caption", models.CharField(blank=True, max_length=255)),
+                ("display_order", models.PositiveSmallIntegerField(default=0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Event Image',
-                'verbose_name_plural': 'Event Images',
-                'db_table': 'event_images',
-                'ordering': ['display_order', 'id'],
+                "verbose_name": "Event Image",
+                "verbose_name_plural": "Event Images",
+                "db_table": "event_images",
+                "ordering": ["display_order", "id"],
             },
         ),
         migrations.CreateModel(
-            name='TicketTier',
+            name="TicketTier",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=150)),
-                ('description', models.TextField(blank=True)),
-                ('price', models.DecimalField(decimal_places=2, default=0, max_digits=10)),
-                ('quantity', models.PositiveIntegerField(validators=[apps.events.validators.validate_ticket_quantity])),
-                ('remaining_quantity', models.PositiveIntegerField(help_text='Set to `quantity` on creation. Will be decremented by the future bookings app as tickets are sold; this app only initializes and validates it, it does not decrement it itself.')),
-                ('display_order', models.PositiveSmallIntegerField(default=0)),
-                ('is_active', models.BooleanField(default=True, help_text='Inactive tiers are hidden from public purchase flows without deleting their history.')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=150)),
+                ("description", models.TextField(blank=True)),
+                (
+                    "price",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=10),
+                ),
+                (
+                    "quantity",
+                    models.PositiveIntegerField(
+                        validators=[apps.events.validators.validate_ticket_quantity]
+                    ),
+                ),
+                (
+                    "remaining_quantity",
+                    models.PositiveIntegerField(
+                        help_text="Set to `quantity` on creation. Will be decremented by the future bookings app as tickets are sold; this app only initializes and validates it, it does not decrement it itself."
+                    ),
+                ),
+                ("display_order", models.PositiveSmallIntegerField(default=0)),
+                (
+                    "is_active",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Inactive tiers are hidden from public purchase flows without deleting their history.",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Ticket Tier',
-                'verbose_name_plural': 'Ticket Tiers',
-                'db_table': 'ticket_tiers',
-                'ordering': ['display_order', 'id'],
+                "verbose_name": "Ticket Tier",
+                "verbose_name_plural": "Ticket Tiers",
+                "db_table": "ticket_tiers",
+                "ordering": ["display_order", "id"],
             },
         ),
     ]

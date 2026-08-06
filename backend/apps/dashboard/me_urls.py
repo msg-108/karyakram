@@ -18,8 +18,14 @@ from .views import (
 
 urlpatterns = [
     # Tickets
-    path("tickets/upcoming/", UpcomingTicketsView.as_view(), name="my-tickets-upcoming"),
-    path("tickets/<uuid:ticket_id>/receipt/", TicketReceiptDownloadView.as_view(), name="my-ticket-receipt"),
+    path(
+        "tickets/upcoming/", UpcomingTicketsView.as_view(), name="my-tickets-upcoming"
+    ),
+    path(
+        "tickets/<uuid:ticket_id>/receipt/",
+        TicketReceiptDownloadView.as_view(),
+        name="my-ticket-receipt",
+    ),
     # Payments
     path("payments/", PaymentHistoryView.as_view(), name="my-payments"),
     # Events

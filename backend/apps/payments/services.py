@@ -8,11 +8,12 @@ from rest_framework.exceptions import ValidationError
 from apps.bookings.models import Booking
 from .models import Payment
 
+
 def create_payment(booking: Booking, provider: str) -> Payment:
     """Create a PENDING payment record for a booking."""
     if booking.status != Booking.Status.PENDING:
         raise ValidationError("Only pending bookings can be paid for.")
-    
+
     # If a payment already exists, update its provider and reset status to PENDING
     if hasattr(booking, "payment"):
         payment = booking.payment
@@ -31,16 +32,18 @@ def create_payment(booking: Booking, provider: str) -> Payment:
         status=Payment.Status.PENDING,
     )
 
+
 # ==================== ESEWA ====================
+
 
 def generate_esewa_signature(total_amount: str, transaction_uuid: str) -> str:
     """Generate HMAC SHA256 signature for eSewa."""
     message = f"total_amount={total_amount},transaction_uuid={transaction_uuid},product_code={settings.ESEWA_MERCHANT_CODE}"
-    secret_key = settings.ESEWA_SECRET_KEY.encode('utf-8')
-    message_bytes = message.encode('utf-8')
-    
+    secret_key = settings.ESEWA_SECRET_KEY.encode("utf-8")
+    message_bytes = message.encode("utf-8")
+
     hmac_hash = hmac.new(secret_key, message_bytes, hashlib.sha256).digest()
-    return base64.b64encode(hmac_hash).decode('utf-8')
+    return base64.b64encode(hmac_hash).decode("utf-8")
 
 
 def get_esewa_payment_data(payment: Payment) -> dict:
@@ -58,7 +61,7 @@ def get_esewa_payment_data(payment: Payment) -> dict:
         "failure_url": f"{settings.FRONTEND_URL}/payment/esewa/failure",
         "signed_field_names": "total_amount,transaction_uuid,product_code",
         "signature": generate_esewa_signature(amount_str, str(payment.reference_id)),
-        "url": settings.ESEWA_URL
+        "url": settings.ESEWA_URL,
     }
 
 
@@ -72,7 +75,7 @@ def verify_esewa_payment(payment: Payment) -> Payment:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         data = response.json()
-        
+
         if data.get("status") == "COMPLETE":
             payment.status = Payment.Status.COMPLETED
             payment.transaction_id = data.get("refId", "")
@@ -82,7 +85,7 @@ def verify_esewa_payment(payment: Payment) -> Payment:
             payment.save(update_fields=["status", "updated_at"])
     except requests.RequestException:
         raise ValidationError("Failed to verify payment with eSewa.")
-    
+
     return payment
 
 
@@ -98,13 +101,15 @@ def initiate_esewa_refund(payment: Payment) -> Payment:
     # Stub for actual eSewa Refund API call
     # url = f"{settings.ESEWA_URL}/refund" (depends on merchant documentation)
     # Payload would typically include transaction_id and amount
-    
+
     # Simulating successful refund
     payment.status = Payment.Status.REFUNDED
     payment.save(update_fields=["status", "updated_at"])
     return payment
 
+
 # ==================== KHALTI ====================
+
 
 def initiate_khalti_payment(payment: Payment) -> dict:
     """Initiate a Khalti checkout and return the payment URL."""
@@ -115,29 +120,29 @@ def initiate_khalti_payment(payment: Payment) -> dict:
         "purchase_order_id": str(payment.reference_id),
         "purchase_order_name": f"Booking {payment.booking_id}",
         "customer_info": {
-            "name": payment.booking.user.get_full_name() or payment.booking.user.username,
+            "name": payment.booking.user.get_full_name()
+            or payment.booking.user.username,
             "email": payment.booking.user.email,
-        }
+        },
     }
-    
+
     headers = {
         "Authorization": f"key {settings.KHALTI_SECRET_KEY}",
         "Content-Type": "application/json",
     }
-    
+
     try:
-        response = requests.post(settings.KHALTI_URL, json=payload, headers=headers, timeout=10)
+        response = requests.post(
+            settings.KHALTI_URL, json=payload, headers=headers, timeout=10
+        )
         response.raise_for_status()
         data = response.json()
-        
+
         # Save Khalti pidx as our transaction_id for later lookup
         payment.transaction_id = data.get("pidx")
         payment.save(update_fields=["transaction_id", "updated_at"])
-        
-        return {
-            "payment_url": data.get("payment_url"),
-            "pidx": data.get("pidx")
-        }
+
+        return {"payment_url": data.get("payment_url"), "pidx": data.get("pidx")}
     except requests.RequestException as e:
         raise ValidationError(f"Failed to initiate Khalti payment: {str(e)}")
 
@@ -152,12 +157,14 @@ def verify_khalti_payment(payment: Payment, pidx: str) -> Payment:
         "Content-Type": "application/json",
     }
     payload = {"pidx": pidx}
-    
+
     try:
-        response = requests.post(settings.KHALTI_LOOKUP_URL, json=payload, headers=headers, timeout=10)
+        response = requests.post(
+            settings.KHALTI_LOOKUP_URL, json=payload, headers=headers, timeout=10
+        )
         response.raise_for_status()
         data = response.json()
-        
+
         status = data.get("status")
         if status == "Completed":
             payment.status = Payment.Status.COMPLETED
@@ -165,10 +172,10 @@ def verify_khalti_payment(payment: Payment, pidx: str) -> Payment:
         elif status in ["Failed", "Expired", "Canceled"]:
             payment.status = Payment.Status.FAILED
             payment.save(update_fields=["status", "updated_at"])
-        
+
     except requests.RequestException:
         raise ValidationError("Failed to verify payment with Khalti.")
-    
+
     return payment
 
 
@@ -182,7 +189,7 @@ def initiate_khalti_refund(payment: Payment) -> Payment:
 
     # Actual Khalti Refund API (v2)
     # url = "https://a.khalti.com/api/v2/epayment/refund/"
-    
+
     headers = {
         "Authorization": f"key {settings.KHALTI_SECRET_KEY}",
         "Content-Type": "application/json",
@@ -190,16 +197,16 @@ def initiate_khalti_refund(payment: Payment) -> Payment:
     payload = {
         "pidx": payment.transaction_id,
     }
-    
+
     try:
         # In a real implementation, you would uncomment the request below.
         # response = requests.post("https://a.khalti.com/api/v2/epayment/refund/", json=payload, headers=headers, timeout=10)
         # response.raise_for_status()
-        
+
         # Simulating successful refund for now
         payment.status = Payment.Status.REFUNDED
         payment.save(update_fields=["status", "updated_at"])
     except requests.RequestException:
         raise ValidationError("Failed to initiate refund with Khalti.")
-    
+
     return payment

@@ -12,6 +12,7 @@ model with a FK onto Event/TicketTier. TicketTier here only defines ticket
 *types*; nothing in this file decrements TicketTier.remaining_quantity,
 since that happens at booking time, which this app doesn't implement.
 """
+
 from __future__ import annotations
 
 import logging
@@ -42,7 +43,7 @@ def _generate_unique_slug(*, title: str, model, exclude_pk: int | None = None) -
     always derived from the title/name, so a collision is not a user
     error to surface, just something to resolve silently.
     """
-    base_slug = slugify(title)[:base_max_length(model)] or "item"
+    base_slug = slugify(title)[: base_max_length(model)] or "item"
     slug = base_slug
     queryset = model.objects.all()
     if exclude_pk is not None:
@@ -103,9 +104,11 @@ def create_event(*, organizer: OrganizerProfile, validated_data: dict) -> Event:
     ticket_tiers_data = validated_data.pop("ticket_tiers", None)
 
     if not ticket_tiers_data:
-        raise ValidationError({
-            "ticket_tiers": "At least one ticket tier is required when creating an event."
-        })
+        raise ValidationError(
+            {
+                "ticket_tiers": "At least one ticket tier is required when creating an event."
+            }
+        )
 
     validate_event_schedule(
         start_datetime=validated_data["start_datetime"],
@@ -168,7 +171,9 @@ def delete_event(event: Event) -> None:
     """
     if event.status not in (Event.Status.DRAFT, Event.Status.REJECTED):
         raise ValidationError(
-            {"detail": "Only draft or rejected events can be deleted. Archive it instead."}
+            {
+                "detail": "Only draft or rejected events can be deleted. Archive it instead."
+            }
         )
     event.delete()
 
@@ -193,19 +198,17 @@ def submit_event_for_review(event: Event, *, organizer: OrganizerProfile) -> Eve
 
     if not event.ticket_tiers.exists():
         raise ValidationError(
-            {"detail": "At least one ticket tier is required before submitting for review."}
+            {
+                "detail": "At least one ticket tier is required before submitting for review."
+            }
         )
 
     event.status = Event.Status.SUBMITTED
     event.rejection_reason = ""
     event.save(update_fields=["status", "rejection_reason", "updated_at"])
 
-    transaction.on_commit(
-        lambda: send_event_submitted_email(event)
-    )
-    transaction.on_commit(
-        lambda: send_admin_event_pending_email(event)
-    )
+    transaction.on_commit(lambda: send_event_submitted_email(event))
+    transaction.on_commit(lambda: send_admin_event_pending_email(event))
 
     return event
 
@@ -225,10 +228,13 @@ def send_event_submitted_email(event: Event) -> None:
 
 def send_admin_event_pending_email(event: Event) -> None:
     from django.conf import settings
-    admin_emails = User.objects.filter(is_superuser=True, is_active=True).values_list("email", flat=True)
+
+    admin_emails = User.objects.filter(is_superuser=True, is_active=True).values_list(
+        "email", flat=True
+    )
     if not admin_emails:
         admin_emails = [settings.DEFAULT_FROM_EMAIL]
-    
+
     for admin_email in admin_emails:
         send_email(
             to=admin_email,
@@ -278,11 +284,17 @@ def approve_event(event: Event, *, admin: User) -> Event:
     event.approved_by = admin
     event.approved_at = timezone.now()
     event.rejection_reason = ""
-    event.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason", "updated_at"])
-
-    transaction.on_commit(
-        lambda: send_event_approved_email(event)
+    event.save(
+        update_fields=[
+            "status",
+            "approved_by",
+            "approved_at",
+            "rejection_reason",
+            "updated_at",
+        ]
     )
+
+    transaction.on_commit(lambda: send_event_approved_email(event))
     return event
 
 
@@ -298,11 +310,17 @@ def reject_event(event: Event, *, admin: User, reason: str) -> Event:
     event.approved_by = admin
     event.approved_at = None
     event.rejection_reason = reason
-    event.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason", "updated_at"])
-
-    transaction.on_commit(
-        lambda: send_event_rejected_email(event, reason)
+    event.save(
+        update_fields=[
+            "status",
+            "approved_by",
+            "approved_at",
+            "rejection_reason",
+            "updated_at",
+        ]
     )
+
+    transaction.on_commit(lambda: send_event_rejected_email(event, reason))
     return event
 
 
@@ -323,9 +341,7 @@ def publish_event(event: Event, *, admin: User) -> Event:
     event.published_at = timezone.now()
     event.save(update_fields=["status", "published_at", "updated_at"])
 
-    transaction.on_commit(
-        lambda: send_event_published_email(event)
-    )
+    transaction.on_commit(lambda: send_event_published_email(event))
 
     return event
 
@@ -352,13 +368,10 @@ def archive_event(event: Event) -> Event:
 
 def list_public_events() -> QuerySet[Event]:
     """Base queryset for anything public-facing: approved/published + public visibility only."""
-    return (
-        Event.objects.filter(
-            status=Event.Status.PUBLISHED,
-            visibility=Event.Visibility.PUBLIC,
-        )
-        .select_related("organizer", "category")
-    )
+    return Event.objects.filter(
+        status=Event.Status.PUBLISHED,
+        visibility=Event.Visibility.PUBLIC,
+    ).select_related("organizer", "category")
 
 
 def list_organizer_events(organizer: OrganizerProfile) -> QuerySet[Event]:
@@ -368,7 +381,9 @@ def list_organizer_events(organizer: OrganizerProfile) -> QuerySet[Event]:
 
 def list_pending_events() -> QuerySet[Event]:
     """Admin review queue: events awaiting a decision."""
-    return Event.objects.filter(status__in=[Event.Status.SUBMITTED, Event.Status.APPROVED]).select_related("organizer", "category")
+    return Event.objects.filter(
+        status__in=[Event.Status.SUBMITTED, Event.Status.APPROVED]
+    ).select_related("organizer", "category")
 
 
 def search_events(queryset: QuerySet[Event], *, query: str) -> QuerySet[Event]:
@@ -449,12 +464,16 @@ def update_ticket_tier(tier: TicketTier, *, validated_data: dict) -> TicketTier:
         )
 
     quantity = validated_data.get("quantity", tier.quantity)
-    remaining_quantity = validated_data.get("remaining_quantity", tier.remaining_quantity)
+    remaining_quantity = validated_data.get(
+        "remaining_quantity", tier.remaining_quantity
+    )
 
     for field, value in validated_data.items():
         setattr(tier, field, value)
 
-    validate_remaining_quantity(quantity=quantity, remaining_quantity=remaining_quantity)
+    validate_remaining_quantity(
+        quantity=quantity, remaining_quantity=remaining_quantity
+    )
 
     tier.full_clean()
     tier.save()

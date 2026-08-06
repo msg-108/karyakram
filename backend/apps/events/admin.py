@@ -22,7 +22,14 @@ class EventImageInline(admin.TabularInline):
 class TicketTierInline(admin.TabularInline):
     model = TicketTier
     extra = 1
-    fields = ("name", "price", "quantity", "remaining_quantity", "display_order", "is_active")
+    fields = (
+        "name",
+        "price",
+        "quantity",
+        "remaining_quantity",
+        "display_order",
+        "is_active",
+    )
     readonly_fields = ("remaining_quantity",)
 
 
@@ -185,7 +192,14 @@ class EventAdmin(admin.ModelAdmin):
 
 @admin.register(TicketTier)
 class TicketTierAdmin(admin.ModelAdmin):
-    list_display = ("name", "event", "price", "quantity", "remaining_quantity", "is_active")
+    list_display = (
+        "name",
+        "event",
+        "price",
+        "quantity",
+        "remaining_quantity",
+        "is_active",
+    )
     list_filter = ("is_active",)
     search_fields = ("name", "event__title")
     readonly_fields = ("created_at", "updated_at")

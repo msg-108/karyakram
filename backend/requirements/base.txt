@@ -37,3 +37,7 @@ requests==2.34.2
 # Async Tasks
 celery>=5.4
 redis>=5.0
+
+# Images / QR Codes
+Pillow>=11.1
+qrcode>=7.4

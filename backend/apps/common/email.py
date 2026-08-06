@@ -9,12 +9,12 @@ Features over the old per-app approach:
 - Staff-broadcast helper for admin alert emails
 - Consistent error logging with structured extras
 """
+
 from __future__ import annotations
 
 import logging
 
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils import timezone
 import base64
@@ -49,14 +49,16 @@ def send_email(
         user:             Optional User instance for structured error logging.
     """
     # Inject common context for the base template
-    context.setdefault("site_url", getattr(settings, "SITE_URL", "http://localhost:5173"))
+    context.setdefault(
+        "site_url", getattr(settings, "SITE_URL", "http://localhost:5173")
+    )
     context.setdefault("current_year", timezone.now().year)
 
     if isinstance(to, str):
         to = [to]
 
     text_body = render_to_string(f"{template_prefix}.txt", context)
-    
+
     html_body = None
     try:
         html_body = render_to_string(f"{template_prefix}.html", context)
@@ -67,7 +69,7 @@ def send_email(
     b64_attachments = None
     if attachments:
         b64_attachments = [
-            (filename, base64.b64encode(content).decode('ascii'), mime_type)
+            (filename, base64.b64encode(content).decode("ascii"), mime_type)
             for filename, content, mime_type in attachments
         ]
 
@@ -84,7 +86,10 @@ def send_email(
     except Exception:
         log_extra = {}
         if user is not None:
-            log_extra = {"user_id": getattr(user, "pk", None), "email": getattr(user, "email", None)}
+            log_extra = {
+                "user_id": getattr(user, "pk", None),
+                "email": getattr(user, "email", None),
+            }
         logger.exception("Failed to dispatch async email to %s", to, extra=log_extra)
         if not fail_silently:
             raise
@@ -98,8 +103,9 @@ def send_email_to_staff(*, subject: str, template_prefix: str, context: dict) ->
     from apps.users.models import User
 
     staff_emails = list(
-        User.objects.filter(is_staff=True, is_active=True)
-        .values_list("email", flat=True)
+        User.objects.filter(is_staff=True, is_active=True).values_list(
+            "email", flat=True
+        )
     )
     if staff_emails:
         send_email(

@@ -2,6 +2,7 @@
 Thin API views. Every view delegates to `services` for anything beyond
 request parsing / permission checks / response shaping.
 """
+
 from __future__ import annotations
 
 from django.shortcuts import get_object_or_404
@@ -15,7 +16,12 @@ from rest_framework.views import APIView
 
 from . import services
 from .models import Event, EventCategory, TicketTier
-from apps.common.permissions import CanApproveEvent, IsApprovedOrganizer, IsEventOwner, IsOrganizer
+from apps.common.permissions import (
+    CanApproveEvent,
+    IsApprovedOrganizer,
+    IsEventOwner,
+    IsOrganizer,
+)
 from .serializers import (
     AdminEventReviewSerializer,
     EventApprovalActionSerializer,
@@ -28,7 +34,6 @@ from .serializers import (
     PublicEventListSerializer,
     TicketTierSerializer,
 )
-
 
 # ==================== PUBLIC: CATEGORIES ====================
 
@@ -97,10 +102,18 @@ class PublicEventListView(ListAPIView):
         tags=["Events: Public"],
         parameters=[
             OpenApiParameter("q", str, description="Free-text search query."),
-            OpenApiParameter("category", str, description="Category slug to filter by."),
-            OpenApiParameter("city", str, description="City to filter by (exact match)."),
-            OpenApiParameter("start_date_from", str, description="ISO 8601 datetime lower bound."),
-            OpenApiParameter("start_date_to", str, description="ISO 8601 datetime upper bound."),
+            OpenApiParameter(
+                "category", str, description="Category slug to filter by."
+            ),
+            OpenApiParameter(
+                "city", str, description="City to filter by (exact match)."
+            ),
+            OpenApiParameter(
+                "start_date_from", str, description="ISO 8601 datetime lower bound."
+            ),
+            OpenApiParameter(
+                "start_date_to", str, description="ISO 8601 datetime upper bound."
+            ),
         ],
         responses=PublicEventListSerializer(many=True),
     )
@@ -125,7 +138,9 @@ class PublicEventDetailView(RetrieveAPIView):
         tags=["Events: Public"],
         responses={
             200: PublicEventDetailSerializer,
-            404: OpenApiResponse(description="Event not found or not publicly visible."),
+            404: OpenApiResponse(
+                description="Event not found or not publicly visible."
+            ),
         },
     )
     def get(self, request, *args, **kwargs):
@@ -162,7 +177,9 @@ class OrganizerEventListCreateView(APIView):
         tags=["Events: Organizer"],
         request=OrganizerEventWriteSerializer,
         responses={
-            201: OpenApiResponse(OrganizerEventDetailSerializer, description="Event created."),
+            201: OpenApiResponse(
+                OrganizerEventDetailSerializer, description="Event created."
+            ),
             400: OpenApiResponse(description="Validation error."),
         },
     )
@@ -172,7 +189,9 @@ class OrganizerEventListCreateView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         event = serializer.save()
-        return Response(serializer.to_representation(event), status=status.HTTP_201_CREATED)
+        return Response(
+            serializer.to_representation(event), status=status.HTTP_201_CREATED
+        )
 
 
 class OrganizerEventDetailView(APIView):
@@ -207,14 +226,21 @@ class OrganizerEventDetailView(APIView):
         tags=["Events: Organizer"],
         request=OrganizerEventWriteSerializer,
         responses={
-            200: OpenApiResponse(OrganizerEventDetailSerializer, description="Event updated."),
-            400: OpenApiResponse(description="Validation error, or event is not editable."),
+            200: OpenApiResponse(
+                OrganizerEventDetailSerializer, description="Event updated."
+            ),
+            400: OpenApiResponse(
+                description="Validation error, or event is not editable."
+            ),
         },
     )
     def patch(self, request, pk: int):
         event = self.get_object(pk)
         serializer = OrganizerEventWriteSerializer(
-            event, data=request.data, partial=True, context={"organizer": request.user.organizer_profile}
+            event,
+            data=request.data,
+            partial=True,
+            context={"organizer": request.user.organizer_profile},
         )
         serializer.is_valid(raise_exception=True)
         event = serializer.save()
@@ -252,15 +278,23 @@ class OrganizerEventSubmitView(APIView):
         tags=["Events: Organizer"],
         request=None,
         responses={
-            200: OpenApiResponse(OrganizerEventDetailSerializer, description="Event submitted."),
-            400: OpenApiResponse(description="Event is not in a submittable status, or has no ticket tiers."),
-            403: OpenApiResponse(description="Organizer account is not approved, or does not own this event."),
+            200: OpenApiResponse(
+                OrganizerEventDetailSerializer, description="Event submitted."
+            ),
+            400: OpenApiResponse(
+                description="Event is not in a submittable status, or has no ticket tiers."
+            ),
+            403: OpenApiResponse(
+                description="Organizer account is not approved, or does not own this event."
+            ),
         },
     )
     def post(self, request, pk: int):
         event = get_object_or_404(Event, pk=pk)
         self.check_object_permissions(request, event)
-        event = services.submit_event_for_review(event, organizer=request.user.organizer_profile)
+        event = services.submit_event_for_review(
+            event, organizer=request.user.organizer_profile
+        )
         return Response(OrganizerEventDetailSerializer(event).data)
 
 
@@ -295,8 +329,12 @@ class OrganizerTicketTierListCreateView(APIView):
         tags=["Events: Organizer"],
         request=TicketTierSerializer,
         responses={
-            201: OpenApiResponse(TicketTierSerializer, description="Ticket tier created."),
-            400: OpenApiResponse(description="Validation error, or event is not a draft."),
+            201: OpenApiResponse(
+                TicketTierSerializer, description="Ticket tier created."
+            ),
+            400: OpenApiResponse(
+                description="Validation error, or event is not a draft."
+            ),
         },
     )
     def post(self, request, pk: int):
@@ -318,7 +356,9 @@ class OrganizerTicketTierDetailView(APIView):
         # This also implicitly verifies organizer ownership via the event FK chain.
         organizer_profile = getattr(self.request.user, "organizer_profile", None)
         if organizer_profile is None:
-            raise PermissionDenied("You do not have permission to modify this ticket tier.")
+            raise PermissionDenied(
+                "You do not have permission to modify this ticket tier."
+            )
         tier = get_object_or_404(
             TicketTier.objects.select_related("event"),
             pk=tier_id,
@@ -334,8 +374,12 @@ class OrganizerTicketTierDetailView(APIView):
         tags=["Events: Organizer"],
         request=TicketTierSerializer,
         responses={
-            200: OpenApiResponse(TicketTierSerializer, description="Ticket tier updated."),
-            400: OpenApiResponse(description="Validation error, or event is not a draft."),
+            200: OpenApiResponse(
+                TicketTierSerializer, description="Ticket tier updated."
+            ),
+            400: OpenApiResponse(
+                description="Validation error, or event is not a draft."
+            ),
         },
     )
     def patch(self, request, event_id: int, tier_id: int):
@@ -383,7 +427,9 @@ class OrganizerEventImageListCreateView(APIView):
     )
     def get(self, request, pk: int):
         event = self.get_event(pk)
-        return Response(EventImageSerializer(event.gallery_images.all(), many=True).data)
+        return Response(
+            EventImageSerializer(event.gallery_images.all(), many=True).data
+        )
 
     @extend_schema(
         operation_id="createEventGalleryImage",
@@ -392,8 +438,12 @@ class OrganizerEventImageListCreateView(APIView):
         tags=["Events: Organizer"],
         request=EventImageSerializer,
         responses={
-            201: OpenApiResponse(EventImageSerializer, description="Gallery image added."),
-            400: OpenApiResponse(description="Validation error, or event is not a draft."),
+            201: OpenApiResponse(
+                EventImageSerializer, description="Gallery image added."
+            ),
+            400: OpenApiResponse(
+                description="Validation error, or event is not a draft."
+            ),
         },
     )
     def post(self, request, pk: int):
@@ -401,7 +451,9 @@ class OrganizerEventImageListCreateView(APIView):
         serializer = EventImageSerializer(data=request.data, context={"event": event})
         serializer.is_valid(raise_exception=True)
         image = serializer.save()
-        return Response(EventImageSerializer(image).data, status=status.HTTP_201_CREATED)
+        return Response(
+            EventImageSerializer(image).data, status=status.HTTP_201_CREATED
+        )
 
 
 # ==================== ADMIN: EVENT REVIEW ====================
@@ -440,8 +492,12 @@ class AdminEventApprovalView(APIView):
         tags=["Admin: Events"],
         request=EventApprovalActionSerializer,
         responses={
-            200: OpenApiResponse(AdminEventReviewSerializer, description="Event review status updated."),
-            400: OpenApiResponse(description="Invalid approval request, or event is not submitted."),
+            200: OpenApiResponse(
+                AdminEventReviewSerializer, description="Event review status updated."
+            ),
+            400: OpenApiResponse(
+                description="Invalid approval request, or event is not submitted."
+            ),
             404: OpenApiResponse(description="Event not found."),
         },
     )
@@ -475,7 +531,9 @@ class AdminEventPublishView(APIView):
         tags=["Admin: Events"],
         request=None,
         responses={
-            200: OpenApiResponse(AdminEventReviewSerializer, description="Event published."),
+            200: OpenApiResponse(
+                AdminEventReviewSerializer, description="Event published."
+            ),
             400: OpenApiResponse(description="Event is not approved."),
             404: OpenApiResponse(description="Event not found."),
         },

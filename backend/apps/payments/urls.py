@@ -10,6 +10,14 @@ app_name = "payments"
 # Standalone payment resource paths (future GET /payments/<id>/) live in
 # standalone_urls.py, mounted at api/payments/.
 urlpatterns = [
-    path("<int:booking_id>/payment/initiate/", PaymentInitiateView.as_view(), name="payment-initiate"),
-    path("<int:booking_id>/payment/verify/", PaymentVerifyView.as_view(), name="payment-verify"),
+    path(
+        "<int:booking_id>/payment/initiate/",
+        PaymentInitiateView.as_view(),
+        name="payment-initiate",
+    ),
+    path(
+        "<int:booking_id>/payment/verify/",
+        PaymentVerifyView.as_view(),
+        name="payment-verify",
+    ),
 ]

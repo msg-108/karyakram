@@ -2,6 +2,7 @@
 Thin API views. Every view delegates to `services` for anything beyond
 request parsing / permission checks / response shaping.
 """
+
 from __future__ import annotations
 
 from django.http import Http404
@@ -14,8 +15,11 @@ from rest_framework.views import APIView
 from . import services
 from .models import Booking
 from apps.common.permissions import IsBookingOwner, IsPlainUser
-from .serializers import BookingCreateSerializer, BookingDetailSerializer, BookingListSerializer
-
+from .serializers import (
+    BookingCreateSerializer,
+    BookingDetailSerializer,
+    BookingListSerializer,
+)
 
 # ==================== BOOKINGS ====================
 
@@ -47,7 +51,9 @@ class BookingListCreateView(APIView):
         tags=["Bookings"],
         request=BookingCreateSerializer,
         responses={
-            201: OpenApiResponse(BookingDetailSerializer, description="Booking created."),
+            201: OpenApiResponse(
+                BookingDetailSerializer, description="Booking created."
+            ),
             400: OpenApiResponse(
                 description="Validation error — event not published, deadline passed, "
                 "invalid tier, or insufficient remaining quantity."
@@ -55,10 +61,14 @@ class BookingListCreateView(APIView):
         },
     )
     def post(self, request):
-        serializer = BookingCreateSerializer(data=request.data, context={"user": request.user})
+        serializer = BookingCreateSerializer(
+            data=request.data, context={"user": request.user}
+        )
         serializer.is_valid(raise_exception=True)
         booking = serializer.save()
-        return Response(BookingDetailSerializer(booking).data, status=status.HTTP_201_CREATED)
+        return Response(
+            BookingDetailSerializer(booking).data, status=status.HTTP_201_CREATED
+        )
 
 
 class BookingDetailView(APIView):
@@ -116,8 +126,12 @@ class BookingCancelView(APIView):
         tags=["Bookings"],
         request=None,
         responses={
-            200: OpenApiResponse(BookingDetailSerializer, description="Booking cancelled."),
-            400: OpenApiResponse(description="Only confirmed bookings can be cancelled."),
+            200: OpenApiResponse(
+                BookingDetailSerializer, description="Booking cancelled."
+            ),
+            400: OpenApiResponse(
+                description="Only confirmed bookings can be cancelled."
+            ),
             404: OpenApiResponse(description="Booking not found."),
         },
     )

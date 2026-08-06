@@ -1,8 +1,0 @@
-Hi {{ organizer.user.first_name }},
-
-Congratulations! 🎉
-
-Your event "{{ event.title }}" has been approved and is ready to be published.
-
-Thanks,
-Karyakram Team

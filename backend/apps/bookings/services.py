@@ -13,13 +13,13 @@ call this / call this then charge) requires touching this function, but
 not the concurrency-critical section inside it — see that function's
 docstring.
 """
+
 from __future__ import annotations
 
 import logging
 from datetime import timedelta
 from decimal import Decimal
 
-from django.conf import settings
 from django.db import transaction
 from django.db.models import QuerySet
 from django.utils import timezone
@@ -128,10 +128,11 @@ def send_organizer_booking_alert(booking: Booking) -> None:
         logger.exception("Failed to send organizer booking alert email")
 
 
-
 def send_booking_email_by_id(booking_id: int, action: str = "created") -> None:
     try:
-        booking = Booking.objects.select_related("user", "event", "event__organizer", "event__organizer__user").get(pk=booking_id)
+        booking = Booking.objects.select_related(
+            "user", "event", "event__organizer", "event__organizer__user"
+        ).get(pk=booking_id)
     except Booking.DoesNotExist:
         return
     if action == "confirmed":
@@ -197,34 +198,47 @@ def create_booking(*, user: User, event: Event, items: list[dict]) -> Booking:
     that specific deadlock shape cannot occur.
     """
     if not items:
-        raise ValidationError({"items": "At least one item is required to create a booking."})
+        raise ValidationError(
+            {"items": "At least one item is required to create a booking."}
+        )
 
     if event.status != Event.Status.PUBLISHED:
-        raise ValidationError({"detail": "Tickets can only be booked for a published event."})
+        raise ValidationError(
+            {"detail": "Tickets can only be booked for a published event."}
+        )
 
     # Idempotency guard: prevent duplicate active bookings for the same user and event
     if Booking.objects.filter(
-        user=user, 
-        event=event, 
-        status__in=[Booking.Status.PENDING, Booking.Status.CONFIRMED]
+        user=user,
+        event=event,
+        status__in=[Booking.Status.PENDING, Booking.Status.CONFIRMED],
     ).exists():
-        raise ValidationError({"detail": "You already have an active booking for this event."})
+        raise ValidationError(
+            {"detail": "You already have an active booking for this event."}
+        )
 
-    if event.registration_deadline is not None and timezone.now() > event.registration_deadline:
-        raise ValidationError({"detail": "The registration deadline for this event has passed."})
+    if (
+        event.registration_deadline is not None
+        and timezone.now() > event.registration_deadline
+    ):
+        raise ValidationError(
+            {"detail": "The registration deadline for this event has passed."}
+        )
 
     tier_quantities = _normalize_items(items)
-    tier_ids_sorted = sorted(tier_quantities.keys())  # fixed lock order — see docstring above
+    tier_ids_sorted = sorted(
+        tier_quantities.keys()
+    )  # fixed lock order — see docstring above
 
     total_amount = Decimal("0")
     booking_items_to_create: list[BookingItem] = []
 
     booking = Booking(
-        user=user, 
-        event=event, 
-        status=Booking.Status.PENDING, 
+        user=user,
+        event=event,
+        status=Booking.Status.PENDING,
         total_amount=Decimal("0"),
-        hold_expires_at=timezone.now() + timedelta(minutes=10)
+        hold_expires_at=timezone.now() + timedelta(minutes=10),
     )
     booking.save()  # PK needed below to construct BookingItem rows; total_amount corrected before returning
 
@@ -232,7 +246,11 @@ def create_booking(*, user: User, event: Event, items: list[dict]) -> Booking:
         quantity = tier_quantities[tier_id]
 
         if quantity <= 0:
-            raise ValidationError({"items": f"Quantity for ticket tier {tier_id} must be greater than zero."})
+            raise ValidationError(
+                {
+                    "items": f"Quantity for ticket tier {tier_id} must be greater than zero."
+                }
+            )
 
         # select_for_update() row-locks this TicketTier for the rest of
         # this transaction — see the concurrency note in the docstring
@@ -248,7 +266,9 @@ def create_booking(*, user: User, event: Event, items: list[dict]) -> Booking:
             )
 
         if not tier.is_active:
-            raise ValidationError({"items": f"Ticket tier '{tier.name}' is not currently available."})
+            raise ValidationError(
+                {"items": f"Ticket tier '{tier.name}' is not currently available."}
+            )
 
         if tier.remaining_quantity < quantity:
             raise ValidationError(
@@ -304,9 +324,10 @@ def confirm_booking(booking: Booking) -> Booking:
     booking.status = Booking.Status.CONFIRMED
     booking.hold_expires_at = None
     booking.save(update_fields=["status", "hold_expires_at", "updated_at"])
-    
+
     # Generate tickets
     from apps.tickets.services import generate_tickets_for_booking
+
     generate_tickets_for_booking(booking)
 
     transaction.on_commit(
@@ -334,10 +355,14 @@ def cancel_booking(booking: Booking, *, user: User) -> Booking:
         raise PermissionDenied("You do not have permission to cancel this booking.")
 
     if booking.status not in (Booking.Status.CONFIRMED, Booking.Status.PENDING):
-        raise ValidationError({"detail": "Only pending or confirmed bookings can be cancelled."})
+        raise ValidationError(
+            {"detail": "Only pending or confirmed bookings can be cancelled."}
+        )
 
     if booking.event.start_datetime <= timezone.now():
-        raise ValidationError({"detail": "Cannot cancel a booking after the event has started."})
+        raise ValidationError(
+            {"detail": "Cannot cancel a booking after the event has started."}
+        )
 
     item_tier_ids_sorted = sorted(
         booking.items.values_list("ticket_tier_id", flat=True)
@@ -356,9 +381,12 @@ def cancel_booking(booking: Booking, *, user: User) -> Booking:
     # If the booking had a completed payment, initiate a refund
     if hasattr(booking, "payment"):
         if booking.payment.status == "COMPLETED":
-            from apps.payments.services import initiate_esewa_refund, initiate_khalti_refund
+            from apps.payments.services import (
+                initiate_esewa_refund,
+                initiate_khalti_refund,
+            )
             from apps.payments.models import Payment
-            
+
             if booking.payment.provider == Payment.Provider.ESEWA:
                 initiate_esewa_refund(booking.payment)
             elif booking.payment.provider == Payment.Provider.KHALTI:

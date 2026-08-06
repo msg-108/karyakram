@@ -15,6 +15,7 @@ could already be stale by the time the service re-reads it under lock a
 few lines later — reporting it as if it were still authoritative would be
 actively misleading, not just redundant.
 """
+
 from __future__ import annotations
 
 from rest_framework import serializers
@@ -23,7 +24,6 @@ from apps.events.models import Event
 
 from . import services
 from .models import Booking, BookingItem
-
 
 # ==================== BOOKING: CREATE (INPUT) ====================
 
@@ -69,7 +69,9 @@ class BookingCreateSerializer(serializers.Serializer):
         except Event.DoesNotExist:
             raise serializers.ValidationError({"event": "Event does not exist."})
 
-        return services.create_booking(user=user, event=event, items=validated_data["items"])
+        return services.create_booking(
+            user=user, event=event, items=validated_data["items"]
+        )
 
 
 # ==================== BOOKING: READ (OUTPUT) ====================
@@ -104,7 +106,9 @@ class BookingListSerializer(serializers.ModelSerializer):
     """
 
     event_title = serializers.CharField(source="event.title", read_only=True)
-    event_start_datetime = serializers.DateTimeField(source="event.start_datetime", read_only=True)
+    event_start_datetime = serializers.DateTimeField(
+        source="event.start_datetime", read_only=True
+    )
     items = BookingItemSerializer(many=True, read_only=True)
 
     class Meta:
@@ -131,7 +135,9 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     """
 
     event_title = serializers.CharField(source="event.title", read_only=True)
-    event_start_datetime = serializers.DateTimeField(source="event.start_datetime", read_only=True)
+    event_start_datetime = serializers.DateTimeField(
+        source="event.start_datetime", read_only=True
+    )
     event_venue = serializers.CharField(source="event.venue", read_only=True)
     items = BookingItemSerializer(many=True, read_only=True)
 

@@ -10,27 +10,75 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('bookings', '0002_booking_hold_expires_at_alter_booking_status_and_more'),
+        ("bookings", "0002_booking_hold_expires_at_alter_booking_status_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Payment',
+            name="Payment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('provider', models.CharField(choices=[('ESEWA', 'eSewa'), ('KHALTI', 'Khalti')], max_length=20)),
-                ('status', models.CharField(choices=[('PENDING', 'Pending'), ('COMPLETED', 'Completed'), ('FAILED', 'Failed'), ('REFUNDED', 'Refunded')], default='PENDING', max_length=20)),
-                ('amount', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('transaction_id', models.CharField(blank=True, help_text='ID returned from the payment gateway (eSewa refId / Khalti idx)', max_length=255)),
-                ('reference_id', models.UUIDField(default=uuid.uuid4, editable=False, help_text='Our internal unique reference passed to the gateway', unique=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('booking', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='payment', to='bookings.booking')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "provider",
+                    models.CharField(
+                        choices=[("ESEWA", "eSewa"), ("KHALTI", "Khalti")],
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("PENDING", "Pending"),
+                            ("COMPLETED", "Completed"),
+                            ("FAILED", "Failed"),
+                            ("REFUNDED", "Refunded"),
+                        ],
+                        default="PENDING",
+                        max_length=20,
+                    ),
+                ),
+                ("amount", models.DecimalField(decimal_places=2, max_digits=10)),
+                (
+                    "transaction_id",
+                    models.CharField(
+                        blank=True,
+                        help_text="ID returned from the payment gateway (eSewa refId / Khalti idx)",
+                        max_length=255,
+                    ),
+                ),
+                (
+                    "reference_id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        help_text="Our internal unique reference passed to the gateway",
+                        unique=True,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "booking",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="payment",
+                        to="bookings.booking",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Payment',
-                'verbose_name_plural': 'Payments',
-                'db_table': 'payments',
+                "verbose_name": "Payment",
+                "verbose_name_plural": "Payments",
+                "db_table": "payments",
             },
         ),
     ]

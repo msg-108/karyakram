@@ -6,6 +6,7 @@ defining its own copy. Previously these were triplicated across
 dashboard/permissions.py, events/permissions.py, and bookings/permissions.py
 with subtle differences (e.g. dashboard's IsPlainUser didn't check is_staff).
 """
+
 from __future__ import annotations
 
 from rest_framework.permissions import BasePermission
@@ -17,9 +18,8 @@ class IsOrganizer(BasePermission):
     message = "This action is only available to organizer accounts."
 
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and hasattr(request.user, "organizer_profile")
+        return request.user.is_authenticated and hasattr(
+            request.user, "organizer_profile"
         )
 
 
@@ -81,5 +81,8 @@ class CanApproveEvent(BasePermission):
     message = "You do not have permission to review events."
 
     def has_permission(self, request, view):
-        return bool(request.user) and request.user.is_authenticated and request.user.is_staff
-
+        return (
+            bool(request.user)
+            and request.user.is_authenticated
+            and request.user.is_staff
+        )

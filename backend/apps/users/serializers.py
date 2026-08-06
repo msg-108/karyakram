@@ -3,6 +3,7 @@ Input/output validation only — no business logic. Registration serializers
 validate and hand a plain dict to `services.register_user` /
 `services.register_organizer`, which do the actual creation.
 """
+
 from __future__ import annotations
 
 from django.contrib.auth.password_validation import validate_password
@@ -11,10 +12,14 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.validators import UniqueValidator
 
 from . import services
-from .models import EmailOTP, OrganizerProfile, User
-from .validators import validate_otp_format, validate_username_format, validate_citizenship_number, validate_pan_number, \
-    validate_bank_account_number
-
+from .models import OrganizerProfile, User
+from .validators import (
+    validate_otp_format,
+    validate_username_format,
+    validate_citizenship_number,
+    validate_pan_number,
+    validate_bank_account_number,
+)
 
 # ==================== SHARED ====================
 
@@ -67,7 +72,9 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs: dict) -> dict:
         if attrs["password"] != attrs.pop("password_confirm"):
-            raise serializers.ValidationError({"password_confirm": "Passwords don't match."})
+            raise serializers.ValidationError(
+                {"password_confirm": "Passwords don't match."}
+            )
         return attrs
 
     def create(self, validated_data: dict) -> User:
@@ -87,7 +94,7 @@ class OrganizerRegisterSerializer(serializers.Serializer):
         validators=[
             UniqueValidator(queryset=User.objects.all()),
             validate_username_format,
-        ]
+        ],
     )
     email = serializers.EmailField(
         validators=[UniqueValidator(queryset=User.objects.all())]
@@ -106,13 +113,13 @@ class OrganizerRegisterSerializer(serializers.Serializer):
         max_length=150,
         validators=[
             validate_citizenship_number,
-        ]
+        ],
     )
     pan_number = serializers.CharField(
         write_only=True,
         validators=[
             validate_pan_number,
-        ]
+        ],
     )
 
     bank_name = serializers.CharField(max_length=255)
@@ -120,7 +127,7 @@ class OrganizerRegisterSerializer(serializers.Serializer):
         write_only=True,
         validators=[
             validate_bank_account_number,
-        ]
+        ],
     )
     citizenship_document = serializers.FileField()
     pan_document = serializers.FileField()
@@ -129,13 +136,17 @@ class OrganizerRegisterSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
         if attrs["password"] != attrs.pop("password_confirm"):
-            raise serializers.ValidationError({"password_confirm": "Passwords don't match."})
+            raise serializers.ValidationError(
+                {"password_confirm": "Passwords don't match."}
+            )
         return attrs
 
     def create(self, validated_data: dict) -> User:
         user_data = {k: validated_data.pop(k) for k in self._USER_FIELDS}
         # Whatever remains in validated_data belongs to OrganizerProfile.
-        return services.register_organizer(validated_data=user_data, profile_data=validated_data)
+        return services.register_organizer(
+            validated_data=user_data, profile_data=validated_data
+        )
 
     def to_representation(self, instance: User) -> dict:
         return UserPublicSerializer(instance).data
@@ -251,7 +262,9 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
     def validate(self, attrs: dict) -> dict:
         if attrs["new_password"] != attrs["new_password_confirm"]:
-            raise serializers.ValidationError({"new_password_confirm": "Passwords do not match."})
+            raise serializers.ValidationError(
+                {"new_password_confirm": "Passwords do not match."}
+            )
         return attrs
 
 

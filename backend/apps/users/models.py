@@ -7,6 +7,7 @@ Two models:
 - OrganizerProfile: organizer-only fields (business info, documents, bank
   details), linked one-to-one to User. Only ever created for role=ORGANIZER.
 """
+
 from __future__ import annotations
 
 from django.conf import settings
@@ -48,7 +49,7 @@ class User(AbstractUser):
     username = models.CharField(
         max_length=150,
         unique=True,
-        validators=[ validate_username_format],
+        validators=[validate_username_format],
         help_text="Required. 3-30 characters. Letters, digits, dot, underscore, hyphen only.",
     )
 
@@ -153,6 +154,7 @@ class OrganizerProfile(models.Model):
 
     def __str__(self) -> str:
         return f"{self.organization_name} ({self.user.username})"
+
 
 def generate_otp() -> str:
     """Generate a cryptographically secure 6-digit OTP."""

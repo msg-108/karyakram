@@ -10,6 +10,7 @@ should ever see/set `approved_by`), and encoding that as branching logic
 in a single serializer would obscure exactly the permission boundary this
 app needs to be explicit about.
 """
+
 from __future__ import annotations
 
 from rest_framework import serializers
@@ -17,7 +18,6 @@ from rest_framework import serializers
 from . import services
 from .models import Event, EventCategory, EventImage, TicketTier
 from .validators import validate_capacity, validate_ticket_quantity
-
 
 # ==================== CATEGORIES ====================
 
@@ -74,7 +74,13 @@ class TicketTierSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "event", "remaining_quantity", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "event",
+            "remaining_quantity",
+            "created_at",
+            "updated_at",
+        ]
 
     def create(self, validated_data: dict) -> TicketTier:
         event = self.context["event"]
@@ -99,7 +105,14 @@ class TicketTierCreateInputSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TicketTier
-        fields = ["name", "description", "price", "quantity", "display_order", "is_active"]
+        fields = [
+            "name",
+            "description",
+            "price",
+            "quantity",
+            "display_order",
+            "is_active",
+        ]
 
 
 # ==================== GALLERY IMAGES ====================
@@ -127,7 +140,9 @@ class PublicEventListSerializer(serializers.ModelSerializer):
     """
 
     category = EventCategorySerializer(read_only=True)
-    organizer_name = serializers.CharField(source="organizer.organization_name", read_only=True)
+    organizer_name = serializers.CharField(
+        source="organizer.organization_name", read_only=True
+    )
 
     class Meta:
         model = Event
@@ -151,7 +166,9 @@ class PublicEventDetailSerializer(serializers.ModelSerializer):
     """Full public representation for a single event's detail page, by slug."""
 
     category = EventCategorySerializer(read_only=True)
-    organizer_name = serializers.CharField(source="organizer.organization_name", read_only=True)
+    organizer_name = serializers.CharField(
+        source="organizer.organization_name", read_only=True
+    )
     gallery_images = EventImageSerializer(many=True, read_only=True)
     ticket_tiers = TicketTierSerializer(many=True, read_only=True)
 
@@ -274,9 +291,13 @@ class OrganizerEventWriteSerializer(serializers.ModelSerializer):
     accidentally wipe or reorder tiers as a side effect.
     """
 
-    category = serializers.PrimaryKeyRelatedField(queryset=EventCategory.objects.filter(is_active=True))
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=EventCategory.objects.filter(is_active=True)
+    )
     capacity = serializers.IntegerField(validators=[validate_capacity])
-    ticket_tiers = TicketTierCreateInputSerializer(many=True, required=False, write_only=True)
+    ticket_tiers = TicketTierCreateInputSerializer(
+        many=True, required=False, write_only=True
+    )
 
     class Meta:
         model = Event
@@ -312,10 +333,13 @@ class OrganizerEventWriteSerializer(serializers.ModelSerializer):
         values so a partial PATCH is validated against the event's
         eventual full state, not just the fields being changed.
         """
-        start = attrs.get("start_datetime", getattr(self.instance, "start_datetime", None))
+        start = attrs.get(
+            "start_datetime", getattr(self.instance, "start_datetime", None)
+        )
         end = attrs.get("end_datetime", getattr(self.instance, "end_datetime", None))
         deadline = attrs.get(
-            "registration_deadline", getattr(self.instance, "registration_deadline", None)
+            "registration_deadline",
+            getattr(self.instance, "registration_deadline", None),
         )
 
         if start and end:
@@ -361,8 +385,12 @@ class AdminEventReviewSerializer(serializers.ModelSerializer):
     """
 
     category = EventCategorySerializer(read_only=True)
-    organizer_name = serializers.CharField(source="organizer.organization_name", read_only=True)
-    approved_by_username = serializers.CharField(source="approved_by.username", read_only=True, default=None)
+    organizer_name = serializers.CharField(
+        source="organizer.organization_name", read_only=True
+    )
+    approved_by_username = serializers.CharField(
+        source="approved_by.username", read_only=True, default=None
+    )
 
     class Meta:
         model = Event

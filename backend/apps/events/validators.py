@@ -4,6 +4,7 @@ URLValidator, etc.) are used directly on fields wherever they suffice — the
 functions below only cover checks Django has no built-in for, or that span
 more than one field and so can't be expressed as a single field validator.
 """
+
 from __future__ import annotations
 
 from django.core.exceptions import ValidationError
@@ -11,7 +12,9 @@ from django.core.validators import FileExtensionValidator
 from django.utils.deconstruct import deconstructible
 
 
-def validate_event_schedule(*, start_datetime, end_datetime, registration_deadline) -> None:
+def validate_event_schedule(
+    *, start_datetime, end_datetime, registration_deadline
+) -> None:
     """
     Cross-field schedule validation shared by the service layer and the
     serializer. Kept as a standalone function (rather than duplicated
@@ -48,7 +51,9 @@ def validate_ticket_quantity(value: int) -> None:
 def validate_remaining_quantity(*, quantity: int, remaining_quantity: int) -> None:
     if remaining_quantity > quantity:
         raise ValidationError(
-            {"remaining_quantity": "Remaining quantity cannot exceed the total quantity."}
+            {
+                "remaining_quantity": "Remaining quantity cannot exceed the total quantity."
+            }
         )
 
 
@@ -83,7 +88,11 @@ class EventImageValidator:
         }
 
         content_type = getattr(value, "content_type", None)
-        if content_type and content_type != "application/octet-stream" and content_type not in allowed_types:
+        if (
+            content_type
+            and content_type != "application/octet-stream"
+            and content_type not in allowed_types
+        ):
             raise ValidationError("Unsupported file type.")
 
         # Fallback: check file name extension

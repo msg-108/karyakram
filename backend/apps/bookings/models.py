@@ -22,6 +22,7 @@ future apps.tickets (or similarly-named) app will most plausibly hold one
 QR-bearing row per admitted attendee with a FK onto BookingItem, mirroring
 how TicketTier -> Booking works today.
 """
+
 from __future__ import annotations
 
 from decimal import Decimal

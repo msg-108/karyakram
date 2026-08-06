@@ -11,11 +11,11 @@ today. Rather than invent schema for those other domains here (see
 models.py for why not) or hardcode imports to apps that may not exist,
 every such capability is implemented as a service function with a real,
 documented signature and return shape, but a placeholder body that returns
-empty/zeroed data. Each is marked with a TODO naming the future app whose
 queryset will eventually replace the placeholder. The view/serializer/URL
 layer above these functions is already final: swapping a placeholder body
 for a real query is the only change needed once the owning app exists.
 """
+
 from __future__ import annotations
 
 import logging
@@ -85,7 +85,6 @@ class TicketSummary:
     """
     One row of a user's ticket list (upcoming or historical).
 
-    TODO(tickets app): replace every placeholder function below with a
     real query once apps.tickets.models.Ticket exists, e.g.
     `Ticket.objects.filter(user=user, event__start_at__gte=timezone.now())`.
     Field names here are chosen to match what that model will plausibly
@@ -103,12 +102,11 @@ class TicketSummary:
 def list_upcoming_tickets(user: User) -> list[TicketSummary]:
     from apps.tickets.models import Ticket
     from django.utils import timezone
-    
+
     tickets = Ticket.objects.filter(
-        booking__user=user, 
-        booking__event__start_date__gte=timezone.now()
+        booking__user=user, booking__event__start_date__gte=timezone.now()
     ).select_related("booking__event", "booking_item__ticket_tier")
-    
+
     return [
         TicketSummary(
             ticket_id=str(t.id),
@@ -124,11 +122,11 @@ def list_upcoming_tickets(user: User) -> list[TicketSummary]:
 
 def list_ticket_history(user: User) -> list[TicketSummary]:
     from apps.tickets.models import Ticket
-    
+
     tickets = Ticket.objects.filter(booking__user=user).select_related(
         "booking__event", "booking_item__ticket_tier"
     )
-    
+
     return [
         TicketSummary(
             ticket_id=str(t.id),
@@ -150,13 +148,13 @@ def get_ticket_receipt_pdf(user: User, *, ticket_id: str) -> bytes:
         ticket = Ticket.objects.select_related("booking").get(id=ticket_id)
     except Ticket.DoesNotExist:
         raise NotFound("Ticket not found.")
-        
+
     if ticket.booking.user != user:
         raise PermissionDenied("You do not have permission to view this ticket.")
-        
+
     if not ticket.qr_code_image:
         raise FeatureNotYetAvailable("QR Code image not yet generated.")
-        
+
     return ticket.qr_code_image.read()
 
 
@@ -168,7 +166,6 @@ class PaymentSummary:
     """
     One row of a user's payment history.
 
-    TODO(payments app): replace with a real query once
     apps.payments.models.Payment exists.
     """
 
@@ -182,9 +179,11 @@ class PaymentSummary:
 
 def list_payment_history(user: User) -> list[PaymentSummary]:
     from apps.payments.models import Payment
-    
-    payments = Payment.objects.filter(booking__user=user).select_related("booking__event")
-    
+
+    payments = Payment.objects.filter(booking__user=user).select_related(
+        "booking__event"
+    )
+
     return [
         PaymentSummary(
             payment_id=p.id,
@@ -207,7 +206,6 @@ class EventSummary:
     One row of an events list (upcoming events a user might attend, or an
     organizer's own events).
 
-    TODO(events app): replace with a real query once
     apps.events.models.Event exists. `users` already has a migration
     dependency on an `events` app (see users/migrations/0003, which
     depends on events.0003_alter_event_organizer), so that app's schema
@@ -226,12 +224,11 @@ class EventSummary:
 def list_upcoming_events(user: User) -> list[EventSummary]:
     from apps.events.models import Event
     from django.utils import timezone
-    
+
     events = Event.objects.filter(
-        status=Event.Status.PUBLISHED,
-        start_date__gte=timezone.now()
+        status=Event.Status.PUBLISHED, start_date__gte=timezone.now()
     ).select_related("organizer__user")
-    
+
     return [
         EventSummary(
             event_id=e.id,
@@ -252,7 +249,6 @@ class ActivityItem:
     the one placeholder shape likely to aggregate across several future
     apps at once rather than map to a single one.
 
-    TODO: replace with a real aggregation once at least one of
     tickets/payments/events exists to generate activity from.
     """
 
@@ -263,24 +259,30 @@ class ActivityItem:
 def list_recent_activity(user: User, *, limit: int = 20) -> list[ActivityItem]:
     from apps.bookings.models import Booking
     from apps.payments.models import Payment
-    
+
     activities = []
-    
+
     bookings = Booking.objects.filter(user=user).order_by("-created_at")[:limit]
     for b in bookings:
-        activities.append(ActivityItem(
-            occurred_at=b.created_at,
-            description=f"Booked tickets for {b.event.title} (Status: {b.get_status_display()})"
-        ))
-        
-    payments = Payment.objects.filter(booking__user=user).order_by("-created_at")[:limit]
+        activities.append(
+            ActivityItem(
+                occurred_at=b.created_at,
+                description=f"Booked tickets for {b.event.title} (Status: {b.get_status_display()})",
+            )
+        )
+
+    payments = Payment.objects.filter(booking__user=user).order_by("-created_at")[
+        :limit
+    ]
     for p in payments:
         if p.status == Payment.Status.COMPLETED:
-            activities.append(ActivityItem(
-                occurred_at=p.updated_at,
-                description=f"Completed payment of Rs. {p.amount} for {p.booking.event.title}"
-            ))
-            
+            activities.append(
+                ActivityItem(
+                    occurred_at=p.updated_at,
+                    description=f"Completed payment of Rs. {p.amount} for {p.booking.event.title}",
+                )
+            )
+
     activities.sort(key=lambda x: x.occurred_at, reverse=True)
     return activities[:limit]
 
@@ -294,7 +296,6 @@ class NotificationSummary:
     One notification. Shared shape for both USER and ORGANIZER dashboards
     since notifications aren't role-specific.
 
-    TODO(notifications app): replace with a real query once
     apps.notifications.models.Notification exists. That app should own
     read/unread state and delivery; this function should only ever read
     from it, matching the "dashboard aggregates, doesn't own" rule.
@@ -306,7 +307,9 @@ class NotificationSummary:
     is_read: bool
 
 
-def list_notifications(user: User, *, unread_only: bool = False) -> list[NotificationSummary]:
+def list_notifications(
+    user: User, *, unread_only: bool = False
+) -> list[NotificationSummary]:
     """Placeholder: no notifications app exists yet."""
     return []
 
@@ -343,7 +346,7 @@ def get_organizer_profile_summary(profile: OrganizerProfile) -> OrganizerProfile
 
 def list_organizer_events(profile: OrganizerProfile) -> list[EventSummary]:
     from apps.events.models import Event
-    
+
     events = Event.objects.filter(organizer=profile).order_by("-start_date")
     return [
         EventSummary(
@@ -360,12 +363,11 @@ def list_organizer_events(profile: OrganizerProfile) -> list[EventSummary]:
 def list_organizer_upcoming_events(profile: OrganizerProfile) -> list[EventSummary]:
     from apps.events.models import Event
     from django.utils import timezone
-    
+
     events = Event.objects.filter(
-        organizer=profile, 
-        start_date__gte=timezone.now()
+        organizer=profile, start_date__gte=timezone.now()
     ).order_by("start_date")
-    
+
     return [
         EventSummary(
             event_id=e.id,
@@ -395,7 +397,6 @@ class EventStatistics:
     scoped to a single event — signature takes the whole profile for now
     since there's no per-event model to scope to yet).
 
-    TODO(events + tickets apps): replace with real aggregation queries.
     """
 
     total_events: int = 0
@@ -406,13 +407,13 @@ class EventStatistics:
 def get_event_statistics(profile: OrganizerProfile) -> EventStatistics:
     from apps.events.models import Event
     from apps.tickets.models import Ticket
-    
+
     total_events = Event.objects.filter(organizer=profile).count()
     tickets = Ticket.objects.filter(booking__event__organizer=profile)
-    
+
     total_tickets_sold = tickets.exclude(status=Ticket.Status.CANCELLED).count()
     total_checked_in = tickets.filter(status=Ticket.Status.CHECKED_IN).count()
-    
+
     return EventStatistics(
         total_events=total_events,
         total_tickets_sold=total_tickets_sold,
@@ -425,7 +426,6 @@ class RevenueAnalytics:
     """
     Aggregate revenue for an organizer.
 
-    TODO(payments app): replace with a real aggregation once
     apps.payments.models.Payment exists. `by_month` is deliberately a
     plain list of (label, amount) pairs rather than a dict, since the
     analytics-chart consumer (frontend or a future export service) will
@@ -440,25 +440,19 @@ class RevenueAnalytics:
 def get_revenue_analytics(profile: OrganizerProfile) -> RevenueAnalytics:
     from django.db.models import Sum
     from apps.payments.models import Payment
-    
+
     payments = Payment.objects.filter(
-        booking__event__organizer=profile,
-        status=Payment.Status.COMPLETED
+        booking__event__organizer=profile, status=Payment.Status.COMPLETED
     )
-    
-    total = payments.aggregate(Sum('amount'))['amount__sum'] or Decimal("0.00")
-    
+
+    total = payments.aggregate(Sum("amount"))["amount__sum"] or Decimal("0.00")
+
     # Very basic by_month aggregation for the demo
-    return RevenueAnalytics(
-        total_revenue=total,
-        currency="NPR",
-        by_month=[]
-    )
+    return RevenueAnalytics(total_revenue=total, currency="NPR", by_month=[])
 
 
 @dataclass(frozen=True)
 class TicketSalesSummary:
-    """TODO(tickets app): replace with a real aggregation."""
 
     total_sold: int = 0
     total_available: int = 0
@@ -468,10 +462,19 @@ def get_ticket_sales_summary(profile: OrganizerProfile) -> TicketSalesSummary:
     from django.db.models import Sum
     from apps.events.models import TicketTier
     from apps.tickets.models import Ticket
-    
-    total_available = TicketTier.objects.filter(event__organizer=profile, is_active=True).aggregate(Sum('remaining_quantity'))['remaining_quantity__sum'] or 0
-    total_sold = Ticket.objects.filter(booking__event__organizer=profile).exclude(status=Ticket.Status.CANCELLED).count()
-    
+
+    total_available = (
+        TicketTier.objects.filter(event__organizer=profile, is_active=True).aggregate(
+            Sum("remaining_quantity")
+        )["remaining_quantity__sum"]
+        or 0
+    )
+    total_sold = (
+        Ticket.objects.filter(booking__event__organizer=profile)
+        .exclude(status=Ticket.Status.CANCELLED)
+        .count()
+    )
+
     return TicketSalesSummary(
         total_sold=total_sold,
         total_available=total_available + total_sold,
@@ -480,7 +483,6 @@ def get_ticket_sales_summary(profile: OrganizerProfile) -> TicketSalesSummary:
 
 @dataclass(frozen=True)
 class CheckInStatistics:
-    """TODO(QR check-in app): replace with a real aggregation."""
 
     total_checked_in: int = 0
     total_expected: int = 0
@@ -488,11 +490,13 @@ class CheckInStatistics:
 
 def get_checkin_statistics(profile: OrganizerProfile) -> CheckInStatistics:
     from apps.tickets.models import Ticket
-    
-    tickets = Ticket.objects.filter(booking__event__organizer=profile).exclude(status=Ticket.Status.CANCELLED)
+
+    tickets = Ticket.objects.filter(booking__event__organizer=profile).exclude(
+        status=Ticket.Status.CANCELLED
+    )
     total_expected = tickets.count()
     total_checked_in = tickets.filter(status=Ticket.Status.CHECKED_IN).count()
-    
+
     return CheckInStatistics(
         total_checked_in=total_checked_in,
         total_expected=total_expected,
@@ -502,7 +506,6 @@ def get_checkin_statistics(profile: OrganizerProfile) -> CheckInStatistics:
 @dataclass(frozen=True)
 class QRScanStatistics:
     """
-    TODO(QR check-in app): replace with a real aggregation. Kept distinct
     from CheckInStatistics because a scan is not necessarily a successful
     check-in (e.g. an already-used or invalid code can still be scanned);
     conflating the two would lose that distinction once real data exists.
@@ -523,7 +526,6 @@ def get_qr_scan_statistics(profile: OrganizerProfile) -> QRScanStatistics:
 
 @dataclass(frozen=True)
 class OrderSummary:
-    """TODO(payments/tickets apps): replace with a real query."""
 
     order_id: int
     buyer_name: str
@@ -533,13 +535,17 @@ class OrderSummary:
     status: str
 
 
-def list_recent_orders(profile: OrganizerProfile, *, limit: int = 20) -> list[OrderSummary]:
+def list_recent_orders(
+    profile: OrganizerProfile, *, limit: int = 20
+) -> list[OrderSummary]:
     from apps.bookings.models import Booking
-    
-    bookings = Booking.objects.filter(
-        event__organizer=profile
-    ).select_related("user", "event").order_by("-created_at")[:limit]
-    
+
+    bookings = (
+        Booking.objects.filter(event__organizer=profile)
+        .select_related("user", "event")
+        .order_by("-created_at")[:limit]
+    )
+
     return [
         OrderSummary(
             order_id=b.id,
@@ -555,7 +561,6 @@ def list_recent_orders(profile: OrganizerProfile, *, limit: int = 20) -> list[Or
 
 @dataclass(frozen=True)
 class AttendeeSummary:
-    """TODO(tickets app): replace with a real query, scoped to one event once Event exists."""
 
     attendee_name: str
     email: str
@@ -563,20 +568,26 @@ class AttendeeSummary:
     checked_in: bool
 
 
-def list_event_attendees(profile: OrganizerProfile, *, event_id: int) -> list[AttendeeSummary]:
+def list_event_attendees(
+    profile: OrganizerProfile, *, event_id: int
+) -> list[AttendeeSummary]:
     from apps.tickets.models import Ticket
     from rest_framework.exceptions import PermissionDenied
     from apps.events.models import Event
-    
+
     try:
         event = Event.objects.get(id=event_id)
         if event.organizer != profile:
-            raise PermissionDenied("You do not have permission to view this event's attendees.")
+            raise PermissionDenied(
+                "You do not have permission to view this event's attendees."
+            )
     except Event.DoesNotExist:
         return []
-        
-    tickets = Ticket.objects.filter(booking__event_id=event_id).exclude(status=Ticket.Status.CANCELLED)
-    
+
+    tickets = Ticket.objects.filter(booking__event_id=event_id).exclude(
+        status=Ticket.Status.CANCELLED
+    )
+
     return [
         AttendeeSummary(
             attendee_name=t.attendee_name,
@@ -593,22 +604,72 @@ def list_event_attendees(profile: OrganizerProfile, *, event_id: int) -> list[At
 
 def export_report(profile: OrganizerProfile, *, report_type: str) -> bytes:
     """
-    Generate a downloadable report (CSV/PDF) for one of the analytics
-    views above, as raw bytes for the view to serve.
-
-    Placeholder: with every analytics source above itself a placeholder,
-    there is nothing meaningful to export yet.
+    Generate a downloadable CSV report for an organizer's analytics.
+    Supported types: 'sales', 'attendees'.
     """
-    raise FeatureNotYetAvailable(
-        "Report export is not yet available: the underlying analytics data sources have not been built."
-    )
+    import csv
+    from io import StringIO
+    from apps.tickets.models import Ticket
+    from apps.payments.models import Payment
+
+    output = StringIO()
+    writer = csv.writer(output)
+
+    if report_type == "sales":
+        writer.writerow(["Payment ID", "Event", "Amount", "Currency", "Status", "Date"])
+        payments = (
+            Payment.objects.filter(booking__event__organizer=profile)
+            .select_related("booking__event")
+            .order_by("-created_at")
+        )
+
+        for p in payments:
+            writer.writerow(
+                [
+                    p.id,
+                    p.booking.event.title,
+                    p.amount,
+                    "NPR",
+                    p.get_status_display(),
+                    p.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                ]
+            )
+
+    elif report_type == "attendees":
+        writer.writerow(
+            ["Ticket ID", "Event", "Tier", "Attendee Name", "Attendee Email", "Status"]
+        )
+        tickets = (
+            Ticket.objects.filter(booking__event__organizer=profile)
+            .select_related("booking__event", "booking_item__ticket_tier")
+            .order_by("-created_at")
+        )
+
+        for t in tickets:
+            writer.writerow(
+                [
+                    t.id,
+                    t.booking.event.title,
+                    t.booking_item.ticket_tier.name,
+                    t.attendee_name,
+                    t.attendee_email,
+                    t.get_status_display(),
+                ]
+            )
+
+    else:
+        raise ValueError(f"Unknown report type: {report_type}")
+
+    return output.getvalue().encode("utf-8")
 
 
 # ==================== ADMIN DASHBOARD: ANALYTICS ====================
 
+
 @dataclass(frozen=True)
 class AdminPlatformStatistics:
     """Platform-wide metrics for super admins."""
+
     total_users: int
     total_organizers: int
     pending_events: int
@@ -631,6 +692,7 @@ def get_admin_platform_statistics(user: User) -> AdminPlatformStatistics:
 @dataclass(frozen=True)
 class AdminRevenueStatistics:
     """Platform-wide revenue metrics for super admins."""
+
     total_revenue: Decimal
     total_successful_payments: int
     total_refunds: int
@@ -640,10 +702,12 @@ def get_admin_revenue_statistics(user: User) -> AdminRevenueStatistics:
     """Return platform-wide revenue and payment counts."""
     from apps.payments.models import Payment
     from django.db.models import Sum
-    
+
     completed_payments = Payment.objects.filter(status=Payment.Status.COMPLETED)
-    total_rev = completed_payments.aggregate(Sum("amount"))["amount__sum"] or Decimal("0.00")
-    
+    total_rev = completed_payments.aggregate(Sum("amount"))["amount__sum"] or Decimal(
+        "0.00"
+    )
+
     return AdminRevenueStatistics(
         total_revenue=total_rev,
         total_successful_payments=completed_payments.count(),

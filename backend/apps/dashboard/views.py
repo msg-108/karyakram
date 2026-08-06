@@ -2,6 +2,7 @@
 Thin API views. Every view delegates to `services` for anything beyond
 request parsing / permission checks / response shaping.
 """
+
 from __future__ import annotations
 
 from django.http import HttpResponse
@@ -53,9 +54,9 @@ class UserDashboardSummaryView(RetrieveAPIView):
         operation_id="getUserDashboardSummary",
         summary="Get user dashboard summary",
         description=(
-                "Return the authenticated user's dashboard summary card: "
-                "upcoming ticket count, total ticket count, and unread "
-                "notification count."
+            "Return the authenticated user's dashboard summary card: "
+            "upcoming ticket count, total ticket count, and unread "
+            "notification count."
         ),
         tags=["Dashboard: User"],
         responses=UserProfileSummarySerializer,
@@ -71,16 +72,16 @@ class UpcomingTicketsView(APIView):
     """List the authenticated user's upcoming (not-yet-happened) tickets."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsPlainUser,
-]
+        IsAuthenticated,
+        IsPlainUser,
+    ]
 
     @extend_schema(
         operation_id="listUpcomingTickets",
         summary="List upcoming tickets",
         description=(
-                "Return the authenticated user's tickets for events that "
-                "haven't happened yet."
+            "Return the authenticated user's tickets for events that "
+            "haven't happened yet."
         ),
         tags=["Me: Tickets"],
         responses=TicketSummarySerializer(many=True),
@@ -90,23 +91,21 @@ class UpcomingTicketsView(APIView):
         return Response(TicketSummarySerializer(tickets, many=True).data)
 
 
-
-
 class TicketReceiptDownloadView(APIView):
     """Download the receipt PDF for one of the authenticated user's own tickets."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsPlainUser,
-]
+        IsAuthenticated,
+        IsPlainUser,
+    ]
 
     @extend_schema(
         operation_id="downloadTicketReceipt",
         summary="Download ticket receipt",
         description=(
-                "Return the receipt PDF for a ticket belonging to the "
-                "authenticated user. Not yet available: returns 501 until "
-                "the tickets app exists."
+            "Return the receipt PDF for a ticket belonging to the "
+            "authenticated user. Not yet available: returns 501 until "
+            "the tickets app exists."
         ),
         tags=["Me: Tickets"],
         responses={
@@ -126,9 +125,9 @@ class PaymentHistoryView(APIView):
     """List the authenticated user's payment history."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsPlainUser,
-]
+        IsAuthenticated,
+        IsPlainUser,
+    ]
 
     @extend_schema(
         operation_id="listPaymentHistory",
@@ -149,9 +148,9 @@ class UpcomingEventsView(APIView):
     """List events the authenticated user might want to attend."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsPlainUser,
-]
+        IsAuthenticated,
+        IsPlainUser,
+    ]
 
     @extend_schema(
         operation_id="listUserUpcomingEvents",
@@ -169,17 +168,17 @@ class RecentActivityView(APIView):
     """List the authenticated user's recent account activity."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsPlainUser,
-]
+        IsAuthenticated,
+        IsPlainUser,
+    ]
 
     @extend_schema(
         operation_id="listRecentActivity",
         summary="List recent activity",
         description=(
-                "Return a chronological feed of the authenticated user's "
-                "recent activity (e.g. bookings, payments, verification "
-                "events)."
+            "Return a chronological feed of the authenticated user's "
+            "recent activity (e.g. bookings, payments, verification "
+            "events)."
         ),
         tags=["Dashboard: User"],
         responses=ActivityItemSerializer(many=True),
@@ -199,22 +198,24 @@ class NotificationListView(APIView):
     """
 
     permission_classes = [
-    IsAuthenticated,
-]
+        IsAuthenticated,
+    ]
 
     @extend_schema(
         operation_id="listNotifications",
         summary="List notifications",
         description=(
-                "Return the authenticated user's notifications. Pass "
-                "?unread_only=true to return only unread notifications."
+            "Return the authenticated user's notifications. Pass "
+            "?unread_only=true to return only unread notifications."
         ),
         tags=["Dashboard: Notifications"],
         responses=NotificationSummarySerializer(many=True),
     )
     def get(self, request):
         unread_only = request.query_params.get("unread_only", "").lower() == "true"
-        notifications = services.list_notifications(request.user, unread_only=unread_only)
+        notifications = services.list_notifications(
+            request.user, unread_only=unread_only
+        )
         return Response(NotificationSummarySerializer(notifications, many=True).data)
 
 
@@ -238,9 +239,9 @@ class OrganizerDashboardSummaryView(RetrieveAPIView):
         operation_id="getOrganizerDashboardSummary",
         summary="Get organizer dashboard summary",
         description=(
-                "Return the authenticated organizer's dashboard summary "
-                "card: total events, upcoming events, and unread "
-                "notification count."
+            "Return the authenticated organizer's dashboard summary "
+            "card: total events, upcoming events, and unread "
+            "notification count."
         ),
         tags=["Dashboard: Organizer"],
         responses=OrganizerProfileSummarySerializer,
@@ -277,9 +278,9 @@ class OrganizerUpcomingEventListView(APIView):
     """List the authenticated organizer's events that haven't started yet."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsOrganizer,
-]
+        IsAuthenticated,
+        IsOrganizer,
+    ]
 
     @extend_schema(
         operation_id="listOrganizerUpcomingEvents",
@@ -298,9 +299,9 @@ class EventAttendeeListView(APIView):
     """List attendees for one of the authenticated organizer's events."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsOrganizer,
-]
+        IsAuthenticated,
+        IsOrganizer,
+    ]
 
     @extend_schema(
         operation_id="listEventAttendees",
@@ -322,17 +323,17 @@ class EventStatisticsView(APIView):
     """Aggregate event statistics for the authenticated organizer."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsOrganizer,
-]
+        IsAuthenticated,
+        IsOrganizer,
+    ]
 
     @extend_schema(
         operation_id="getEventStatistics",
         summary="Get event statistics",
         description=(
-                "Return aggregate statistics across the authenticated "
-                "organizer's events: total events, tickets sold, and "
-                "attendees checked in."
+            "Return aggregate statistics across the authenticated "
+            "organizer's events: total events, tickets sold, and "
+            "attendees checked in."
         ),
         tags=["Dashboard: Organizer"],
         responses=EventStatisticsSerializer,
@@ -347,16 +348,16 @@ class RevenueAnalyticsView(APIView):
     """Aggregate revenue analytics for the authenticated organizer."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsOrganizer,
-]
+        IsAuthenticated,
+        IsOrganizer,
+    ]
 
     @extend_schema(
         operation_id="getRevenueAnalytics",
         summary="Get revenue analytics",
         description=(
-                "Return the authenticated organizer's total revenue and "
-                "a month-by-month breakdown, suitable for charting."
+            "Return the authenticated organizer's total revenue and "
+            "a month-by-month breakdown, suitable for charting."
         ),
         tags=["Dashboard: Organizer"],
         responses=RevenueAnalyticsSerializer,
@@ -371,9 +372,9 @@ class TicketSalesSummaryView(APIView):
     """Ticket sales summary for the authenticated organizer."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsOrganizer,
-]
+        IsAuthenticated,
+        IsOrganizer,
+    ]
 
     @extend_schema(
         operation_id="getTicketSalesSummary",
@@ -392,9 +393,9 @@ class CheckInStatisticsView(APIView):
     """Check-in statistics for the authenticated organizer's events."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsOrganizer,
-]
+        IsAuthenticated,
+        IsOrganizer,
+    ]
 
     @extend_schema(
         operation_id="getCheckInStatistics",
@@ -413,16 +414,16 @@ class QRScanStatisticsView(APIView):
     """QR scan statistics for the authenticated organizer's events."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsOrganizer,
-]
+        IsAuthenticated,
+        IsOrganizer,
+    ]
 
     @extend_schema(
         operation_id="getQRScanStatistics",
         summary="Get QR scan statistics",
         description=(
-                "Return total, valid, and invalid QR scans across the "
-                "organizer's events."
+            "Return total, valid, and invalid QR scans across the "
+            "organizer's events."
         ),
         tags=["Dashboard: Organizer"],
         responses=QRScanStatisticsSerializer,
@@ -440,9 +441,9 @@ class RecentOrdersView(APIView):
     """List recent orders across the authenticated organizer's events."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsOrganizer,
-]
+        IsAuthenticated,
+        IsOrganizer,
+    ]
 
     @extend_schema(
         operation_id="listRecentOrders",
@@ -464,32 +465,39 @@ class ReportExportView(APIView):
     """Export a downloadable report for one of the organizer's analytics views."""
 
     permission_classes = [
-    IsAuthenticated,
-    IsOrganizer,
-]
+        IsAuthenticated,
+        IsOrganizer,
+    ]
 
     @extend_schema(
         operation_id="exportReport",
         summary="Export report",
         description=(
-                "Generate and return a downloadable report (CSV/PDF) for "
-                "one of the organizer's analytics views. Not yet "
-                "available: returns 501 until the underlying analytics "
-                "data sources exist."
+            "Generate and return a downloadable CSV report for "
+            "one of the organizer's analytics views (e.g. 'sales', 'attendees')."
         ),
         tags=["Dashboard: Organizer"],
         responses={
-            200: OpenApiResponse(description="Report file bytes."),
-            501: OpenApiResponse(description="Report export is not yet available."),
+            200: OpenApiResponse(description="Report file bytes (CSV)."),
+            400: OpenApiResponse(description="Invalid report type requested."),
         },
     )
     def get(self, request, report_type: str):
         profile = request.user.organizer_profile
-        report_bytes = services.export_report(profile, report_type=report_type)
-        return HttpResponse(report_bytes, content_type="application/octet-stream")
+        try:
+            report_bytes = services.export_report(profile, report_type=report_type)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=400)
+
+        response = HttpResponse(report_bytes, content_type="text/csv")
+        response["Content-Disposition"] = (
+            f'attachment; filename="{report_type}_report.csv"'
+        )
+        return response
 
 
 # ==================== ADMIN DASHBOARD ====================
+
 
 class AdminDashboardSummaryView(APIView):
     permission_classes = [IsAdminUser]
@@ -498,7 +506,7 @@ class AdminDashboardSummaryView(APIView):
         operation_id="getAdminDashboardSummary",
         summary="Admin platform-wide metrics",
         tags=["Dashboard: Admin"],
-        responses={200: AdminPlatformStatisticsSerializer}
+        responses={200: AdminPlatformStatisticsSerializer},
     )
     def get(self, request):
         stats = services.get_admin_platform_statistics(request.user)
@@ -512,7 +520,7 @@ class AdminRevenueAnalyticsView(APIView):
         operation_id="getAdminRevenueAnalytics",
         summary="Admin platform-wide revenue",
         tags=["Dashboard: Admin"],
-        responses={200: AdminRevenueStatisticsSerializer}
+        responses={200: AdminRevenueStatisticsSerializer},
     )
     def get(self, request):
         stats = services.get_admin_revenue_statistics(request.user)

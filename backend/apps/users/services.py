@@ -4,15 +4,14 @@ and serializers stay dumb. Each service raises DRF's ValidationError (or a
 subclass) on failure so views can let exceptions propagate to DRF's default
 exception handler rather than re-wrapping responses themselves.
 """
+
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
 
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
-from django.template.loader import render_to_string
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -72,10 +71,12 @@ def send_welcome_email(user: User) -> None:
 
 def send_admin_organizer_pending_email(profile: OrganizerProfile) -> None:
     # Get all superusers or a configured admin email
-    admin_emails = User.objects.filter(is_superuser=True, is_active=True).values_list("email", flat=True)
+    admin_emails = User.objects.filter(is_superuser=True, is_active=True).values_list(
+        "email", flat=True
+    )
     if not admin_emails:
         admin_emails = [settings.DEFAULT_FROM_EMAIL]
-    
+
     for admin_email in admin_emails:
         send_email(
             to=admin_email,
@@ -110,7 +111,9 @@ def send_password_reset_success_email(user: User) -> None:
     )
 
 
-def send_ticket_email(user: User, *, event_name: str, ticket_pdf_bytes: bytes, ticket_filename: str) -> None:
+def send_ticket_email(
+    user: User, *, event_name: str, ticket_pdf_bytes: bytes, ticket_filename: str
+) -> None:
     """
     Deliver a ticket after successful payment. Kept here (rather than in a
     future `tickets` app) per the requirements doc, which lists "ticket
@@ -141,9 +144,7 @@ def register_user(*, validated_data: dict) -> User:
 
     otp = issue_otp(user, purpose=EmailOTP.Purpose.EMAIL_VERIFICATION)
 
-    transaction.on_commit(
-        lambda: send_otp_email(user, otp)
-    )
+    transaction.on_commit(lambda: send_otp_email(user, otp))
 
     return user
 
@@ -167,12 +168,8 @@ def register_organizer(*, validated_data: dict, profile_data: dict) -> User:
 
     otp = issue_otp(user, purpose=EmailOTP.Purpose.EMAIL_VERIFICATION)
 
-    transaction.on_commit(
-        lambda: send_otp_email(user, otp)
-    )
-    transaction.on_commit(
-        lambda: send_admin_organizer_pending_email(profile)
-    )
+    transaction.on_commit(lambda: send_otp_email(user, otp))
+    transaction.on_commit(lambda: send_admin_organizer_pending_email(profile))
 
     return user
 
@@ -230,15 +227,21 @@ def _validate_otp(user: User, *, code: str, purpose: str) -> EmailOTP:
     try:
         otp = EmailOTP.objects.select_for_update().get(user=user, purpose=purpose)
     except EmailOTP.DoesNotExist:
-        raise ValidationError({"code": "No verification code found. Please request a new one."})
+        raise ValidationError(
+            {"code": "No verification code found. Please request a new one."}
+        )
 
     if otp.is_expired:
         otp.delete()
-        raise ValidationError({"code": "This code has expired. Please request a new one."})
+        raise ValidationError(
+            {"code": "This code has expired. Please request a new one."}
+        )
 
     if otp.attempts_remaining <= 0:
         otp.delete()
-        raise ValidationError({"code": "Too many incorrect attempts. Please request a new code."})
+        raise ValidationError(
+            {"code": "Too many incorrect attempts. Please request a new code."}
+        )
 
     if otp.code != code:
         otp.attempts += 1
@@ -293,7 +296,9 @@ def request_password_reset(*, email: str) -> None:
 
     # Check cooldown
     try:
-        existing = EmailOTP.objects.get(user=user, purpose=EmailOTP.Purpose.PASSWORD_RESET)
+        existing = EmailOTP.objects.get(
+            user=user, purpose=EmailOTP.Purpose.PASSWORD_RESET
+        )
         if existing.seconds_until_resend_allowed > 0:
             return  # Fail silently if they are spamming it
     except EmailOTP.DoesNotExist:
@@ -356,9 +361,7 @@ def assert_can_login(user: User) -> None:
         raise ValidationError({"detail": "Please verify your email before logging in."})
 
     if user.is_organizer and not user.is_approved:
-        raise PermissionDenied(
-            "Your organizer account is pending admin approval."
-        )
+        raise PermissionDenied("Your organizer account is pending admin approval.")
 
     if not user.is_active:
         # Deliberately checked last: for an unapproved organizer, is_active
@@ -382,14 +385,14 @@ def approve_organizer(profile: OrganizerProfile, *, admin: User) -> OrganizerPro
     profile.rejection_reason = ""
     profile.save(update_fields=["approved_at", "approved_by", "rejection_reason"])
 
-    transaction.on_commit(
-        lambda: send_organizer_approved_email(user)
-    )
+    transaction.on_commit(lambda: send_organizer_approved_email(user))
     return profile
 
 
 @transaction.atomic
-def reject_organizer(profile: OrganizerProfile, *, admin: User, reason: str) -> OrganizerProfile:
+def reject_organizer(
+    profile: OrganizerProfile, *, admin: User, reason: str
+) -> OrganizerProfile:
     if not reason.strip():
         raise ValidationError({"reason": "A rejection reason is required."})
 
@@ -403,7 +406,5 @@ def reject_organizer(profile: OrganizerProfile, *, admin: User, reason: str) -> 
     profile.rejection_reason = reason
     profile.save(update_fields=["approved_at", "approved_by", "rejection_reason"])
 
-    transaction.on_commit(
-        lambda: send_organizer_rejected_email(user, reason)
-    )
+    transaction.on_commit(lambda: send_organizer_rejected_email(user, reason))
     return profile
