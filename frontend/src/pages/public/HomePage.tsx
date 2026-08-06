@@ -136,13 +136,13 @@ export const HomePage: React.FC = () => {
         {eventsLoading ? (
           <div className="flex gap-6 overflow-hidden py-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="w-[300px] sm:w-[350px] h-[340px] skeleton shrink-0" />
+              <div key={i} className="w-[340px] sm:w-[380px] lg:w-[420px] h-[430px] skeleton shrink-0 rounded-2xl" />
             ))}
           </div>
         ) : (
           <div ref={trendingRowRef} className="flex overflow-x-auto scroll-smooth gap-6 py-2 scrollbar-none">
             {trendingEvents.map((evt) => (
-              <div key={evt.id} className="w-[300px] sm:w-[350px] shrink-0">
+              <div key={evt.id} className="w-[340px] sm:w-[380px] lg:w-[420px] shrink-0">
                 <EventCard event={evt} />
               </div>
             ))}
@@ -187,13 +187,13 @@ export const HomePage: React.FC = () => {
         {eventsLoading ? (
           <div className="flex gap-6 overflow-hidden py-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="w-[300px] sm:w-[350px] h-[340px] skeleton shrink-0" />
+              <div key={i} className="w-[340px] sm:w-[380px] lg:w-[420px] h-[430px] skeleton shrink-0 rounded-2xl" />
             ))}
           </div>
         ) : (
           <div ref={recommendedRowRef} className="flex overflow-x-auto scroll-smooth gap-6 py-2 scrollbar-none">
             {recommendedEvents.map((evt) => (
-              <div key={evt.id} className="w-[300px] sm:w-[350px] shrink-0">
+              <div key={evt.id} className="w-[340px] sm:w-[380px] lg:w-[420px] shrink-0">
                 <EventCard event={evt} />
               </div>
             ))}

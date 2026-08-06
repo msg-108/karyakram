@@ -27,10 +27,10 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
   };
 
   return (
-    <Link to={`/events/${event.slug}`} className="block group">
-      <div className="h-full bg-slate-900 border border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 group-hover:border-indigo-500 group-hover:shadow-2xl group-hover:shadow-indigo-500/20 group-hover:-translate-y-1">
-        {/* Banner Image / Fallback Container */}
-        <div className="relative aspect-video w-full bg-slate-950 overflow-hidden border-b border-slate-800">
+    <Link to={`/events/${event.slug}`} className="block group h-full">
+      <div className="h-[430px] bg-slate-900 border border-slate-700/80 rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-300 group-hover:border-indigo-500 group-hover:shadow-2xl group-hover:shadow-indigo-500/20 group-hover:-translate-y-1">
+        {/* Banner Image Container (Main Priority - Expanded Height) */}
+        <div className="relative h-64 w-full bg-slate-950 overflow-hidden border-b border-slate-800 shrink-0">
           {event.banner ? (
             <img
               src={event.banner}
@@ -41,7 +41,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
             <div className="w-full h-full relative flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 p-6 text-center overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/25 via-purple-500/10 to-transparent" />
               <div className="relative z-10 space-y-1">
-                <span className="text-2xl sm:text-3xl font-black text-white font-heading tracking-tight drop-shadow-md">
+                <span className="text-2xl font-black text-white font-heading tracking-tight drop-shadow-md">
                   {event.title}
                 </span>
                 {event.organizer_name && (
@@ -70,9 +70,9 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
           </div>
         </div>
 
-        {/* Content Details */}
-        <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-          <div className="space-y-2.5">
+        {/* Content Details (Short Description Removed, Clean Uniform Padding) */}
+        <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+          <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-bold uppercase tracking-wider">
               <Calendar className="w-3.5 h-3.5 text-indigo-400" />
               <span>
@@ -80,18 +80,14 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
               </span>
             </div>
 
-            <h3 className="text-xl font-extrabold text-white group-hover:text-indigo-400 transition-colors line-clamp-2 font-heading leading-snug">
+            <h3 className="text-lg font-extrabold text-white group-hover:text-indigo-400 transition-colors line-clamp-2 font-heading leading-snug">
               {event.title}
             </h3>
-
-            <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
-              {event.short_description}
-            </p>
           </div>
 
-          <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs">
+          <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
             <div className="flex flex-col min-w-0 pr-2">
-              <span className="text-slate-300 font-semibold truncate">
+              <span className="text-slate-200 font-bold truncate">
                 {event.venue}
               </span>
               {event.organizer_name && (
@@ -101,8 +97,8 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
               )}
             </div>
 
-            <span className="shrink-0 px-3 py-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 font-bold text-indigo-300 group-hover:bg-indigo-600 group-hover:text-white transition-all inline-flex items-center gap-1">
-              Tickets →
+            <span className="shrink-0 px-3.5 py-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 font-bold text-indigo-300 group-hover:bg-indigo-600 group-hover:text-white transition-all inline-flex items-center gap-1">
+              Book →
             </span>
           </div>
         </div>
