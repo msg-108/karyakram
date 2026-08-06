@@ -17,6 +17,9 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils import timezone
+import base64
+
+from .tasks import dispatch_email_task
 
 logger = logging.getLogger(__name__)
 
@@ -53,33 +56,36 @@ def send_email(
         to = [to]
 
     text_body = render_to_string(f"{template_prefix}.txt", context)
-    message = EmailMultiAlternatives(
-        subject=subject,
-        body=text_body,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=to,
-        reply_to=reply_to,
-    )
-
-    # HTML variant is optional — gracefully skip if template doesn't exist
+    
+    html_body = None
     try:
         html_body = render_to_string(f"{template_prefix}.html", context)
-        message.attach_alternative(html_body, "text/html")
     except Exception:  # noqa: BLE001
         pass
 
-    # File attachments (e.g. QR ticket PDF)
+    # Base64 encode attachments for Celery JSON serialization
+    b64_attachments = None
     if attachments:
-        for filename, content, mime_type in attachments:
-            message.attach(filename, content, mime_type)
+        b64_attachments = [
+            (filename, base64.b64encode(content).decode('ascii'), mime_type)
+            for filename, content, mime_type in attachments
+        ]
 
     try:
-        message.send(fail_silently=fail_silently)
+        dispatch_email_task.delay(
+            to=to,
+            subject=subject,
+            text_body=text_body,
+            html_body=html_body,
+            b64_attachments=b64_attachments,
+            reply_to=reply_to,
+            fail_silently=fail_silently,
+        )
     except Exception:
         log_extra = {}
         if user is not None:
             log_extra = {"user_id": getattr(user, "pk", None), "email": getattr(user, "email", None)}
-        logger.exception("Failed to send email to %s", to, extra=log_extra)
+        logger.exception("Failed to dispatch async email to %s", to, extra=log_extra)
         if not fail_silently:
             raise
 
