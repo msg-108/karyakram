@@ -16,7 +16,13 @@ cd backend
 python -m venv .venv && source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 pip install -r requirements/base.txt
 python manage.py migrate
+# Note: Ensure Redis is running (`sudo service redis-server start`)
+# Open two terminals for the backend:
+# Terminal 1: API Server
 python manage.py runserver
+# Terminal 2: Celery Worker & Beat
+celery -A config worker --beat -l INFO
+
 # API at http://localhost:8000/api/
 # Swagger docs at http://localhost:8000/api/docs/
 ```

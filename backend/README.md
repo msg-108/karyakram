@@ -15,6 +15,7 @@ Karyakram is an event ticketing and management platform backend built with Djang
 ### Prerequisites
 - Python 3.12+
 - PostgreSQL (or SQLite for development)
+- Redis Server (required for async tasks and background jobs)
 - WSL (if developing on Windows)
 
 ### Installation
@@ -26,21 +27,29 @@ Karyakram is an event ticketing and management platform backend built with Djang
    ```
 3. Install dependencies:
    ```bash
-   pip install -r requirements/development.txt
+   pip install -r requirements/base.txt
    ```
 4. Run migrations:
    ```bash
    python manage.py migrate
    ```
-5. Start the development server:
+5. Ensure Redis is running:
+   ```bash
+   sudo service redis-server start
+   ```
+6. Start the development server (Terminal 1):
    ```bash
    python manage.py runserver
    ```
+7. Start the Celery worker & beat (Terminal 2):
+   ```bash
+   celery -A config worker --beat -l INFO
+   ```
 
 ### Running Tests
-The backend uses `pytest` and `factory_boy` for testing.
+The backend uses `pytest`, `factory_boy`, and standard Django tests.
 ```bash
-python manage.py test
+python manage.py test apps
 ```
 
 ## Structure

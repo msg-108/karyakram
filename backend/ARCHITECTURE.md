@@ -14,6 +14,12 @@ All complex operations, multi-model state changes, email triggering, and locking
 ### Exceptions for Flow Control
 We rely on Django REST Framework's standard exceptions (`ValidationError`, `PermissionDenied`, `NotFound`) in the service layer. Views simply let these exceptions bubble up to DRF's default exception handler, eliminating repetitive `try-except` blocks and manual HTTP response crafting.
 
+### Asynchronous Execution (Celery)
+To guarantee fast API response times, any long-running or IO-bound operations (e.g., sending emails via SMTP, rendering QR code image files) are offloaded to **Celery**. 
+- The web request instantly queues the task in **Redis** and returns a success response to the user.
+- A background Celery worker processes the queue.
+- Celery Beat is used for periodic maintenance (e.g., cron jobs that sweep the database for expired pending bookings every 5 minutes).
+
 ### Atomicity and Concurrency
 Booking tickets is a highly concurrent operation. The `create_booking` service relies on:
 - `@transaction.atomic` for all state changes.
