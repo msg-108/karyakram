@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib/
 lib64/
 parts/
 sdist/
@@ -229,3 +229,8 @@ backend/media/
 
 # Stale migration backups
 *.py.save
+
+# Node dependencies
+node_modules/
+frontend/node_modules/
+

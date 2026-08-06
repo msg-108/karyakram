@@ -1,317 +1,119 @@
-/**
- * RegisterOrganizerPage.tsx — Registration form for role=ORGANIZER.
- *
- * Real endpoint: POST /api/auth/register/organizer/
- * Sent as multipart/FormData because citizenship_document and pan_document are FileFields.
- *
- * Real fields (from OrganizerRegisterSerializer):
- *   User fields:    username, email, first_name, last_name, password, password_confirm
- *   Profile fields: organization_name, organization_description (optional),
- *                   website_url (optional), citizenship_number, pan_number,
- *                   bank_name, bank_account_number,
- *                   citizenship_document (file), pan_document (file)
- *
- * Fields removed from the old stub: phone_number, date_of_birth, citizenship (country).
- */
-import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { registerOrganizer } from '../../api/users'
-import type { OrganizerRegisterPayload } from '../../types/auth'
+import React from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Link, useNavigate } from 'react-router-dom';
+import { registerOrganizerSchema, RegisterOrganizerFormData } from '../../schemas/auth.schema';
+import { authService } from '../../services/auth.service';
+import { useToast } from '../../context/ToastContext';
+import { FormField } from '../../components/forms/FormField';
+import { FileDropzone } from '../../components/forms/FileDropzone';
+import { Button } from '../../components/ui/Button';
+import { parseApiError } from '../../lib/api';
 
-type OrgForm = Omit<OrganizerRegisterPayload, 'citizenship_document' | 'pan_document'> & {
-  agreed: boolean
-  citizenship_document: File | null
-  pan_document: File | null
-}
+export const RegisterOrganizerPage: React.FC = () => {
+  const navigate = useNavigate();
+  const toast = useToast();
 
-const INITIAL: OrgForm = {
-  username: '',
-  email: '',
-  first_name: '',
-  last_name: '',
-  password: '',
-  password_confirm: '',
-  organization_name: '',
-  organization_description: '',
-  website_url: '',
-  citizenship_number: '',
-  pan_number: '',
-  bank_name: '',
-  bank_account_number: '',
-  citizenship_document: null,
-  pan_document: null,
-  agreed: false,
-}
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterOrganizerFormData>({
+    resolver: zodResolver(registerOrganizerSchema),
+  });
 
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string
-  error?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">{label}</label>
-      {children}
-      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
-    </div>
-  )
-}
-
-function Input({ className = '', ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      {...props}
-      className={`w-full border border-[var(--color-border)] bg-white rounded-lg
-                  px-4 py-2.5 text-sm text-[var(--color-text)]
-                  placeholder:text-[var(--color-muted)] outline-none
-                  focus:ring-2 focus:ring-[var(--color-primary-500)]
-                  focus:border-transparent transition ${className}`}
-    />
-  )
-}
-
-type FieldErrors = Partial<Record<keyof OrgForm | 'non_field_errors', string[]>>
-
-export default function RegisterOrganizerPage() {
-  const [form, setForm] = useState<OrgForm>(INITIAL)
-  const [errors, setErrors] = useState<FieldErrors>({})
-  const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
-  const citizenRef = useRef<HTMLInputElement>(null)
-  const panRef = useRef<HTMLInputElement>(null)
-
-  const set =
-    (field: keyof OrgForm) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const value =
-        e.target.type === 'checkbox'
-          ? (e.target as HTMLInputElement).checked
-          : e.target.value
-      setForm((f) => ({ ...f, [field]: value }))
-      setErrors((er) => ({ ...er, [field]: undefined }))
-    }
-
-  const setFile =
-    (field: 'citizenship_document' | 'pan_document') =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0] ?? null
-      setForm((f) => ({ ...f, [field]: file }))
-      setErrors((er) => ({ ...er, [field]: undefined }))
-    }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!form.citizenship_document || !form.pan_document) {
-      setErrors({
-        citizenship_document: form.citizenship_document ? undefined : ['Required'],
-        pan_document: form.pan_document ? undefined : ['Required'],
-      })
-      return
-    }
-    setLoading(true)
-    setErrors({})
+  const onSubmit = async (data: RegisterOrganizerFormData) => {
     try {
-      await registerOrganizer({
-        ...form,
-        citizenship_document: form.citizenship_document,
-        pan_document: form.pan_document,
-      })
-      localStorage.setItem('last_registered_email', form.email)
-      navigate('/verify', { state: { email: form.email, role: 'ORGANIZER' } })
-    } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: FieldErrors } }
-      const data = axiosErr.response?.data
-      if (data && typeof data === 'object') {
-        setErrors(data)
-      } else {
-        setErrors({ non_field_errors: ['Something went wrong. Please try again.'] })
-      }
-    } finally {
-      setLoading(false)
+      await authService.registerOrganizer(data);
+      toast.success('Organizer account created! Please verify your email.');
+      navigate('/verify-otp', { state: { email: data.email, isOrganizer: true } });
+    } catch (err) {
+      toast.error(parseApiError(err));
     }
-  }
+  };
 
   return (
-    <div className="w-full max-w-md">
-      {errors.non_field_errors && (
-        <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3 mb-5">
-          {errors.non_field_errors[0]}
-        </div>
-      )}
+    <div className="space-y-6 max-w-xl mx-auto">
+      <div className="space-y-1 text-center">
+        <h2 className="text-2xl font-black text-slate-900">Register as Organizer</h2>
+        <p className="text-xs text-slate-500">Provide legal details to host & publish events in Nepal</p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Name */}
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="First Name" error={errors.first_name?.[0]}>
-            <Input id="reg-org-first" value={form.first_name} onChange={set('first_name')} placeholder="John" required />
-          </Field>
-          <Field label="Last Name" error={errors.last_name?.[0]}>
-            <Input id="reg-org-last" value={form.last_name} onChange={set('last_name')} placeholder="Doe" required />
-          </Field>
-        </div>
-
-        <Field label="Username" error={errors.username?.[0]}>
-          <Input id="reg-org-username" value={form.username} onChange={set('username')} placeholder="acme_events" required autoComplete="username" />
-        </Field>
-
-        <Field label="Email" error={errors.email?.[0]}>
-          <Input id="reg-org-email" type="email" value={form.email} onChange={set('email')} placeholder="you@company.com" required autoComplete="email" />
-        </Field>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Password" error={errors.password?.[0]}>
-            <Input id="reg-org-password" type="password" value={form.password} onChange={set('password')} placeholder="••••••••" required autoComplete="new-password" />
-          </Field>
-          <Field label="Confirm Password" error={errors.password_confirm?.[0]}>
-            <Input id="reg-org-confirm" type="password" value={form.password_confirm} onChange={set('password_confirm')} placeholder="••••••••" required />
-          </Field>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl space-y-3">
+          <h3 className="text-xs font-bold text-indigo-900 uppercase tracking-wider">1. Account Details</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="First Name" placeholder="Aman" {...register('first_name')} error={errors.first_name?.message} />
+            <FormField label="Last Name" placeholder="Shrestha" {...register('last_name')} error={errors.last_name?.message} />
+          </div>
+          <FormField label="Username" placeholder="amanorg" {...register('username')} error={errors.username?.message} />
+          <FormField label="Email Address" type="email" placeholder="aman@org.com" {...register('email')} error={errors.email?.message} />
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Password" type="password" placeholder="••••••••" {...register('password')} error={errors.password?.message} />
+            <FormField label="Confirm Password" type="password" placeholder="••••••••" {...register('password_confirm')} error={errors.password_confirm?.message} />
+          </div>
         </div>
 
-        {/* Organization section */}
-        <div className="pt-3 border-t border-[var(--color-border)] space-y-4">
-          <p className="text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider">
-            Organization Details
-          </p>
+        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">2. Organization & Verification</h3>
+          <FormField label="Organization Name" placeholder="TechEvents Nepal Ltd" {...register('organization_name')} error={errors.organization_name?.message} />
+          <FormField label="Description" as="textarea" rows={2} placeholder="Brief details about your organization" {...register('organization_description')} />
+          <FormField label="Website URL (Optional)" placeholder="https://example.com" {...register('website_url')} error={errors.website_url?.message} />
 
-          <Field label="Organization Name" error={errors.organization_name?.[0]}>
-            <Input id="reg-org-name" value={form.organization_name} onChange={set('organization_name')} placeholder="Acme Events Pvt. Ltd." required />
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Citizenship Number" placeholder="12-01-78-0012" {...register('citizenship_number')} error={errors.citizenship_number?.message} />
+            <FormField label="PAN Number" placeholder="600123456" {...register('pan_number')} error={errors.pan_number?.message} />
+          </div>
 
-          <Field label="Organization Description (optional)" error={errors.organization_description?.[0]}>
-            <textarea
-              id="reg-org-desc"
-              value={form.organization_description}
-              onChange={set('organization_description')}
-              placeholder="Brief description of your organization…"
-              rows={2}
-              className="w-full border border-[var(--color-border)] bg-white rounded-lg
-                         px-4 py-2.5 text-sm text-[var(--color-text)]
-                         placeholder:text-[var(--color-muted)] outline-none
-                         focus:ring-2 focus:ring-[var(--color-primary-500)]
-                         focus:border-transparent transition resize-none"
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <Controller
+              name="citizenship_document"
+              control={control}
+              render={({ field }) => (
+                <FileDropzone
+                  label="Citizenship Document"
+                  file={field.value}
+                  onChange={field.onChange}
+                  error={errors.citizenship_document?.message as string}
+                />
+              )}
             />
-          </Field>
 
-          <Field label="Website URL (optional)" error={errors.website_url?.[0]}>
-            <Input id="reg-org-website" type="url" value={form.website_url} onChange={set('website_url')} placeholder="https://yourorganization.com" />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Citizenship Number" error={errors.citizenship_number?.[0]}>
-              <Input id="reg-org-citizen" value={form.citizenship_number} onChange={set('citizenship_number')} placeholder="XX-XX-XXXXXXX" required />
-            </Field>
-            <Field label="PAN Number" error={errors.pan_number?.[0]}>
-              <Input id="reg-org-pan" value={form.pan_number} onChange={set('pan_number')} placeholder="9 digits" maxLength={9} required />
-            </Field>
-          </div>
-
-          <Field label="Bank Name" error={errors.bank_name?.[0]}>
-            <Input id="reg-org-bank" value={form.bank_name} onChange={set('bank_name')} placeholder="Nepal Investment Bank" required />
-          </Field>
-
-          <Field label="Bank Account Number" error={errors.bank_account_number?.[0]}>
-            <Input id="reg-org-account" value={form.bank_account_number} onChange={set('bank_account_number')} placeholder="XXXXXXXXXXXXXXXXXX" required />
-          </Field>
-
-          {/* Document uploads */}
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Citizenship Document" error={errors.citizenship_document?.[0]}>
-              <div
-                onClick={() => citizenRef.current?.click()}
-                className="border border-dashed border-[var(--color-border)] rounded-lg p-3
-                           text-center cursor-pointer hover:border-[var(--color-primary-500)]
-                           hover:bg-[var(--color-primary-50)] transition"
-              >
-                <p className="text-xs text-[var(--color-muted)]">
-                  {form.citizenship_document ? form.citizenship_document.name : 'Click to upload'}
-                </p>
-              </div>
-              <input
-                id="reg-org-citizen-doc"
-                ref={citizenRef}
-                type="file"
-                accept="image/*,.pdf"
-                onChange={setFile('citizenship_document')}
-                className="hidden"
-                required
-              />
-            </Field>
-
-            <Field label="PAN Document" error={errors.pan_document?.[0]}>
-              <div
-                onClick={() => panRef.current?.click()}
-                className="border border-dashed border-[var(--color-border)] rounded-lg p-3
-                           text-center cursor-pointer hover:border-[var(--color-primary-500)]
-                           hover:bg-[var(--color-primary-50)] transition"
-              >
-                <p className="text-xs text-[var(--color-muted)]">
-                  {form.pan_document ? form.pan_document.name : 'Click to upload'}
-                </p>
-              </div>
-              <input
-                id="reg-org-pan-doc"
-                ref={panRef}
-                type="file"
-                accept="image/*,.pdf"
-                onChange={setFile('pan_document')}
-                className="hidden"
-                required
-              />
-            </Field>
+            <Controller
+              name="pan_document"
+              control={control}
+              render={({ field }) => (
+                <FileDropzone
+                  label="PAN Document"
+                  file={field.value}
+                  onChange={field.onChange}
+                  error={errors.pan_document?.message as string}
+                />
+              )}
+            />
           </div>
         </div>
 
-        {/* Terms */}
-        <div className="flex items-start gap-2.5 pt-1">
-          <input
-            id="reg-org-agreed"
-            type="checkbox"
-            checked={form.agreed}
-            onChange={set('agreed')}
-            required
-            className="size-4 mt-0.5 rounded border-[var(--color-border)] accent-[var(--color-primary-500)] cursor-pointer"
-          />
-          <label htmlFor="reg-org-agreed" className="text-sm text-[var(--color-muted)] cursor-pointer select-none">
-            I agree to the{' '}
-            <a href="#" className="text-[var(--color-primary-500)] hover:underline">Terms of Service</a>
-            {' '}and{' '}
-            <a href="#" className="text-[var(--color-primary-500)] hover:underline">Privacy Policy</a>
-          </label>
+        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">3. Bank Account (For Ticket Payouts)</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Bank Name" placeholder="Nabil Bank" {...register('bank_name')} error={errors.bank_name?.message} />
+            <FormField label="Account Number" placeholder="01201017500001" {...register('bank_account_number')} error={errors.bank_account_number?.message} />
+          </div>
         </div>
 
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => setForm(INITIAL)}
-            className="flex-1 border border-[var(--color-border)] text-[var(--color-text)]
-                       font-medium rounded-lg py-2.5 text-sm hover:bg-[var(--color-bg)]
-                       transition-colors"
-          >
-            Reset
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-[var(--color-primary-500)] hover:bg-[var(--color-primary-600)]
-                       disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium
-                       rounded-lg py-2.5 text-sm transition-colors"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z" />
-                </svg>
-                Registering…
-              </span>
-            ) : 'Register as Organizer'}
-          </button>
-        </div>
+        <Button type="submit" isLoading={isSubmitting} className="w-full py-3 text-base">
+          Submit Organizer Application
+        </Button>
       </form>
+
+      <p className="text-center text-xs text-slate-500">
+        Already registered?{' '}
+        <Link to="/login" className="font-bold text-indigo-600 hover:underline">
+          Sign In
+        </Link>
+      </p>
     </div>
-  )
-}
+  );
+};
