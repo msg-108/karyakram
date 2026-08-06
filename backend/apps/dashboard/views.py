@@ -90,29 +90,6 @@ class UpcomingTicketsView(APIView):
         return Response(TicketSummarySerializer(tickets, many=True).data)
 
 
-class TicketHistoryView(APIView):
-    """List all of the authenticated user's tickets, past and future."""
-
-    permission_classes = [
-    IsAuthenticated,
-    IsPlainUser,
-]
-
-    @extend_schema(
-        operation_id="listTicketHistory",
-        summary="List ticket history",
-        description=(
-                "Return every ticket the authenticated user has ever "
-                "booked, regardless of event date. "
-                "Deprecated route — use GET /me/tickets/ (api/me/tickets/) instead, "
-                "which serves the same dataset."
-        ),
-        tags=["Me: Tickets"],
-        responses=TicketSummarySerializer(many=True),
-    )
-    def get(self, request):
-        tickets = services.list_ticket_history(request.user)
-        return Response(TicketSummarySerializer(tickets, many=True).data)
 
 
 class TicketReceiptDownloadView(APIView):
