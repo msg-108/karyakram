@@ -31,24 +31,20 @@ export const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-16 pb-24 overflow-hidden bg-slate-950 text-slate-100 min-h-screen">
+    <div className="space-y-16 pb-24 overflow-hidden bg-[#FAFAFA] text-slate-900 min-h-screen">
       {/* 1. Short Intro to Karyakram Hero Section */}
-      <section className="relative pt-14 pb-16 lg:pt-20 lg:pb-24 overflow-hidden border-b border-slate-800/80 bg-gradient-to-b from-slate-900/60 to-slate-950">
-        {/* Ambient Glowing Orbs */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-600/15 rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute top-10 right-10 w-[350px] h-[350px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
-
-        <div className="container-app relative z-10 text-center space-y-6 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-bold uppercase tracking-wider backdrop-blur-md">
-            <Zap className="w-4 h-4 text-amber-400 animate-pulse" />
-            <span>Nepal's Premier Event & Ticketing Platform</span>
+      <section className="bg-karyakram-red-600 text-white py-14 sm:py-20 border-b border-karyakram-red-800">
+        <div className="container-app max-w-4xl text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white text-xs font-bold tracking-wide uppercase shadow-inner">
+            <Sparkles className="w-3.5 h-3.5 text-karyakram-gold-200 animate-pulse" />
+            <span>Nepal's Premier Ticket Exchange & Event Management</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-black text-white font-heading tracking-tight leading-tight">
-            Welcome to <span className="text-gradient">Karyakram</span>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black font-heading tracking-tight text-white leading-tight">
+            Discover & Experience Unforgettable Events in Nepal
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-sans font-medium">
+          <p className="text-base sm:text-lg text-karyakram-red-50 max-w-2xl mx-auto leading-relaxed font-sans font-medium">
             Discover live music concerts, tech summits, workshops, and food festivals across Nepal. Book verified tickets instantly with atomic QR passes and eSewa integration.
           </p>
 
@@ -56,7 +52,7 @@ export const HomePage: React.FC = () => {
             <Button
               size="lg"
               onClick={() => navigate('/events')}
-              className="px-8 py-3.5 text-sm sm:text-base font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 text-white shadow-xl shadow-indigo-500/25 border-0 rounded-2xl"
+              className="px-8 py-3.5 text-sm sm:text-base font-bold shadow-md shadow-karyakram-gold-600/30 rounded-2xl cursor-pointer"
             >
               Explore All Events →
             </Button>
@@ -64,7 +60,7 @@ export const HomePage: React.FC = () => {
               size="lg"
               variant="outline"
               onClick={() => navigate('/register/organizer')}
-              className="px-6 py-3.5 text-sm sm:text-base font-bold bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800 hover:text-white rounded-2xl"
+              className="px-6 py-3.5 text-sm sm:text-base font-bold rounded-2xl cursor-pointer border-white text-white hover:bg-karyakram-red-800 bg-karyakram-red-400"
             >
               Host an Event
             </Button>
@@ -76,10 +72,10 @@ export const HomePage: React.FC = () => {
       {categories.length > 0 && (
         <section className="container-app space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-extrabold text-white font-heading flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-indigo-400" /> Browse by Category
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 font-heading flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-karyakram-red-600" /> Browse by Category
             </h2>
-            <Link to="/events" className="text-xs font-bold text-indigo-400 hover:text-indigo-300">
+            <Link to="/events" className="text-xs font-bold text-slate-900 hover:text-karyakram-red-600">
               View All Categories →
             </Link>
           </div>
@@ -89,9 +85,9 @@ export const HomePage: React.FC = () => {
               <button
                 key={cat.id}
                 onClick={() => navigate(`/events?category=${cat.slug}`)}
-                className="px-5 py-3 bg-slate-900 border border-slate-800 hover:border-indigo-500 rounded-2xl text-xs font-bold text-slate-200 hover:text-white hover:bg-slate-800 transition-all shrink-0 flex items-center gap-2 shadow-md cursor-pointer"
+                className="px-5 py-3 bg-[#F3F4F6] border border-slate-300 hover:border-karyakram-red-600 rounded-2xl text-xs font-bold text-slate-900 hover:text-karyakram-red-600 hover:bg-white transition-all shrink-0 flex items-center gap-2 shadow-2xs cursor-pointer"
               >
-                <Calendar className="w-4 h-4 text-indigo-400" />
+                <Calendar className="w-4 h-4 text-karyakram-red-600" />
                 <span>{cat.name}</span>
               </button>
             ))}
@@ -99,33 +95,33 @@ export const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* 3. 🔥 Trending Events Section (Single Sliding Row with Arrows) */}
+      {/* 3. Trending Events Section */}
       <section className="container-app space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading flex items-center gap-2">
-              <Flame className="w-6 h-6 text-rose-500" /> Trending Events
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 font-heading flex items-center gap-2">
+              <Flame className="w-6 h-6 text-karyakram-red-600" /> Trending Events
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400">Handpicked upcoming events with highest interest across Nepal</p>
+            <p className="text-xs sm:text-sm text-slate-600 font-medium">Handpicked upcoming events with highest interest across Nepal</p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => scrollRow(trendingRowRef, 'left')}
               aria-label="Previous Trending"
-              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition-all cursor-pointer shadow-md"
+              className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-karyakram-red-600 hover:bg-karyakram-red-50 transition-all cursor-pointer shadow-2xs"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={() => scrollRow(trendingRowRef, 'right')}
               aria-label="Next Trending"
-              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition-all cursor-pointer shadow-md"
+              className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-karyakram-purple-600 hover:bg-karyakram-purple-50 transition-all cursor-pointer shadow-2xs"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
             <Link to="/events" className="hidden sm:inline-block ml-2">
-              <Button variant="outline" size="sm" className="bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl">
+              <Button variant="outline" size="sm" className="rounded-xl">
                 See All →
               </Button>
             </Link>
@@ -150,33 +146,33 @@ export const HomePage: React.FC = () => {
         )}
       </section>
 
-      {/* 4. ✨ Recommended Events Section (Single Sliding Row with Arrows) */}
+      {/* 4. Recommended Events Section */}
       <section className="container-app space-y-4 pt-2">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-heading flex items-center gap-2">
-              <ThumbsUp className="w-6 h-6 text-indigo-400" /> Recommended For You
+            <h2 className="text-2xl sm:text-3xl font-black text-karyakram-purple-800 font-heading flex items-center gap-2">
+              <ThumbsUp className="w-6 h-6 text-karyakram-purple-600" /> Recommended For You
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400">Specially curated events based on top categories and venues</p>
+            <p className="text-xs sm:text-sm text-slate-500">Specially curated events based on top categories and venues</p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => scrollRow(recommendedRowRef, 'left')}
               aria-label="Previous Recommended"
-              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition-all cursor-pointer shadow-md"
+              className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-karyakram-purple-600 hover:bg-karyakram-purple-50 transition-all cursor-pointer shadow-2xs"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={() => scrollRow(recommendedRowRef, 'right')}
               aria-label="Next Recommended"
-              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition-all cursor-pointer shadow-md"
+              className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-karyakram-purple-600 hover:bg-karyakram-purple-50 transition-all cursor-pointer shadow-2xs"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
             <Link to="/events" className="hidden sm:inline-block ml-2">
-              <Button variant="outline" size="sm" className="bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl">
+              <Button variant="outline" size="sm" className="rounded-xl">
                 Explore All →
               </Button>
             </Link>
@@ -203,36 +199,36 @@ export const HomePage: React.FC = () => {
 
       {/* 5. Features Callout */}
       <section className="container-app pt-6">
-        <div className="relative bg-slate-900/90 border border-slate-800 rounded-3xl p-8 sm:p-12 overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative bg-white border border-slate-200 rounded-3xl p-8 sm:p-12 overflow-hidden shadow-xl shadow-slate-200/50">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-karyakram-purple-50 rounded-full blur-3xl pointer-events-none" />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
             <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <div className="w-12 h-12 rounded-2xl bg-karyakram-purple-50 text-karyakram-purple-800 border border-karyakram-purple-200/60 flex items-center justify-center shadow-2xs">
                 <Ticket className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white font-heading">Instant QR Ticket Passes</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <h3 className="text-lg font-bold text-slate-900 font-heading">Instant QR Ticket Passes</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Receive signed QR code ticket passes directly in your portal after payment verification.
               </p>
             </div>
 
             <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+              <div className="w-12 h-12 rounded-2xl bg-karyakram-gold-50 text-karyakram-gold-800 border border-karyakram-gold-200/60 flex items-center justify-center shadow-2xs">
                 <ShieldCheck className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white font-heading">eSewa Instant Payments</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <h3 className="text-lg font-bold text-slate-900 font-heading">eSewa Instant Payments</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Pay securely via eSewa with automated real-time payment status reconciliation.
               </p>
             </div>
 
             <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400">
+              <div className="w-12 h-12 rounded-2xl bg-karyakram-purple-50 text-karyakram-purple-800 border border-karyakram-purple-200/60 flex items-center justify-center shadow-2xs">
                 <Zap className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white font-heading">Organizer Dashboard</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <h3 className="text-lg font-bold text-slate-900 font-heading">Organizer Dashboard</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Access attendee QR scanning, multi-tier ticket builders, and real-time sales dashboards.
               </p>
             </div>
