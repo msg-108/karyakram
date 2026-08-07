@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { createEventSchema, CreateEventFormData, TicketTierInputData } from '../../schemas/event.schema';
-import { useCreateEvent, usePublicCategories } from '../../hooks/useEvents';
+import { useCreateEvent, useSubmitEvent, usePublicCategories } from '../../hooks/useEvents';
 import { FormField } from '../../components/forms/FormField';
 import { TicketTierForm } from '../../components/forms/TicketTierForm';
 import { FileDropzone } from '../../components/forms/FileDropzone';
@@ -13,6 +13,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 export const CreateEventPage: React.FC = () => {
   const navigate = useNavigate();
   const createEventMutation = useCreateEvent();
+  const submitEventMutation = useSubmitEvent();
   const { data: categories = [] } = usePublicCategories();
 
   const [step, setStep] = useState(1);
@@ -37,9 +38,13 @@ export const CreateEventPage: React.FC = () => {
 
   const ticketTiers = watch('ticket_tiers');
 
+  const categoriesList = Array.isArray(categories)
+    ? categories
+    : (categories as any)?.results || [];
+
   const categoryOptions = [
     { value: '', label: 'Select a category' },
-    ...categories.map((c) => ({ value: c.id, label: c.name })),
+    ...categoriesList.map((c: any) => ({ value: c.id, label: c.name })),
   ];
 
   const visibilityOptions = [
@@ -47,7 +52,7 @@ export const CreateEventPage: React.FC = () => {
     { value: 'UNLISTED', label: 'Unlisted (Link access only)' },
   ];
 
-  const onSubmit = (data: CreateEventFormData) => {
+  const onSaveDraft = (data: CreateEventFormData) => {
     createEventMutation.mutate(data, {
       onSuccess: () => {
         navigate('/organizer/events');
@@ -55,32 +60,50 @@ export const CreateEventPage: React.FC = () => {
     });
   };
 
+  const onSubmitForReview = (data: CreateEventFormData) => {
+    createEventMutation.mutate(data, {
+      onSuccess: (event) => {
+        submitEventMutation.mutate(event.id, {
+          onSuccess: () => {
+            navigate('/organizer/events');
+          },
+          // No onError override here — useSubmitEvent's own onError already
+          // fires a toast via parseApiError. The event still exists as a
+          // real DRAFT row at this point; the organizer lands back on their
+          // event list where it's now visible and editable, not lost.
+        });
+      },
+      // No onError override here either — useCreateEvent's own onError
+      // already fires a toast. Nothing was created, nothing to submit.
+    });
+  };
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div>
-        <h1 className="text-2xl font-black text-slate-900">Create New Event</h1>
-        <p className="text-xs text-slate-500">Fill in event details, add ticket tiers, and save as draft</p>
+        <h1 className="text-2xl font-black text-slate-900 font-heading">Create New Event</h1>
+        <p className="text-xs text-slate-600 font-medium">Fill in event details, add ticket tiers, and save as draft</p>
       </div>
 
       {/* Step Indicator */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3 text-xs font-bold">
+      <div className="flex items-center justify-between border-b border-slate-300 pb-3 text-xs font-bold">
         <button
           type="button"
           onClick={() => setStep(1)}
-          className={`pb-1 ${step === 1 ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-400'}`}
+          className={`pb-1 cursor-pointer ${step === 1 ? 'border-b-2 border-karyakram-red-600 text-slate-900 font-black' : 'text-slate-600 font-bold'}`}
         >
           1. Basic Details & Venue
         </button>
         <button
           type="button"
           onClick={() => setStep(2)}
-          className={`pb-1 ${step === 2 ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-slate-400'}`}
+          className={`pb-1 cursor-pointer ${step === 2 ? 'border-b-2 border-karyakram-red-600 text-slate-900 font-black' : 'text-slate-600 font-bold'}`}
         >
           2. Ticket Tiers & Banner
         </button>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form className="space-y-6">
         {step === 1 && (
           <Card>
             <CardHeader>
@@ -134,7 +157,13 @@ export const CreateEventPage: React.FC = () => {
             <CardContent className="space-y-6">
               <TicketTierForm
                 tiers={ticketTiers}
-                onChange={(tiers: TicketTierInputData[]) => setValue('ticket_tiers', tiers)}
+                onChange={(tiers: TicketTierInputData[]) =>
+                  setValue('ticket_tiers', tiers, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                    shouldTouch: true,
+                  })
+                }
                 error={errors.ticket_tiers?.message}
               />
 
@@ -158,8 +187,22 @@ export const CreateEventPage: React.FC = () => {
                 <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1">
                   ← Back
                 </Button>
-                <Button type="submit" isLoading={createEventMutation.isPending} className="flex-1">
-                  Save Event as Draft
+                <Button
+                  type="button"
+                  variant="outline"
+                  isLoading={createEventMutation.isPending && !submitEventMutation.isPending}
+                  onClick={handleSubmit(onSaveDraft)}
+                  className="flex-1"
+                >
+                  Save as Draft
+                </Button>
+                <Button
+                  type="button"
+                  isLoading={createEventMutation.isPending || submitEventMutation.isPending}
+                  onClick={handleSubmit(onSubmitForReview)}
+                  className="flex-1"
+                >
+                  Submit for Review
                 </Button>
               </div>
             </CardContent>
