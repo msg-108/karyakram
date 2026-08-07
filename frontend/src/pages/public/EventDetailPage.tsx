@@ -10,6 +10,8 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Spinner } from '../../components/ui/Spinner';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { bookingService } from '../../services/booking.service';
+import { submitEsewaForm } from '../../lib/payment';
 import { SESSION_KEYS } from '../../config/constants';
 
 export const EventDetailPage: React.FC = () => {
@@ -84,77 +86,76 @@ export const EventDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="container-app py-8 space-y-8 min-h-screen text-slate-100">
-      {/* 1. Top Banner Container (Enlarged Height) */}
-      <div className="w-full h-[400px] sm:h-[520px] lg:h-[600px] rounded-3xl overflow-hidden shadow-2xl relative bg-slate-900 border border-slate-800">
+    <div className="container-app py-8 space-y-8 min-h-screen text-slate-900">
+      {/* 1. Top Banner Container */}
+      <div className="w-full h-[400px] sm:h-[520px] lg:h-[600px] rounded-3xl overflow-hidden shadow-xl relative bg-karyakram-purple-600 border border-karyakram-purple-800">
         {event.banner ? (
           <img src={event.banner} alt={event.title} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 relative flex items-center justify-center p-8 text-center">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/25 via-purple-500/10 to-transparent" />
+          <div className="w-full h-full bg-gradient-to-br from-karyakram-purple-600 via-karyakram-purple-800 to-karyakram-purple-900 relative flex items-center justify-center p-8 text-center">
             <div className="relative z-10 space-y-2">
               <span className="text-3xl sm:text-5xl font-black text-white font-heading tracking-tight drop-shadow-md">
                 {event.title}
               </span>
               {event.organizer_name && (
-                <p className="text-sm sm:text-base text-indigo-300 font-medium">Organized by {event.organizer_name}</p>
+                <p className="text-sm sm:text-base text-karyakram-purple-200 font-medium">Organized by {event.organizer_name}</p>
               )}
             </div>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-80" />
       </div>
 
-      {/* 2. Title & Metadata Section (Compact Size) */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl">
+      {/* 2. Title & Metadata Section */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl shadow-slate-200/50">
         <div className="flex flex-wrap items-center gap-2.5">
-          <span className="px-3.5 py-1 text-xs font-bold rounded-full bg-indigo-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-400/30 font-heading uppercase tracking-wider">
+          <span className="px-3.5 py-1 text-xs font-bold rounded-full badge-purple">
             {event.category?.name || 'General Event'}
           </span>
-          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-slate-800 text-slate-200 border border-slate-700">
+          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 border border-slate-200">
             📍 {event.city}
           </span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-heading tracking-tight leading-snug">
+        <h1 className="text-2xl sm:text-3xl font-black text-karyakram-purple-900 font-heading tracking-tight leading-snug">
           {event.title}
         </h1>
 
         {event.short_description && (
-          <p className="text-xs sm:text-sm text-slate-300 max-w-4xl leading-relaxed font-sans">
+          <p className="text-xs sm:text-sm text-slate-600 max-w-4xl leading-relaxed font-sans font-medium">
             {event.short_description}
           </p>
         )}
 
         {/* Quick Info Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-800 text-xs sm:text-sm text-slate-200">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-100 text-xs sm:text-sm text-slate-700">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-karyakram-purple-50 border border-karyakram-purple-200/60 text-karyakram-purple-800 flex items-center justify-center shrink-0">
               <Calendar className="w-4 h-4" />
             </div>
             <div>
-              <p className="font-bold text-white">{formatDate(event.start_datetime)}</p>
-              <p className="text-[11px] text-slate-400">{formatTime(event.start_datetime)}</p>
+              <p className="font-bold text-slate-900">{formatDate(event.start_datetime)}</p>
+              <p className="text-[11px] text-slate-500">{formatTime(event.start_datetime)}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-karyakram-purple-50 border border-karyakram-purple-200/60 text-karyakram-purple-800 flex items-center justify-center shrink-0">
               <MapPin className="w-4 h-4" />
             </div>
             <div>
-              <p className="font-bold text-white">{event.venue}</p>
-              <p className="text-[11px] text-slate-400">{event.address}, {event.city}</p>
+              <p className="font-bold text-slate-900">{event.venue}</p>
+              <p className="text-[11px] text-slate-500">{event.address}, {event.city}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-karyakram-purple-50 border border-karyakram-purple-200/60 text-karyakram-purple-800 flex items-center justify-center shrink-0">
               <Building className="w-4 h-4" />
             </div>
             <div>
-              <p className="font-bold text-white">Organized by</p>
-              <p className="text-[11px] text-slate-400">{event.organizer_name}</p>
+              <p className="font-bold text-slate-900">Organized by</p>
+              <p className="text-[11px] text-slate-500">{event.organizer_name}</p>
             </div>
           </div>
         </div>
@@ -164,17 +165,17 @@ export const EventDetailPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-2">
         {/* Left Column: Full Description & Terms */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">
-            <h2 className="text-xl font-bold text-white font-heading">About The Event</h2>
-            <div className="prose prose-invert max-w-none text-sm text-slate-300 leading-relaxed whitespace-pre-line font-sans">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl shadow-slate-200/50">
+            <h2 className="text-xl font-black text-karyakram-purple-900 font-heading">About The Event</h2>
+            <div className="prose max-w-none text-sm text-slate-700 leading-relaxed whitespace-pre-line font-sans">
               {event.description}
             </div>
           </div>
 
           {event.terms_and_conditions && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-3 shadow-xl">
-              <h3 className="text-base font-bold text-white font-heading">Terms & Conditions</h3>
-              <p className="text-xs text-slate-400 whitespace-pre-line leading-relaxed font-sans">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-3 shadow-xl shadow-slate-200/50">
+              <h3 className="text-base font-black text-karyakram-purple-900 font-heading">Terms & Conditions</h3>
+              <p className="text-xs text-slate-600 whitespace-pre-line leading-relaxed font-sans">
                 {event.terms_and_conditions}
               </p>
             </div>
@@ -183,12 +184,12 @@ export const EventDetailPage: React.FC = () => {
 
         {/* Right Column: Ticket Purchase Card */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl p-6 sm:p-8 space-y-6 sticky top-24 shadow-2xl">
-            <div className="flex items-center gap-2.5 pb-4 border-b border-slate-800">
-              <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6 sticky top-24 shadow-xl shadow-slate-200/50">
+            <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100">
+              <div className="w-8 h-8 rounded-xl bg-karyakram-purple-50 text-karyakram-purple-800 flex items-center justify-center">
                 <Ticket className="w-4 h-4" />
               </div>
-              <h3 className="text-xl font-extrabold text-white font-heading">Select Tickets</h3>
+              <h3 className="text-xl font-black text-karyakram-purple-900 font-heading">Select Tickets</h3>
             </div>
 
             <TicketSelector
@@ -198,11 +199,11 @@ export const EventDetailPage: React.FC = () => {
             />
 
             {/* Total & Checkout Action */}
-            <div className="pt-6 border-t border-slate-800 space-y-4">
+            <div className="pt-6 border-t border-slate-100 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-slate-400 font-semibold">Total ({totalSelectedTickets} tickets)</p>
-                  <p className="text-3xl font-black text-emerald-400 font-heading">NPR {totalCost.toLocaleString()}</p>
+                  <p className="text-xs text-slate-500 font-semibold">Total ({totalSelectedTickets} tickets)</p>
+                  <p className="text-2xl sm:text-3xl font-black text-karyakram-purple-900 font-heading">NPR {totalCost.toLocaleString()}</p>
                 </div>
 
                 <Button
@@ -210,20 +211,20 @@ export const EventDetailPage: React.FC = () => {
                   disabled={totalSelectedTickets === 0}
                   isLoading={createBookingMutation.isPending}
                   onClick={handleBookNow}
-                  className="px-8 py-4 text-base font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 text-white shadow-xl shadow-indigo-500/30 border-0 rounded-2xl"
+                  className="px-6 py-4 text-sm sm:text-base font-extrabold bg-karyakram-gold-600 hover:bg-karyakram-gold-800 text-karyakram-purple-900 hover:text-white shadow-md shadow-karyakram-gold-600/25 border-0 rounded-2xl cursor-pointer"
                 >
-                  Book Now
+                  Proceed to Checkout →
                 </Button>
               </div>
 
               {!isAuthenticated && (
-                <p className="text-xs text-amber-300 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 text-center font-medium">
+                <p className="text-xs text-karyakram-gold-800 bg-karyakram-gold-50 p-3 rounded-xl border border-karyakram-gold-200 text-center font-semibold">
                   You'll be asked to log in or register before completing checkout.
                 </p>
               )}
 
-              <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 pt-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500 pt-2">
+                <ShieldCheck className="w-4 h-4 text-karyakram-purple-600" />
                 <span>Instant eSewa payment & QR pass delivery</span>
               </div>
             </div>
