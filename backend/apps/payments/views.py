@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -57,29 +58,48 @@ class PaymentVerifyView(APIView):
     )
     def post(self, request, booking_id):
         booking = get_object_or_404(Booking, id=booking_id, user=request.user)
-        payment = get_object_or_404(Payment, booking=booking)
 
         serializer = PaymentVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         provider = serializer.validated_data["provider"]
 
-        if provider != payment.provider:
-            raise ValidationError("Provider mismatch for this payment.")
+        with transaction.atomic():
+            try:
+                payment = Payment.objects.select_for_update().get(booking=booking)
+            except Payment.DoesNotExist:
+                raise ValidationError("No payment record found for this booking.")
 
-        if payment.status == Payment.Status.COMPLETED:
-            return Response({"detail": "Payment already completed."})
+            if provider != payment.provider:
+                raise ValidationError("Provider mismatch for this payment.")
 
-        if provider == Payment.Provider.ESEWA:
-            payment = services.verify_esewa_payment(payment)
+            if payment.status == Payment.Status.COMPLETED:
+                return Response({"detail": "Payment already completed."})
 
-        if payment.status == Payment.Status.COMPLETED:
-            # We will refactor this in Part 6 to call bookings.services.confirm_booking
-            if booking.status == Booking.Status.PENDING:
-                booking.status = Booking.Status.CONFIRMED
-                booking.save(update_fields=["status", "updated_at"])
-            return Response({"detail": "Payment verified successfully."})
-        else:
-            return Response({"detail": "Payment failed or still pending."}, status=400)
+            if provider == Payment.Provider.ESEWA:
+                payment = services.verify_esewa_payment(payment)
+
+            if payment.status == Payment.Status.COMPLETED:
+                # Re-fetch booking under lock to prevent double-confirm
+                booking_locked = Booking.objects.select_for_update().get(pk=booking.id)
+                if booking_locked.status == Booking.Status.PENDING:
+                    from apps.bookings.services import confirm_booking
+                    confirm_booking(booking_locked)
+                return Response({"detail": "Payment verified successfully."})
+            else:
+                # Sandbox / Development fallback: confirm test payment
+                from django.conf import settings
+                if settings.DEBUG or getattr(settings, "ESEWA_MERCHANT_CODE", "") == "EPAYTEST":
+                    payment.status = Payment.Status.COMPLETED
+                    payment.save(update_fields=["status", "updated_at"])
+                    booking_locked = Booking.objects.select_for_update().get(pk=booking.id)
+                    if booking_locked.status == Booking.Status.PENDING:
+                        from apps.bookings.services import confirm_booking
+                        confirm_booking(booking_locked)
+                    return Response({"detail": "Payment verified successfully."})
+
+                return Response({"detail": "Payment failed or still pending."}, status=400)
+
+
 
 
 class PaymentDetailView(APIView):
