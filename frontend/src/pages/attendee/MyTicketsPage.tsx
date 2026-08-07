@@ -46,17 +46,13 @@ export const MyTicketsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-slate-900">My Tickets & Passes</h1>
-        <p className="text-xs text-slate-500">Present these QR passes at the venue door for check-in</p>
+        <h1 className="text-2xl font-black text-slate-900 font-heading">My Tickets & Passes</h1>
+        <p className="text-xs text-slate-600 font-medium">Present these QR passes at the venue door for check-in</p>
       </div>
 
       <div className="space-y-6">
         {tickets.map((ticket) => (
-          <TicketPass
-            key={ticket.id}
-            ticket={ticket}
-            eventDate={formatDateTime(ticket.created_at)}
-          />
+          <TicketPass key={ticket.id} ticket={ticket} />
         ))}
       </div>
 
