@@ -55,7 +55,7 @@ export const PendingEventsPage: React.FC = () => {
       accessor: (row) => (
         <div className="space-y-0.5 max-w-[220px]">
           <span className="font-bold text-slate-900 block truncate">{row.title}</span>
-          <span className="text-xs text-indigo-600 block">{row.category?.name}</span>
+          <span className="text-xs text-slate-900 font-bold block">{row.category?.name}</span>
         </div>
       ),
     },
@@ -75,8 +75,8 @@ export const PendingEventsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-slate-900">Pending Events Queue</h1>
-        <p className="text-xs text-slate-500">Review submitted organizer events, approve content, and publish live</p>
+        <h1 className="text-2xl font-black text-slate-900 font-heading">Pending Events Queue</h1>
+        <p className="text-xs text-slate-600 font-medium">Review submitted organizer events, approve content, and publish live</p>
       </div>
 
       <DataTable
@@ -90,13 +90,13 @@ export const PendingEventsPage: React.FC = () => {
       {selectedEvent && (
         <Modal isOpen={Boolean(selectedEvent)} onClose={() => setSelectedEvent(null)} title="Review Event Submission">
           <div className="space-y-4 text-xs">
-            <div className="p-4 bg-slate-50 rounded-xl space-y-2">
+            <div className="p-4 bg-[#F3F4F6] border border-slate-300 rounded-xl space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-slate-900 text-sm">{selectedEvent.title}</h3>
                 <StatusBadge status={selectedEvent.status} />
               </div>
-              <p className="text-slate-600 font-medium">Organized by {selectedEvent.organizer_name}</p>
-              <p className="text-indigo-600 font-semibold">{formatDateTime(selectedEvent.start_datetime)}</p>
+              <p className="text-slate-700 font-medium">Organized by {selectedEvent.organizer_name}</p>
+              <p className="text-slate-900 font-bold">{formatDateTime(selectedEvent.start_datetime)}</p>
             </div>
 
             <FormField
