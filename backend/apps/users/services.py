@@ -25,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 def send_otp_email(user: User, otp: EmailOTP) -> None:
+    logger.info("Generated verification OTP for %s: %s", user.email, otp.code)
+    print(f"\n==================================================\n[EMAIL OTP] Code for {user.username} ({user.email}): {otp.code}\n==================================================\n", flush=True)
     send_email(
         to=user.email,
         subject="Your Karyakram verification code",
@@ -88,6 +90,8 @@ def send_admin_organizer_pending_email(profile: OrganizerProfile) -> None:
 
 
 def send_password_reset_email(user: User, otp: EmailOTP) -> None:
+    logger.info("Generated password reset OTP for %s: %s", user.email, otp.code)
+    print(f"\n==================================================\n[PASSWORD RESET OTP] Code for {user.username} ({user.email}): {otp.code}\n==================================================\n", flush=True)
     send_email(
         to=user.email,
         subject="Reset your Karyakram password",
@@ -111,23 +115,7 @@ def send_password_reset_success_email(user: User) -> None:
     )
 
 
-def send_ticket_email(
-    user: User, *, event_name: str, ticket_pdf_bytes: bytes, ticket_filename: str
-) -> None:
-    """
-    Deliver a ticket after successful payment. Kept here (rather than in a
-    future `tickets` app) per the requirements doc, which lists "ticket
-    email sending" as a users-app responsibility; the tickets/payments apps
-    themselves are explicitly deferred.
-    """
-    send_email(
-        to=user.email,
-        subject=f"Your ticket for {event_name}",
-        template_prefix="emails/ticket_delivery",
-        context={"user": user, "event_name": event_name},
-        attachments=[(ticket_filename, ticket_pdf_bytes, "application/pdf")],
-        user=user,
-    )
+
 
 
 # ==================== REGISTRATION ====================

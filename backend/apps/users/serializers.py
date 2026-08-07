@@ -36,6 +36,7 @@ class UserPublicSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "role",
+            "is_staff",
             "is_email_verified",
             "is_approved",
             "created_at",

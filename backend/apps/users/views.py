@@ -159,7 +159,6 @@ class VerifyEmailOTPView(APIView):
         result = services.verify_email_otp(
             user,
             code=serializer.validated_data["code"],
-            purpose=EmailOTP.Purpose.EMAIL_VERIFICATION,
         )
 
         detail = (
