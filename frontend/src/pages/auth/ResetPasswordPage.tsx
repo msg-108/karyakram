@@ -79,8 +79,8 @@ export const ResetPasswordPage: React.FC = () => {
         </Button>
       </form>
 
-      <p className="text-center text-xs text-slate-500">
-        <Link to="/login" className="font-bold text-indigo-600 hover:underline">
+      <p className="text-center text-xs text-slate-500 font-medium">
+        <Link to="/login" className="font-bold text-karyakram-purple-600 hover:text-karyakram-purple-800 hover:underline">
           Back to Login
         </Link>
       </p>
