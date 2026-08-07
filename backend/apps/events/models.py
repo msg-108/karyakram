@@ -134,12 +134,7 @@ class Event(models.Model):
     city = models.CharField(max_length=150)
     district = models.CharField(max_length=150, blank=True)
     province = models.CharField(max_length=150, blank=True)
-    latitude = models.DecimalField(
-        max_digits=9, decimal_places=6, null=True, blank=True
-    )
-    longitude = models.DecimalField(
-        max_digits=9, decimal_places=6, null=True, blank=True
-    )
+
 
     banner = models.ImageField(
         upload_to="events/banners/",
