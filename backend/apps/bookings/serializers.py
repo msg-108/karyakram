@@ -152,8 +152,10 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             "status",
             "total_amount",
             "items",
+            "hold_expires_at",
             "cancelled_at",
             "created_at",
             "updated_at",
         ]
         read_only_fields = fields
+

@@ -207,16 +207,6 @@ def create_booking(*, user: User, event: Event, items: list[dict]) -> Booking:
             {"detail": "Tickets can only be booked for a published event."}
         )
 
-    # Idempotency guard: prevent duplicate active bookings for the same user and event
-    if Booking.objects.filter(
-        user=user,
-        event=event,
-        status__in=[Booking.Status.PENDING, Booking.Status.CONFIRMED],
-    ).exists():
-        raise ValidationError(
-            {"detail": "You already have an active booking for this event."}
-        )
-
     if (
         event.registration_deadline is not None
         and timezone.now() > event.registration_deadline
