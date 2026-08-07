@@ -70,7 +70,7 @@ export const OrganizerEventsPage: React.FC = () => {
               title="Submit for Admin Review"
               disabled={!isApproved || submitMutation.isPending}
               onClick={() => submitMutation.mutate(row.id)}
-              className="p-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-40"
+              className="p-1.5 rounded-lg border border-karyakram-purple-200 bg-karyakram-purple-50 text-karyakram-purple-800 hover:bg-karyakram-purple-600 hover:text-white transition-colors cursor-pointer disabled:opacity-40"
             >
               <Send className="w-4 h-4" />
             </button>
