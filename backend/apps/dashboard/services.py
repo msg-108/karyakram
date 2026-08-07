@@ -104,15 +104,15 @@ def list_upcoming_tickets(user: User) -> list[TicketSummary]:
     from django.utils import timezone
 
     tickets = Ticket.objects.filter(
-        booking__user=user, booking__event__start_date__gte=timezone.now()
+        booking__user=user, booking__event__start_datetime__gte=timezone.now()
     ).select_related("booking__event", "booking_item__ticket_tier")
 
     return [
         TicketSummary(
             ticket_id=str(t.id),
             event_title=t.booking.event.title,
-            event_date_time=t.booking.event.start_date,
-            event_location=t.booking.event.location,
+            event_date_time=t.booking.event.start_datetime,
+            event_location=t.booking.event.venue,
             seat_or_tier=t.booking_item.ticket_tier.name,
             status=t.get_status_display(),
         )
@@ -131,8 +131,8 @@ def list_ticket_history(user: User) -> list[TicketSummary]:
         TicketSummary(
             ticket_id=str(t.id),
             event_title=t.booking.event.title,
-            event_date_time=t.booking.event.start_date,
-            event_location=t.booking.event.location,
+            event_date_time=t.booking.event.start_datetime,
+            event_location=t.booking.event.venue,
             seat_or_tier=t.booking_item.ticket_tier.name,
             status=t.get_status_display(),
         )
@@ -226,15 +226,15 @@ def list_upcoming_events(user: User) -> list[EventSummary]:
     from django.utils import timezone
 
     events = Event.objects.filter(
-        status=Event.Status.PUBLISHED, start_date__gte=timezone.now()
+        status=Event.Status.PUBLISHED, start_datetime__gte=timezone.now()
     ).select_related("organizer__user")
 
     return [
         EventSummary(
             event_id=e.id,
             title=e.title,
-            date_time=e.start_date,
-            location=e.location,
+            date_time=e.start_datetime,
+            location=e.venue,
             organizer_name=e.organizer.user.username,
         )
         for e in events
@@ -347,13 +347,13 @@ def get_organizer_profile_summary(profile: OrganizerProfile) -> OrganizerProfile
 def list_organizer_events(profile: OrganizerProfile) -> list[EventSummary]:
     from apps.events.models import Event
 
-    events = Event.objects.filter(organizer=profile).order_by("-start_date")
+    events = Event.objects.filter(organizer=profile).order_by("-start_datetime")
     return [
         EventSummary(
             event_id=e.id,
             title=e.title,
-            date_time=e.start_date,
-            location=e.location,
+            date_time=e.start_datetime,
+            location=e.venue,
             organizer_name=profile.user.username,
         )
         for e in events
@@ -365,15 +365,15 @@ def list_organizer_upcoming_events(profile: OrganizerProfile) -> list[EventSumma
     from django.utils import timezone
 
     events = Event.objects.filter(
-        organizer=profile, start_date__gte=timezone.now()
-    ).order_by("start_date")
+        organizer=profile, start_datetime__gte=timezone.now()
+    ).order_by("start_datetime")
 
     return [
         EventSummary(
             event_id=e.id,
             title=e.title,
-            date_time=e.start_date,
-            location=e.location,
+            date_time=e.start_datetime,
+            location=e.venue,
             organizer_name=profile.user.username,
         )
         for e in events
@@ -439,6 +439,7 @@ class RevenueAnalytics:
 
 def get_revenue_analytics(profile: OrganizerProfile) -> RevenueAnalytics:
     from django.db.models import Sum
+    from django.db.models.functions import TruncMonth
     from apps.payments.models import Payment
 
     payments = Payment.objects.filter(
@@ -447,8 +448,20 @@ def get_revenue_analytics(profile: OrganizerProfile) -> RevenueAnalytics:
 
     total = payments.aggregate(Sum("amount"))["amount__sum"] or Decimal("0.00")
 
-    # Very basic by_month aggregation for the demo
-    return RevenueAnalytics(total_revenue=total, currency="NPR", by_month=[])
+    monthly = (
+        payments.annotate(month=TruncMonth("created_at"))
+        .values("month")
+        .annotate(total=Sum("amount"))
+        .order_by("month")
+    )
+
+    by_month = [
+        (m["month"].strftime("%b %Y"), m["total"])
+        for m in monthly
+        if m["month"] is not None
+    ]
+
+    return RevenueAnalytics(total_revenue=total, currency="NPR", by_month=by_month)
 
 
 @dataclass(frozen=True)
@@ -505,20 +518,23 @@ def get_checkin_statistics(profile: OrganizerProfile) -> CheckInStatistics:
 
 @dataclass(frozen=True)
 class QRScanStatistics:
-    """
-    from CheckInStatistics because a scan is not necessarily a successful
-    check-in (e.g. an already-used or invalid code can still be scanned);
-    conflating the two would lose that distinction once real data exists.
-    """
-
     total_scans: int = 0
     valid_scans: int = 0
     invalid_scans: int = 0
 
 
 def get_qr_scan_statistics(profile: OrganizerProfile) -> QRScanStatistics:
-    """Placeholder: no QR check-in app exists yet."""
-    return QRScanStatistics()
+    from apps.tickets.models import Ticket
+
+    tickets = Ticket.objects.filter(booking__event__organizer=profile)
+    checked_in = tickets.filter(status=Ticket.Status.CHECKED_IN).count()
+    total_valid = tickets.exclude(status=Ticket.Status.CANCELLED).count()
+
+    return QRScanStatistics(
+        total_scans=checked_in,
+        valid_scans=checked_in,
+        invalid_scans=max(0, total_valid - checked_in),
+    )
 
 
 # ==================== ORGANIZER DASHBOARD: ORDERS & ATTENDEES ====================
@@ -684,7 +700,7 @@ def get_admin_platform_statistics(user: User) -> AdminPlatformStatistics:
     return AdminPlatformStatistics(
         total_users=AppUser.objects.filter(role=AppUser.Role.USER).count(),
         total_organizers=AppUser.objects.filter(role=AppUser.Role.ORGANIZER).count(),
-        pending_events=Event.objects.filter(status=Event.Status.PENDING).count(),
+        pending_events=Event.objects.filter(status=Event.Status.SUBMITTED).count(),
         active_events=Event.objects.filter(status=Event.Status.PUBLISHED).count(),
     )
 
