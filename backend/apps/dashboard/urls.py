@@ -14,7 +14,6 @@ from .views import (
     ReportExportView,
     RevenueAnalyticsView,
     TicketSalesSummaryView,
-    TicketSalesSummaryView,
     UserDashboardSummaryView,
     AdminDashboardSummaryView,
     AdminRevenueAnalyticsView,
