@@ -42,9 +42,13 @@ export const EventFilterBar: React.FC<EventFilterBarProps> = ({
     onFilterChange({});
   };
 
+  const categoriesList = Array.isArray(categories)
+    ? categories
+    : (categories as any)?.results || [];
+
   const categoryOptions = [
     { value: '', label: 'All Categories' },
-    ...categories.map((c) => ({ value: c.slug, label: c.name })),
+    ...categoriesList.map((c: any) => ({ value: c.slug, label: c.name })),
   ];
 
   const cityOptions = [
@@ -62,7 +66,7 @@ export const EventFilterBar: React.FC<EventFilterBarProps> = ({
   };
 
   return (
-    <form onSubmit={handleSearchSubmit} className="bg-slate-900 border border-slate-700/80 p-5 rounded-2xl shadow-xl space-y-4 mb-8">
+    <form onSubmit={handleSearchSubmit} className="bg-[#F3F4F6] border border-slate-300 p-5 rounded-2xl shadow-md space-y-4 mb-8">
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
         {/* Search input */}
         <div className="sm:col-span-5 relative">
@@ -70,9 +74,9 @@ export const EventFilterBar: React.FC<EventFilterBarProps> = ({
             placeholder="Search events by title, venue, or artist..."
             value={q}
             onChange={(e) => handleQueryChange(e.target.value)}
-            className="pl-11 bg-slate-950 border-slate-700 text-white placeholder:text-slate-400 font-medium"
+            className="pl-11 font-medium"
           />
-          <Search className="w-4 h-4 text-indigo-400 absolute left-4 top-4 pointer-events-none" />
+          <Search className="w-4 h-4 text-karyakram-purple-600 absolute left-4 top-4 pointer-events-none" />
         </div>
 
         {/* Category select */}
@@ -84,7 +88,7 @@ export const EventFilterBar: React.FC<EventFilterBarProps> = ({
               setSelectedCategory(e.target.value);
               onFilterChange({ q, category: e.target.value, city });
             }}
-            className="bg-slate-950 border-slate-700 text-white font-medium"
+            className="font-medium"
           />
         </div>
 
@@ -97,17 +101,17 @@ export const EventFilterBar: React.FC<EventFilterBarProps> = ({
               setCity(e.target.value);
               onFilterChange({ q, category: selectedCategory, city: e.target.value });
             }}
-            className="bg-slate-950 border-slate-700 text-white font-medium"
+            className="font-medium"
           />
         </div>
 
         {/* Actions */}
         <div className="sm:col-span-2 flex items-center gap-2">
-          <Button type="submit" className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white border-0 shadow-md shadow-indigo-600/20">
+          <Button type="submit" className="w-full border-0 shadow-md">
             Search
           </Button>
           {(q || selectedCategory || city) && (
-            <Button type="button" variant="outline" onClick={handleReset} className="p-3 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800">
+            <Button type="button" variant="outline" onClick={handleReset} className="p-3">
               <X className="w-4 h-4" />
             </Button>
           )}
