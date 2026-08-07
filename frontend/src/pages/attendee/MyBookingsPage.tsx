@@ -44,49 +44,48 @@ export const MyBookingsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-slate-900">My Booking History</h1>
-        <p className="text-xs text-slate-500">Track your pending, confirmed, and cancelled orders</p>
+        <h1 className="text-2xl font-black text-slate-900 font-heading">My Booking History</h1>
+        <p className="text-xs text-slate-600 font-medium">Track your pending, confirmed, and cancelled orders</p>
       </div>
 
       <div className="space-y-4">
         {bookings.map((b) => (
-          <Card key={b.id} className="hover:border-slate-300">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <Card key={b.id} className="border border-slate-300 shadow-md hover:border-karyakram-red-600">
+            <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-300">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-base">{b.event_title}</CardTitle>
+                  <CardTitle className="text-base font-black text-slate-900 font-heading">{b.event_title}</CardTitle>
                   <StatusBadge status={b.status} />
                 </div>
-                <p className="text-xs text-indigo-600 font-semibold">
+                <p className="text-xs text-slate-900 font-bold">
                   {formatDateTime(b.event_start_datetime)}
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-xs text-slate-400 font-medium">Order Total</span>
-                <p className="text-base font-black text-slate-900">{formatCurrency(b.total_amount)}</p>
+                <span className="text-xs text-slate-600 font-medium">Order Total</span>
+                <p className="text-base font-black text-slate-900 font-heading">{formatCurrency(b.total_amount)}</p>
               </div>
             </CardHeader>
 
-            <CardContent className="space-y-3 pt-2">
-              <div className="p-3 bg-slate-50 rounded-xl space-y-1.5 divide-y divide-slate-200/60">
+            <CardContent className="space-y-3 pt-4">
+              <div className="p-3 bg-[#F3F4F6] border border-slate-300 rounded-xl space-y-1.5 divide-y divide-slate-300">
                 {b.items.map((item, idx) => (
                   <div key={idx} className="pt-1.5 first:pt-0 flex items-center justify-between text-xs">
-                    <span className="font-medium text-slate-800">
+                    <span className="font-bold text-slate-900">
                       {item.ticket_tier_name} x{item.quantity}
                     </span>
-                    <span className="font-bold text-slate-900">{formatCurrency(item.subtotal)}</span>
+                    <span className="font-extrabold text-slate-900">{formatCurrency(item.subtotal)}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
+              <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
                 <span>Booked on {formatDateTime(b.created_at)}</span>
 
-                {b.status === 'CONFIRMED' && (
+                {(b.status === 'CONFIRMED' || b.status === 'PENDING') && (
                   <Button
-                    variant="outline"
+                    variant="danger"
                     size="sm"
-                    className="text-rose-600 border-rose-200 hover:bg-rose-50"
                     isLoading={cancelBookingMutation.isPending}
                     onClick={() => {
                       if (window.confirm('Are you sure you want to cancel this booking? Stock will be restored.')) {
