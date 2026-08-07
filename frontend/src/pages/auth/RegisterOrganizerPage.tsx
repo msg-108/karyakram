@@ -34,19 +34,19 @@ export const RegisterOrganizerPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 w-full py-2 text-slate-100">
+    <div className="space-y-6 w-full py-2 text-slate-900">
       <div className="space-y-2 text-center">
-        <h2 className="text-3xl sm:text-4xl font-black text-white font-heading tracking-tight">
-          Register as <span className="text-gradient">Organizer</span>
+        <h2 className="text-3xl sm:text-4xl font-black text-slate-900 font-heading tracking-tight">
+          Register as <span className="text-karyakram-purple-600">Organizer</span>
         </h2>
-        <p className="text-sm text-slate-300 max-w-xl mx-auto">
+        <p className="text-sm text-slate-600 max-w-xl mx-auto font-medium">
           Provide organization and legal verification details to host and publish events across Nepal
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="p-5 sm:p-6 bg-slate-900/90 border border-indigo-500/30 rounded-2xl space-y-4 shadow-xl">
-          <h3 className="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+        <div className="p-5 sm:p-6 bg-white border border-slate-200 rounded-2xl space-y-4 shadow-xl shadow-slate-200/40">
+          <h3 className="text-xs font-black text-karyakram-purple-800 uppercase tracking-wider flex items-center gap-2 font-heading">
             1. Account Details
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -61,8 +61,8 @@ export const RegisterOrganizerPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-5 sm:p-6 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-4 shadow-xl">
-          <h3 className="text-xs font-extrabold text-purple-400 uppercase tracking-wider flex items-center gap-2">
+        <div className="p-5 sm:p-6 bg-white border border-slate-200 rounded-2xl space-y-4 shadow-xl shadow-slate-200/40">
+          <h3 className="text-xs font-black text-karyakram-purple-800 uppercase tracking-wider flex items-center gap-2 font-heading">
             2. Organization & Verification
           </h3>
           <FormField label="Organization Name" placeholder="TechEvents Nepal Ltd" {...register('organization_name')} error={errors.organization_name?.message} />
@@ -103,8 +103,8 @@ export const RegisterOrganizerPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-5 sm:p-6 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-4 shadow-xl">
-          <h3 className="text-xs font-extrabold text-pink-400 uppercase tracking-wider flex items-center gap-2">
+        <div className="p-5 sm:p-6 bg-white border border-slate-200 rounded-2xl space-y-4 shadow-xl shadow-slate-200/40">
+          <h3 className="text-xs font-black text-karyakram-purple-800 uppercase tracking-wider flex items-center gap-2 font-heading">
             3. Bank Account (For Ticket Payouts)
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -113,14 +113,14 @@ export const RegisterOrganizerPage: React.FC = () => {
           </div>
         </div>
 
-        <Button type="submit" isLoading={isSubmitting} className="w-full py-4 text-base font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 text-white rounded-2xl shadow-xl shadow-indigo-500/25 border-0">
+        <Button type="submit" isLoading={isSubmitting} className="w-full py-4 text-base font-extrabold rounded-2xl border-0 shadow-md">
           Submit Organizer Application
         </Button>
       </form>
 
-      <p className="text-center text-xs text-slate-500">
+      <p className="text-center text-xs text-slate-500 font-medium">
         Already registered?{' '}
-        <Link to="/login" className="font-bold text-indigo-600 hover:underline">
+        <Link to="/login" className="font-bold text-karyakram-purple-600 hover:text-karyakram-purple-800 hover:underline">
           Sign In
         </Link>
       </p>
