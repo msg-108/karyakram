@@ -68,8 +68,8 @@ export const PendingOrganizersPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-slate-900">Pending Organizers</h1>
-        <p className="text-xs text-slate-500">Inspect citizenship & PAN legal documents to approve organizer accounts</p>
+        <h1 className="text-2xl font-black text-slate-900 font-heading">Pending Organizers Approval Queue</h1>
+        <p className="text-xs text-slate-600 font-medium">Review organizer applications and verify submitted legal documents</p>
       </div>
 
       <DataTable
@@ -83,40 +83,40 @@ export const PendingOrganizersPage: React.FC = () => {
       {selectedOrg && (
         <Modal isOpen={Boolean(selectedOrg)} onClose={() => setSelectedOrg(null)} title="Inspect Organizer Application">
           <div className="space-y-4 text-xs">
-            <div className="p-3 bg-slate-50 rounded-xl space-y-1">
+            <div className="p-3 bg-[#F3F4F6] border border-slate-300 rounded-xl space-y-1">
               <p className="font-bold text-slate-900 text-sm">{selectedOrg.organization_name}</p>
-              <p className="text-slate-600">{selectedOrg.organization_description || 'No description provided.'}</p>
+              <p className="text-slate-700">{selectedOrg.organization_description || 'No description provided.'}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-slate-700">
+            <div className="grid grid-cols-2 gap-3 text-slate-800">
               <div>
-                <span className="text-slate-400 block font-medium">Applicant Name</span>
-                <span className="font-semibold">{selectedOrg.user.first_name} {selectedOrg.user.last_name}</span>
+                <span className="text-slate-500 block font-medium">Applicant Name</span>
+                <span className="font-bold text-slate-900">{selectedOrg.user.first_name} {selectedOrg.user.last_name}</span>
               </div>
               <div>
-                <span className="text-slate-400 block font-medium">Bank Name</span>
-                <span className="font-semibold">{selectedOrg.bank_name}</span>
+                <span className="text-slate-500 block font-medium">Bank Name</span>
+                <span className="font-bold text-slate-900">{selectedOrg.bank_name}</span>
               </div>
             </div>
 
             {/* Document links */}
-            <div className="p-3 border border-slate-200 rounded-xl space-y-2">
-              <span className="font-bold text-slate-800 block">Submitted Legal Documents</span>
+            <div className="p-3 border border-slate-300 rounded-xl space-y-2 bg-[#F3F4F6]">
+              <span className="font-bold text-slate-900 block">Submitted Legal Documents</span>
               <div className="flex gap-4">
                 {selectedOrg.citizenship_document ? (
-                  <a href={selectedOrg.citizenship_document} target="_blank" rel="noreferrer" className="text-indigo-600 font-semibold underline flex items-center gap-1">
-                    <FileText className="w-4 h-4" /> Citizenship Certificate
+                  <a href={selectedOrg.citizenship_document} target="_blank" rel="noreferrer" className="text-slate-900 font-bold underline flex items-center gap-1 hover:text-karyakram-red-600">
+                    <FileText className="w-4 h-4 text-karyakram-red-600" /> Citizenship Certificate
                   </a>
                 ) : (
-                  <span className="text-slate-400">No Citizenship File</span>
+                  <span className="text-slate-500 font-medium">No Citizenship File</span>
                 )}
 
                 {selectedOrg.pan_document ? (
-                  <a href={selectedOrg.pan_document} target="_blank" rel="noreferrer" className="text-indigo-600 font-semibold underline flex items-center gap-1">
-                    <FileText className="w-4 h-4" /> PAN Card
+                  <a href={selectedOrg.pan_document} target="_blank" rel="noreferrer" className="text-slate-900 font-bold underline flex items-center gap-1 hover:text-karyakram-red-600">
+                    <FileText className="w-4 h-4 text-karyakram-red-600" /> PAN Card
                   </a>
                 ) : (
-                  <span className="text-slate-400">No PAN File</span>
+                  <span className="text-slate-500 font-medium">No PAN File</span>
                 )}
               </div>
             </div>
