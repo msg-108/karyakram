@@ -18,45 +18,42 @@ logger = logging.getLogger(__name__)
 def list_user_tickets(user):
     """Return all tickets owned by the given user with select_related optimization."""
     return Ticket.objects.filter(booking__user=user).select_related(
-        "booking", "booking_item__ticket_tier"
+        "booking__event", "booking_item__ticket_tier"
     )
 
 
 def send_tickets_delivered_email(booking: Booking, tickets: list[Ticket]) -> None:
     try:
-        from django.core.mail import EmailMultiAlternatives
-        from django.template.loader import render_to_string
+        from apps.common.email import send_email
 
-        context = {
-            "user": booking.user,
-            "event": booking.event,
-            "settings": settings,
-        }
-        subject = f"Your Tickets for {booking.event.title}"
-        text_body = render_to_string("emails/tickets_delivered.txt", context)
-        html_body = render_to_string("emails/tickets_delivered.html", context)
-
-        msg = EmailMultiAlternatives(
-            subject, text_body, settings.DEFAULT_FROM_EMAIL, [booking.user.email]
-        )
-        msg.attach_alternative(html_body, "text/html")
-
-        # Attach ticket QR codes
+        attachments = []
         for ticket in tickets:
             if ticket.qr_code_image:
-                msg.attach(
-                    f"ticket_{ticket.id}.png", ticket.qr_code_image.read(), "image/png"
+                attachments.append(
+                    (f"ticket_{ticket.id}.png", ticket.qr_code_image.read(), "image/png")
                 )
 
-        msg.send(fail_silently=False)
+        send_email(
+            to=booking.user.email,
+            subject=f"Your Tickets for {booking.event.title}",
+            template_prefix="emails/tickets_delivered",
+            context={
+                "user": booking.user,
+                "event": booking.event,
+            },
+            attachments=attachments if attachments else None,
+            user=booking.user,
+            fail_silently=True,
+        )
     except Exception:
         logger.exception("Failed to send tickets delivered email")
 
 
 def generate_qr_jwt(ticket: Ticket) -> str:
     """
-    Generate a signed JWT containing the ticket's core details.
+    Generate a signed JWT containing the ticket's core details and expiration.
     This JWT is encoded into the QR code and scanned by organizers.
+    Expires automatically when the event end_datetime passes.
     """
     payload = {
         "ticket_id": str(ticket.id),
@@ -64,6 +61,7 @@ def generate_qr_jwt(ticket: Ticket) -> str:
         "event_id": ticket.booking.event_id,
         "attendee_email": ticket.attendee_email,
         "iat": timezone.now().timestamp(),
+        "exp": ticket.booking.event.end_datetime.timestamp(),
     }
     return jwt.encode(payload, settings.QR_JWT_SECRET_KEY, algorithm="HS256")
 
@@ -140,28 +138,19 @@ def generate_tickets_for_booking(booking: Booking) -> list[Ticket]:
 def check_in_ticket(qr_payload: str, event_id: int) -> Ticket:
     """
     Mark a ticket as checked in. Ensures the ticket belongs to the correct event
-    and hasn't been checked in already or cancelled.
+    and hasn't expired, been checked in already, or cancelled.
     """
     try:
         decoded = jwt.decode(qr_payload, settings.QR_JWT_SECRET_KEY, algorithms=["HS256"])
         ticket_id = decoded["ticket_id"]
+    except jwt.ExpiredSignatureError:
+        raise ValidationError("This ticket QR code has expired because the event has ended.")
     except jwt.InvalidSignatureError:
         try:
             decoded = jwt.decode(qr_payload, settings.SECRET_KEY, algorithms=["HS256"])
             ticket_id = decoded["ticket_id"]
-            try:
-                temp_ticket = Ticket.objects.select_related("booking__event").get(id=ticket_id)
-                logger.warning(
-                    "Legacy QR key fallback used during check-in: "
-                    "ticket_id=%s, event_id=%s, event_title='%s', event_start='%s', scanned_at='%s'",
-                    temp_ticket.id,
-                    temp_ticket.booking.event_id,
-                    temp_ticket.booking.event.title,
-                    temp_ticket.booking.event.start_datetime.isoformat(),
-                    timezone.now().isoformat(),
-                )
-            except Ticket.DoesNotExist:
-                pass
+        except jwt.ExpiredSignatureError:
+            raise ValidationError("This ticket QR code has expired because the event has ended.")
         except jwt.PyJWTError:
             raise ValidationError("Invalid or corrupted ticket QR code.")
     except jwt.PyJWTError:
@@ -171,11 +160,14 @@ def check_in_ticket(qr_payload: str, event_id: int) -> Ticket:
         # Use select_for_update to prevent double check-ins
         ticket = (
             Ticket.objects.select_for_update()
-            .select_related("booking")
+            .select_related("booking__event")
             .get(id=ticket_id)
         )
     except Ticket.DoesNotExist:
         raise ValidationError("Ticket not found.")
+
+    if ticket.booking.event.end_datetime < timezone.now():
+        raise ValidationError("This event has already ended. Ticket QR code is expired.")
 
     if ticket.booking.event_id != event_id:
         raise ValidationError("Ticket is not valid for this event.")
