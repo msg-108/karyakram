@@ -45,8 +45,8 @@ export const OrganizerDashboard: React.FC = () => {
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">Organizer Dashboard</h1>
-          <p className="text-xs text-slate-500">Welcome, {user?.first_name}! Overview of your events and sales</p>
+          <h1 className="text-2xl font-black text-slate-900 font-heading">Organizer Dashboard</h1>
+          <p className="text-xs text-slate-600 font-medium">Welcome, {user?.first_name}! Overview of your events and sales</p>
         </div>
 
         <div className="flex items-center gap-3">
