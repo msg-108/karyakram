@@ -11,14 +11,14 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading = false, children, disabled, ...props }, ref) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]';
+      'inline-flex items-center justify-center font-bold rounded-xl transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98] cursor-pointer';
 
     const variants = {
-      primary: 'bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:outline-indigo-600 shadow-sm shadow-indigo-200',
-      secondary: 'bg-slate-100 text-slate-800 hover:bg-slate-200 focus-visible:outline-slate-500',
-      outline: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-slate-500 shadow-xs',
-      ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-slate-500',
-      danger: 'bg-rose-600 text-white hover:bg-rose-700 focus-visible:outline-rose-600 shadow-sm shadow-rose-200',
+      primary: 'bg-karyakram-gold-600 hover:bg-karyakram-gold-800 text-karyakram-red-900 hover:text-white font-black focus-visible:outline-karyakram-gold-600 shadow-md shadow-karyakram-gold-600/25 border-0',
+      secondary: 'bg-karyakram-indigo-600 hover:bg-karyakram-indigo-800 text-white font-bold focus-visible:outline-karyakram-indigo-600 shadow-sm border-0',
+      outline: 'border border-karyakram-red-600 bg-[#F5F6F8] text-karyakram-red-600 hover:bg-karyakram-red-50 focus-visible:outline-karyakram-red-600 shadow-2xs font-bold',
+      ghost: 'text-slate-700 hover:bg-karyakram-red-50 hover:text-karyakram-red-800 focus-visible:outline-karyakram-red-600 font-semibold',
+      danger: 'bg-karyakram-red-800 text-white hover:bg-karyakram-red-900 focus-visible:outline-karyakram-red-800 shadow-sm',
     };
 
     const sizes = {
