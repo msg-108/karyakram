@@ -61,31 +61,31 @@ export const EventListingPage: React.FC = () => {
   const activeCategoryObj = categories.find((c) => c.slug === filters.category);
 
   return (
-    <div className="container-app py-12 space-y-8 min-h-screen text-slate-100">
+    <div className="container-app py-12 space-y-8 min-h-screen text-slate-900">
       {/* Dynamic Heading Above Search */}
       <div className="space-y-2">
         {filters.q ? (
           <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading tracking-tight">
-              Search Results for <span className="text-indigo-400 font-black">"{filters.q}"</span>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-karyakram-purple-800 font-heading tracking-tight">
+              Search Results for <span className="text-karyakram-purple-600 font-black">"{filters.q}"</span>
             </h1>
-            <p className="text-sm text-slate-300 font-medium">
+            <p className="text-sm text-slate-600 font-medium">
               Showing matching events, venues, and concerts across Nepal ({totalCount} found)
             </p>
           </div>
         ) : activeCategoryObj ? (
           <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading tracking-tight">
-              <span className="text-indigo-400 font-black">{activeCategoryObj.name}</span> Events
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-karyakram-purple-800 font-heading tracking-tight">
+              <span className="text-karyakram-purple-600 font-black">{activeCategoryObj.name}</span> Events
             </h1>
-            <p className="text-sm text-slate-300 font-medium">Showing top events in {activeCategoryObj.name}</p>
+            <p className="text-sm text-slate-600 font-medium">Showing top events in {activeCategoryObj.name}</p>
           </div>
         ) : (
           <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white font-heading tracking-tight">
-              Explore <span className="text-indigo-400 font-black">Events</span>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-karyakram-purple-800 font-heading tracking-tight">
+              Explore <span className="text-karyakram-purple-600 font-black">Events</span>
             </h1>
-            <p className="text-sm text-slate-300 font-medium">Discover and book verified live events across Nepal</p>
+            <p className="text-sm text-slate-600 font-medium">Discover and book verified live events across Nepal</p>
           </div>
         )}
       </div>
@@ -99,9 +99,9 @@ export const EventListingPage: React.FC = () => {
       />
 
       {error ? (
-        <div className="p-6 bg-rose-950/80 border border-rose-800/80 rounded-2xl text-center text-rose-300">
+        <div className="p-6 bg-karyakram-red-50 border border-karyakram-red-200 rounded-2xl text-center text-karyakram-red-800 shadow-2xs">
           <p className="font-semibold text-sm">Failed to load events.</p>
-          <button onClick={() => refetch()} className="text-xs underline font-bold mt-2 hover:text-white">
+          <button onClick={() => refetch()} className="text-xs underline font-bold mt-2 hover:text-karyakram-red-900 cursor-pointer">
             Try again
           </button>
         </div>
