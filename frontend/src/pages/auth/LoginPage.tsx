@@ -46,8 +46,19 @@ export const LoginPage: React.FC = () => {
       } else {
         navigate('/dashboard');
       }
-    } catch (err) {
-      toast.error(parseApiError(err));
+    } catch (err: any) {
+      const errorData = err?.response?.data;
+      const errorMsg = parseApiError(err);
+      if (
+        errorData?.is_email_verified === false ||
+        errorMsg.toLowerCase().includes('verify your email')
+      ) {
+        const unverifiedEmail = errorData?.email || (data.username.includes('@') ? data.username : '');
+        toast.error('Please verify your email address before logging in.');
+        navigate('/verify-otp', { state: { email: unverifiedEmail } });
+        return;
+      }
+      toast.error(errorMsg);
     }
   };
 
