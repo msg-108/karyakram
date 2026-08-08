@@ -13,14 +13,14 @@ from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.utils.deconstruct import deconstructible
 
-# Nepal citizenship number: historically "DD-DD-DD-DDDDD" (district-year-
-# volume-serial) or a plain digit string. We accept both formats loosely
-# since there's no single enforced national standard, then normalize.
-_CITIZENSHIP_RE = re.compile(r"^\d{1,2}-\d{1,2}-\d{1,2}-\d{3,6}$|^\d{6,12}$")
+# Nepal citizenship number: historic & modern DAO formats (hyphen/slash/spaces allowed, e.g. "27-01-75-01234" or "12-34/5678")
+_CITIZENSHIP_RE = re.compile(r"^(?:\d{1,4}[-/\s]?){2,4}\d{1,7}$|^\d{5,16}$")
 
-# PAN (Permanent Account Number) issued by Nepal's Inland Revenue
-# Department is a 9-digit number.
+# PAN (Permanent Account Number) issued by Nepal's Inland Revenue Department: 9 digits.
 _PAN_RE = re.compile(r"^\d{9}$")
+
+# Nepal Bank Account Number: 8 to 20 digits/alphanumeric characters (NIC Asia, Nabil, Global IME, etc.)
+_BANK_ACCOUNT_RE = re.compile(r"^[A-Za-z0-9]{8,20}$")
 
 # Username: letters, numbers, underscore, dot, hyphen; must start with a
 # letter; 3-30 chars. Stricter than Django's default AbstractUser regex,
@@ -40,8 +40,7 @@ def validate_username_format(value: str) -> None:
 def validate_citizenship_number(value: str) -> None:
     if not _CITIZENSHIP_RE.match(value.strip()):
         raise ValidationError(
-            "Enter a valid Nepal citizenship number, e.g. '12-34-56-78901' "
-            "or a plain numeric ID."
+            "Enter a valid Nepal citizenship number, e.g. '27-01-75-01234' or '12-34/5678'."
         )
 
 
@@ -52,11 +51,9 @@ def validate_pan_number(value: str) -> None:
 
 def validate_bank_account_number(value: str) -> None:
     stripped = value.strip()
-    if not stripped.isdigit():
-        raise ValidationError("Bank account number must contain only digits.")
-    if not (5 <= len(stripped) <= 20):
+    if not _BANK_ACCOUNT_RE.match(stripped):
         raise ValidationError(
-            "Bank account number must be between 5 and 20 digits long."
+            "Enter a valid Nepal bank account number (8 to 20 digits/characters)."
         )
 
 
