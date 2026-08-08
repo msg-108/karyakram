@@ -51,30 +51,26 @@ def send_tickets_delivered_email(booking: Booking, tickets: list[Ticket]) -> Non
 
 def generate_qr_jwt(ticket: Ticket) -> str:
     """
-    Generate a signed JWT containing the ticket's core details and expiration.
-    This JWT is encoded into the QR code and scanned by organizers.
-    Expires automatically when the event end_datetime passes.
+    Generate a signed JWT containing the ticket ID and expiration.
+    Kept streamlined and minimal to optimize QR code block size for fast scanning on low-quality cameras.
     """
     payload = {
         "ticket_id": str(ticket.id),
-        "booking_id": ticket.booking_id,
         "event_id": ticket.booking.event_id,
-        "attendee_email": ticket.attendee_email,
-        "iat": timezone.now().timestamp(),
-        "exp": ticket.booking.event.end_datetime.timestamp(),
+        "exp": int(ticket.booking.event.end_datetime.timestamp()),
     }
     return jwt.encode(payload, settings.QR_JWT_SECRET_KEY, algorithm="HS256")
 
 
 def generate_qr_image(ticket: Ticket) -> ContentFile:
     """
-    Generate a QR code image from the ticket's JWT.
+    Generate a high-contrast, low-density QR code image optimized for low-resolution phone cameras.
     """
     qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
-        box_size=10,
-        border=4,
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=14,
+        border=3,
     )
     qr.add_data(ticket.qr_code_payload)
     qr.make(fit=True)
