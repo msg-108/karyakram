@@ -24,9 +24,9 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange, className
             key={tab.id}
             onClick={() => onChange(tab.id)}
             className={cn(
-              'inline-flex items-center gap-2 py-3 px-4 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap',
+              'inline-flex items-center gap-2 py-3 px-4 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer',
               isActive
-                ? 'border-indigo-600 text-indigo-600'
+                ? 'border-karyakram-purple-600 text-karyakram-purple-800 font-bold'
                 : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
             )}
           >
@@ -35,7 +35,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange, className
               <span
                 className={cn(
                   'px-2 py-0.5 rounded-full text-xs font-bold',
-                  isActive ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                  isActive ? 'bg-karyakram-purple-50 text-karyakram-purple-800' : 'bg-slate-100 text-slate-600'
                 )}
               >
                 {tab.badge}

@@ -23,15 +23,15 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           rows={rows}
           className={cn(
-            'w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 transition-colors resize-y',
-            'focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20',
-            error && 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20',
+            'w-full px-4 py-3 bg-[#F3F4F6] border border-slate-300 rounded-xl text-sm text-slate-900 placeholder:text-slate-500 transition-all shadow-2xs font-medium resize-y',
+            'focus:outline-none focus:border-karyakram-red-600 focus:ring-2 focus:ring-karyakram-red-600/30 focus:bg-white',
+            error && 'border-orange-500 focus:border-orange-600 focus:ring-orange-500/20 text-orange-950',
             className
           )}
           {...props}
         />
-        {error && <p className="text-xs text-rose-600 font-medium">{error}</p>}
-        {!error && helperText && <p className="text-xs text-slate-500">{helperText}</p>}
+        {error && <p className="text-xs text-orange-600 font-bold">{error}</p>}
+        {!error && helperText && <p className="text-xs text-slate-600">{helperText}</p>}
       </div>
     );
   }
