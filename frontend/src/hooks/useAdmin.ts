@@ -42,6 +42,15 @@ export function usePendingEvents() {
   });
 }
 
+export function useAdminEventDetail(eventId: number | null) {
+  return useQuery({
+    queryKey: ['admin', 'event', eventId],
+    queryFn: () => eventService.getAdminEventDetail(eventId!),
+    enabled: Boolean(eventId),
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useApproveOrRejectEvent() {
   const queryClient = useQueryClient();
   const toast = useToast();
