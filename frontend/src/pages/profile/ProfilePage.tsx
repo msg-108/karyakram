@@ -7,11 +7,11 @@ import {
   Lock,
   Mail,
   ShieldCheck,
-  LogOut,
   Save,
   CheckCircle2,
   ExternalLink,
   FileText,
+  Key,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/auth.service';
@@ -20,18 +20,19 @@ import {
   UpdateUserFormData,
   updateOrganizerProfileSchema,
   UpdateOrganizerProfileFormData,
+  passwordChangeSchema,
+  PasswordChangeFormData,
 } from '../../schemas/auth.schema';
 import { OrganizerProfile } from '../../types/auth.types';
 import { FormField } from '../../components/forms/FormField';
 import { Button } from '../../components/ui/Button';
 import { useToast } from '../../context/ToastContext';
 import { parseApiError } from '../../lib/api';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 export const ProfilePage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const toast = useToast();
-  const navigate = useNavigate();
 
   const [organizerProfile, setOrganizerProfile] = useState<OrganizerProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
@@ -59,6 +60,16 @@ export const ProfilePage: React.FC = () => {
     formState: { errors: orgErrors, isSubmitting: isSubmittingOrg },
   } = useForm<UpdateOrganizerProfileFormData>({
     resolver: zodResolver(updateOrganizerProfileSchema),
+  });
+
+  // Password Change form
+  const {
+    register: registerPass,
+    handleSubmit: handleSubmitPass,
+    reset: resetPassForm,
+    formState: { errors: passErrors, isSubmitting: isSubmittingPass },
+  } = useForm<PasswordChangeFormData>({
+    resolver: zodResolver(passwordChangeSchema),
   });
 
   useEffect(() => {
@@ -110,9 +121,14 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleSignOut = () => {
-    logout();
-    navigate('/login');
+  const onChangePassword = async (data: PasswordChangeFormData) => {
+    try {
+      await authService.changePassword(data);
+      toast.success('Password updated successfully!');
+      resetPassForm();
+    } catch (err) {
+      toast.error(parseApiError(err));
+    }
   };
 
   return (
@@ -196,6 +212,60 @@ export const ProfilePage: React.FC = () => {
           <div className="flex justify-end pt-2">
             <Button type="submit" isLoading={isSubmittingUser} className="gap-2 px-6">
               <Save className="w-4 h-4" /> Save Personal Info
+            </Button>
+          </div>
+        </form>
+      </div>
+
+      {/* Change Password Card */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+          <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center justify-center font-bold">
+            <Key className="w-5 h-5 text-indigo-600" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Change Password</h2>
+            <p className="text-xs text-slate-500 font-medium">
+              Update your password by entering your current password below.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmitPass(onChangePassword)} className="space-y-4">
+          <FormField
+            label="Current Password"
+            type="password"
+            placeholder="••••••••"
+            {...registerPass('old_password')}
+            error={passErrors.old_password?.message}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              label="New Password"
+              type="password"
+              placeholder="••••••••"
+              {...registerPass('new_password')}
+              error={passErrors.new_password?.message}
+            />
+            <FormField
+              label="Confirm New Password"
+              type="password"
+              placeholder="••••••••"
+              {...registerPass('new_password_confirm')}
+              error={passErrors.new_password_confirm?.message}
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+            <p className="text-xs text-slate-500 font-medium">
+              Forgot your current password?{' '}
+              <Link to="/forgot-password" className="font-bold text-karyakram-purple-600 hover:underline">
+                Reset via OTP
+              </Link>
+            </p>
+            <Button type="submit" isLoading={isSubmittingPass} className="gap-2 px-6 w-full sm:w-auto">
+              <Lock className="w-4 h-4" /> Update Password
             </Button>
           </div>
         </form>
@@ -330,23 +400,6 @@ export const ProfilePage: React.FC = () => {
           )}
         </div>
       )}
-
-      {/* Sign Out Action Card */}
-      <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
-        <div className="space-y-1 text-center sm:text-left">
-          <h3 className="text-lg font-bold text-red-950">Sign Out of Karyakram</h3>
-          <p className="text-xs text-red-700 font-medium max-w-md">
-            End your current session safely. You will need your password or reset OTP to log back in.
-          </p>
-        </div>
-        <Button
-          onClick={handleSignOut}
-          variant="outline"
-          className="w-full sm:w-auto border-red-300 text-red-700 hover:bg-red-600 hover:text-white hover:border-red-600 gap-2 shrink-0 shadow-xs"
-        >
-          <LogOut className="w-4 h-4" /> Sign Out
-        </Button>
-      </div>
     </div>
   );
 };

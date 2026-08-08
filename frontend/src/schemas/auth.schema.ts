@@ -119,3 +119,16 @@ export const updateOrganizerProfileSchema = z.object({
 });
 
 export type UpdateOrganizerProfileFormData = z.infer<typeof updateOrganizerProfileSchema>;
+
+export const passwordChangeSchema = z
+  .object({
+    old_password: z.string().min(1, 'Current password is required'),
+    new_password: z.string().min(8, 'New password must be at least 8 characters'),
+    new_password_confirm: z.string().min(1, 'Please confirm new password'),
+  })
+  .refine((data) => data.new_password === data.new_password_confirm, {
+    message: 'Passwords do not match',
+    path: ['new_password_confirm'],
+  });
+
+export type PasswordChangeFormData = z.infer<typeof passwordChangeSchema>;

@@ -9,6 +9,7 @@ import {
   PasswordResetConfirmFormData,
   UpdateUserFormData,
   UpdateOrganizerProfileFormData,
+  PasswordChangeFormData,
 } from '../schemas/auth.schema';
 import { LoginResponse, UserPublic, OrganizerProfile } from '../types/auth.types';
 import { DetailResponse } from '../types/common.types';
@@ -79,6 +80,11 @@ export const authService = {
 
   async updateOrganizerProfile(data: UpdateOrganizerProfileFormData): Promise<OrganizerProfile> {
     const res = await api.patch<OrganizerProfile>('/me/organizer-profile/', data);
+    return res.data;
+  },
+
+  async changePassword(data: PasswordChangeFormData): Promise<DetailResponse> {
+    const res = await api.post<DetailResponse>('/me/change-password/', data);
     return res.data;
   },
 };
