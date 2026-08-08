@@ -49,18 +49,18 @@ export const DashboardSidebar: React.FC = () => {
   const currentNav = isAdmin ? adminNav : isOrganizer ? organizerNav : attendeeNav;
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col justify-between hidden md:flex shrink-0 min-h-[calc(100vh-4rem)]">
+    <aside className="w-64 bg-karyakram-red-600 border-r border-karyakram-red-800 text-white flex flex-col justify-between hidden md:flex shrink-0 min-h-[calc(100vh-4rem)]">
       <div className="p-4 space-y-6">
         {/* User Info Header */}
-        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+        <div className="p-3 bg-karyakram-red-800/80 rounded-xl border border-karyakram-red-200/20 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-karyakram-gold-600 text-karyakram-red-900 flex items-center justify-center font-extrabold text-sm shadow-xs">
             {user?.first_name?.[0] || 'U'}
           </div>
           <div className="min-w-0 flex-1">
-            <h4 className="text-sm font-bold text-slate-900 truncate">
+            <h4 className="text-sm font-bold text-white truncate">
               {user?.first_name} {user?.last_name}
             </h4>
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
+            <p className="text-xs text-karyakram-red-200 font-semibold uppercase tracking-wider">
               {isAdmin ? 'System Admin' : user?.role}
             </p>
           </div>
@@ -79,8 +79,8 @@ export const DashboardSidebar: React.FC = () => {
                   cn(
                     'flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'bg-karyakram-red-800 text-white font-bold shadow-xs'
+                      : 'text-karyakram-red-50 hover:bg-karyakram-red-800/60 hover:text-white'
                   )
                 }
               >
@@ -93,10 +93,10 @@ export const DashboardSidebar: React.FC = () => {
       </div>
 
       {/* Logout Footer */}
-      <div className="p-4 border-t border-slate-100">
+      <div className="p-4 border-t border-karyakram-red-800">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-karyakram-gold-200 hover:bg-karyakram-red-800 transition-colors cursor-pointer"
         >
           <LogOut className="w-4 h-4 shrink-0" />
           <span>Log Out</span>

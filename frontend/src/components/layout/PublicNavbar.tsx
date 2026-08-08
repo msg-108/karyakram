@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, Ticket, LogOut, Menu, X, PlusCircle, Search } from 'lucide-react';
+import { Ticket, LogOut, Menu, X, PlusCircle, Search } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
 
@@ -27,15 +27,12 @@ export const PublicNavbar: React.FC = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-[100] bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/80 transition-all">
+    <nav className="sticky top-0 z-[100] bg-karyakram-red-600 text-white backdrop-blur-xl border-b border-karyakram-red-800 transition-all shadow-md">
       <div className="container-app h-16 flex items-center justify-between gap-4">
-        {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-all">
-            <Calendar className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-2xl font-black text-white tracking-tight font-heading">
-            Karya<span className="text-gradient">kram</span>
+        {/* Brand Logo - Mix of white and red */}
+        <Link to="/" className="flex items-center group shrink-0">
+          <span className="text-2xl font-black tracking-tight font-heading group-hover:opacity-90 transition-opacity text-white">
+            Karya<span className="text-karyakram-red-200">kram</span>
           </span>
         </Link>
 
@@ -47,15 +44,15 @@ export const PublicNavbar: React.FC = () => {
               placeholder="Search events, concerts, tech summits, or cities..."
               value={navSearch}
               onChange={(e) => setNavSearch(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700/90 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all font-medium shadow-inner"
+              className="w-full bg-karyakram-red-800/80 border border-karyakram-red-200/30 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder:text-karyakram-red-200 focus:outline-none focus:border-karyakram-gold-600 focus:ring-2 focus:ring-karyakram-gold-600/30 transition-all font-medium shadow-inner"
             />
-            <Search className="w-4 h-4 text-indigo-400 absolute left-3.5 pointer-events-none" />
+            <Search className="w-4 h-4 text-karyakram-red-200 absolute left-3.5 pointer-events-none" />
           </form>
         )}
 
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-6">
-          <Link to="/events" className="text-sm font-semibold text-slate-300 hover:text-indigo-400 transition-colors">
+          <Link to="/events" className="text-sm font-semibold text-karyakram-red-50 hover:text-white transition-colors">
             Browse Events
           </Link>
 
@@ -63,7 +60,7 @@ export const PublicNavbar: React.FC = () => {
             <div className="flex items-center gap-3">
               {user?.role === 'ORGANIZER' && (
                 <Link to="/organizer/events/new">
-                  <Button size="sm" className="gap-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-md shadow-indigo-600/20 border-0">
+                  <Button size="sm" className="gap-1.5 shadow-md border-0">
                     <PlusCircle className="w-4 h-4" />
                     Create Event
                   </Button>
@@ -71,26 +68,26 @@ export const PublicNavbar: React.FC = () => {
               )}
 
               {user?.role === 'USER' && (
-                <Link to="/my-tickets" className="text-sm font-semibold text-slate-300 hover:text-indigo-400 flex items-center gap-1.5 transition-colors">
-                  <Ticket className="w-4 h-4 text-indigo-400" />
+                <Link to="/my-tickets" className="text-sm font-semibold text-karyakram-red-50 hover:text-white flex items-center gap-1.5 transition-colors">
+                  <Ticket className="w-4 h-4 text-karyakram-gold-200" />
                   My Tickets
                 </Link>
               )}
 
               <Link
                 to={isStaff ? '/admin/dashboard' : user?.role === 'ORGANIZER' ? '/organizer/dashboard' : '/dashboard'}
-                className="flex items-center gap-2.5 pl-3 border-l border-slate-800"
+                className="flex items-center gap-2.5 pl-3 border-l border-karyakram-red-800"
               >
-                <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold">
+                <div className="w-9 h-9 rounded-xl bg-karyakram-red-50 text-karyakram-red-800 border border-karyakram-red-200 flex items-center justify-center text-xs font-bold shadow-xs">
                   {user?.first_name?.[0] || 'U'}
                 </div>
-                <span className="text-sm font-semibold text-slate-200 hover:text-white transition-colors">{user?.first_name}</span>
+                <span className="text-sm font-semibold text-white hover:text-karyakram-gold-200 transition-colors">{user?.first_name}</span>
               </Link>
 
               <button
                 onClick={handleLogout}
                 title="Log out"
-                className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-900 rounded-xl transition-colors"
+                className="p-2 text-karyakram-red-200 hover:text-white hover:bg-karyakram-red-800 rounded-xl transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -98,12 +95,12 @@ export const PublicNavbar: React.FC = () => {
           ) : (
             <div className="flex items-center gap-3">
               <Link to="/login">
-                <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-slate-900">
+                <Button variant="ghost" size="sm" className="text-karyakram-red-50 hover:text-white hover:bg-karyakram-red-800">
                   Sign In
                 </Button>
               </Link>
               <Link to="/register">
-                <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white border-0 shadow-lg shadow-indigo-500/25">
+                <Button size="sm" className="shadow-md">
                   Get Started
                 </Button>
               </Link>
@@ -114,7 +111,7 @@ export const PublicNavbar: React.FC = () => {
         {/* Mobile menu trigger */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-2 rounded-xl text-slate-400 hover:bg-slate-900 hover:text-white"
+          className="md:hidden p-2 rounded-xl text-karyakram-red-200 hover:bg-karyakram-red-800 hover:text-white"
         >
           {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -122,11 +119,11 @@ export const PublicNavbar: React.FC = () => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-slate-200 bg-white px-4 py-4 space-y-3 animate-in slide-in-from-top-2">
+        <div className="md:hidden border-b border-karyakram-red-800 bg-karyakram-red-600 px-4 py-4 space-y-3 animate-in slide-in-from-top-2 shadow-lg">
           <Link
             to="/events"
             onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-xl text-base font-medium text-slate-700 hover:bg-slate-50"
+            className="block px-3 py-2 rounded-xl text-base font-medium text-white hover:bg-karyakram-purple-800"
           >
             Browse Events
           </Link>
@@ -136,7 +133,7 @@ export const PublicNavbar: React.FC = () => {
               <Link
                 to={isStaff ? '/admin/dashboard' : user?.role === 'ORGANIZER' ? '/organizer/dashboard' : '/dashboard'}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-xl text-base font-medium text-slate-700 hover:bg-slate-50"
+                className="block px-3 py-2 rounded-xl text-base font-medium text-white hover:bg-karyakram-purple-800"
               >
                 Dashboard
               </Link>
@@ -144,7 +141,7 @@ export const PublicNavbar: React.FC = () => {
                 <Link
                   to="/my-tickets"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 rounded-xl text-base font-medium text-slate-700 hover:bg-slate-50"
+                  className="block px-3 py-2 rounded-xl text-base font-medium text-white hover:bg-karyakram-purple-800"
                 >
                   My Tickets
                 </Link>
@@ -154,7 +151,7 @@ export const PublicNavbar: React.FC = () => {
                   setMobileMenuOpen(false);
                   handleLogout();
                 }}
-                className="w-full text-left px-3 py-2 rounded-xl text-base font-medium text-rose-600 hover:bg-rose-50"
+                className="w-full text-left px-3 py-2 rounded-xl text-base font-medium text-karyakram-gold-200 hover:bg-karyakram-purple-800 cursor-pointer"
               >
                 Log Out
               </button>

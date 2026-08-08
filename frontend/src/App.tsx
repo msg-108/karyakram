@@ -123,6 +123,9 @@ export default function App() {
           <Route path="/my-bookings" element={<MyBookingsPage />} />
           <Route path="/my-tickets" element={<MyTicketsPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          {/* Path-based callback: eSewa appends ?data=<base64> cleanly to the path URL */}
+          <Route path="/payment/callback/:bookingId/:provider" element={<PaymentCallbackPage />} />
+          {/* Legacy query-param callback kept as fallback */}
           <Route path="/payment/callback" element={<PaymentCallbackPage />} />
 
           {/* Organizer */}
