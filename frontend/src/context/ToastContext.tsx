@@ -66,17 +66,17 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             key={t.id}
             className={`pointer-events-auto flex items-center justify-between gap-3 p-4 rounded-xl shadow-lg border text-sm transition-all duration-300 transform translate-y-0 ${
               t.type === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-950 font-semibold'
                 : t.type === 'error'
-                ? 'bg-rose-50 border-rose-200 text-rose-800'
+                ? 'bg-orange-50 border-orange-300 text-orange-950 font-semibold'
                 : t.type === 'warning'
-                ? 'bg-amber-50 border-amber-200 text-amber-800'
-                : 'bg-blue-50 border-blue-200 text-blue-800'
+                ? 'bg-amber-50 border-amber-300 text-amber-950 font-semibold'
+                : 'bg-blue-50 border-blue-300 text-blue-950 font-semibold'
             }`}
           >
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
               {t.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
-              {t.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />}
+              {t.type === 'error' && <AlertCircle className="w-5 h-5 text-orange-600 shrink-0" />}
               {t.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />}
               {t.type === 'info' && <Info className="w-5 h-5 text-blue-600 shrink-0" />}
               <span className="truncate font-medium">{t.message}</span>

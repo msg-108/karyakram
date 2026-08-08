@@ -19,24 +19,24 @@ export const BookingSummary: React.FC<BookingSummaryProps> = ({
   totalAmount,
 }) => {
   return (
-    <Card className="border-indigo-100 bg-slate-50/50">
-      <CardHeader className="bg-white">
-        <CardTitle className="text-base font-bold">Order Summary</CardTitle>
-        <p className="text-xs text-slate-500">{eventTitle}</p>
-        <p className="text-xs text-indigo-600 font-semibold">{formatDateTime(eventStartDatetime)}</p>
-        {eventVenue && <p className="text-xs text-slate-400">{eventVenue}</p>}
+    <Card className="border-karyakram-purple-200/60 bg-white shadow-xl shadow-slate-200/40">
+      <CardHeader className="bg-karyakram-purple-50/50 border-b border-karyakram-purple-200/40">
+        <CardTitle className="text-base font-black text-karyakram-purple-900 font-heading">Order Summary</CardTitle>
+        <p className="text-xs font-bold text-slate-800">{eventTitle}</p>
+        <p className="text-xs text-karyakram-purple-800 font-semibold">{formatDateTime(eventStartDatetime)}</p>
+        {eventVenue && <p className="text-xs text-slate-500">{eventVenue}</p>}
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-4">
         {/* Line Items */}
-        <div className="space-y-2.5 divide-y divide-slate-200/60">
+        <div className="space-y-2.5 divide-y divide-slate-100">
           {items.map((item, index) => (
             <div key={index} className="pt-2.5 first:pt-0 flex items-center justify-between text-xs">
               <div>
-                <span className="font-semibold text-slate-800">{item.ticket_tier_name}</span>
-                <span className="text-slate-500 ml-1.5">x{item.quantity}</span>
+                <span className="font-bold text-slate-900">{item.ticket_tier_name}</span>
+                <span className="text-slate-500 ml-1.5 font-semibold">x{item.quantity}</span>
               </div>
-              <span className="font-bold text-slate-900">
+              <span className="font-extrabold text-slate-900">
                 {formatCurrency(item.subtotal || item.price_at_purchase)}
               </span>
             </div>
@@ -44,9 +44,9 @@ export const BookingSummary: React.FC<BookingSummaryProps> = ({
         </div>
 
         {/* Total */}
-        <div className="pt-4 border-t border-slate-300 flex items-center justify-between">
+        <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
           <span className="text-sm font-bold text-slate-900">Total Amount</span>
-          <span className="text-lg font-black text-indigo-600">
+          <span className="text-2xl font-black text-karyakram-purple-900 font-heading">
             {formatCurrency(totalAmount)}
           </span>
         </div>
