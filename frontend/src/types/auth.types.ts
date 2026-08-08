@@ -20,7 +20,10 @@ export interface OrganizerProfile {
   organization_name: string;
   organization_description: string;
   website_url: string;
+  citizenship_number?: string;
+  pan_number?: string;
   bank_name: string;
+  bank_account_number?: string;
   citizenship_document: string | null;
   pan_document: string | null;
   approval_requested_at: string;

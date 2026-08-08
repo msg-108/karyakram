@@ -54,6 +54,7 @@ export const PendingOrganizersPage: React.FC = () => {
     { header: 'Applicant', accessor: (row) => `${row.user.first_name} ${row.user.last_name}` },
     { header: 'Email', accessor: (row) => row.user.email },
     { header: 'Bank Name', accessor: (row) => row.bank_name },
+    { header: 'Account No.', accessor: (row) => row.bank_account_number || 'N/A' },
     { header: 'Requested At', accessor: (row) => formatDateTime(row.approval_requested_at) },
     {
       header: 'Review',
@@ -88,14 +89,30 @@ export const PendingOrganizersPage: React.FC = () => {
               <p className="text-slate-700">{selectedOrg.organization_description || 'No description provided.'}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-slate-800">
+            <div className="grid grid-cols-2 gap-3 text-slate-800 bg-white p-3 border border-slate-200 rounded-xl">
               <div>
                 <span className="text-slate-500 block font-medium">Applicant Name</span>
                 <span className="font-bold text-slate-900">{selectedOrg.user.first_name} {selectedOrg.user.last_name}</span>
               </div>
               <div>
+                <span className="text-slate-500 block font-medium">Email / Username</span>
+                <span className="font-bold text-slate-900">{selectedOrg.user.email}</span>
+              </div>
+              <div>
                 <span className="text-slate-500 block font-medium">Bank Name</span>
                 <span className="font-bold text-slate-900">{selectedOrg.bank_name}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block font-medium">Bank Account Number</span>
+                <span className="font-bold text-slate-900 font-mono text-xs">{selectedOrg.bank_account_number || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block font-medium">Citizenship Number</span>
+                <span className="font-bold text-slate-900 font-mono text-xs">{selectedOrg.citizenship_number || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block font-medium">PAN Number</span>
+                <span className="font-bold text-slate-900 font-mono text-xs">{selectedOrg.pan_number || 'N/A'}</span>
               </div>
             </div>
 
