@@ -14,7 +14,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full space-y-1.5">
         {label && (
-          <label htmlFor={inputId} className="block text-xs font-bold text-slate-300 uppercase tracking-wider font-heading">
+          <label htmlFor={inputId} className="block text-xs font-bold text-slate-800 uppercase tracking-wider font-heading">
             {label}
           </label>
         )}
@@ -23,15 +23,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           type={type}
           className={cn(
-            'w-full px-4 py-3 bg-slate-900/90 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder:text-slate-500 transition-all',
-            'focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25',
-            error && 'border-rose-500/80 focus:border-rose-500 focus:ring-rose-500/20',
+            'w-full px-4 py-3 bg-[#F3F4F6] border border-slate-300 rounded-xl text-sm text-slate-900 placeholder:text-slate-500 transition-all shadow-2xs font-medium',
+            'focus:outline-none focus:border-karyakram-red-600 focus:ring-2 focus:ring-karyakram-red-600/30 focus:bg-white',
+            error && 'border-orange-500 focus:border-orange-600 focus:ring-orange-500/20 text-orange-950',
             className
           )}
           {...props}
         />
-        {error && <p className="text-xs text-rose-400 font-medium">{error}</p>}
-        {!error && helperText && <p className="text-xs text-slate-400">{helperText}</p>}
+        {error && <p className="text-xs text-orange-600 font-bold">{error}</p>}
+        {!error && helperText && <p className="text-xs text-slate-600">{helperText}</p>}
       </div>
     );
   }
