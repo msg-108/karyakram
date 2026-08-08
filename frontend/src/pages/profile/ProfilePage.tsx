@@ -12,6 +12,8 @@ import {
   ExternalLink,
   FileText,
   Key,
+  Pencil,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/auth.service';
@@ -28,7 +30,6 @@ import { FormField } from '../../components/forms/FormField';
 import { Button } from '../../components/ui/Button';
 import { useToast } from '../../context/ToastContext';
 import { parseApiError } from '../../lib/api';
-import { Link } from 'react-router-dom';
 
 export const ProfilePage: React.FC = () => {
   const { user } = useAuth();
@@ -36,6 +37,11 @@ export const ProfilePage: React.FC = () => {
 
   const [organizerProfile, setOrganizerProfile] = useState<OrganizerProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+
+  // Read-Only / Edit Toggle States
+  const [isEditingPersonal, setIsEditingPersonal] = useState(false);
+  const [isEditingOrg, setIsEditingOrg] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // User form
   const {
@@ -107,6 +113,7 @@ export const ProfilePage: React.FC = () => {
     try {
       await authService.updateCurrentUser(data);
       toast.success('Personal profile updated successfully!');
+      setIsEditingPersonal(false);
     } catch (err) {
       toast.error(parseApiError(err));
     }
@@ -117,6 +124,7 @@ export const ProfilePage: React.FC = () => {
       const updated = await authService.updateOrganizerProfile(data);
       setOrganizerProfile(updated);
       toast.success('Organization profile updated successfully!');
+      setIsEditingOrg(false);
     } catch (err) {
       toast.error(parseApiError(err));
     }
@@ -127,6 +135,7 @@ export const ProfilePage: React.FC = () => {
       await authService.changePassword(data);
       toast.success('Password updated successfully!');
       resetPassForm();
+      setIsChangingPassword(false);
     } catch (err: any) {
       const fieldErrors = err?.response?.data;
       if (fieldErrors && typeof fieldErrors === 'object') {
@@ -145,6 +154,33 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleCancelPersonalEdit = () => {
+    if (user) {
+      resetUserForm({
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        username: user.username || '',
+      });
+    }
+    setIsEditingPersonal(false);
+  };
+
+  const handleCancelOrgEdit = () => {
+    if (organizerProfile) {
+      resetOrgForm({
+        organization_name: organizerProfile.organization_name || '',
+        organization_description: organizerProfile.organization_description || '',
+        website_url: organizerProfile.website_url || '',
+      });
+    }
+    setIsEditingOrg(false);
+  };
+
+  const handleCancelPasswordChange = () => {
+    resetPassForm();
+    setIsChangingPassword(false);
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
       {/* Header */}
@@ -154,7 +190,7 @@ export const ProfilePage: React.FC = () => {
             Account Profile
           </h1>
           <p className="text-sm text-slate-500 mt-1 font-medium">
-            Manage your account settings, personal information, and dashboard preferences.
+            View and manage your personal details, organization info, and security credentials.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -166,14 +202,31 @@ export const ProfilePage: React.FC = () => {
 
       {/* Personal Information Form */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-          <div className="w-10 h-10 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
-            <UserIcon className="w-5 h-5 text-slate-700" />
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
+              <UserIcon className="w-5 h-5 text-slate-700" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Personal Information</h2>
+              <p className="text-xs text-slate-500 font-medium">
+                {isEditingPersonal
+                  ? 'Update your name and account handle below.'
+                  : 'Account display name and primary identifier.'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">Personal Information</h2>
-            <p className="text-xs text-slate-500 font-medium">Update your public display name and account handle.</p>
-          </div>
+          {!isEditingPersonal && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditingPersonal(true)}
+              className="gap-1.5 text-xs font-bold"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Edit Info
+            </Button>
+          )}
         </div>
 
         <form onSubmit={handleSubmitUser(onUpdateUser)} className="space-y-5">
@@ -181,12 +234,14 @@ export const ProfilePage: React.FC = () => {
             <FormField
               label="First Name"
               placeholder="Sita"
+              disabled={!isEditingPersonal}
               {...registerUser('first_name')}
               error={userErrors.first_name?.message}
             />
             <FormField
               label="Last Name"
               placeholder="Gharti"
+              disabled={!isEditingPersonal}
               {...registerUser('last_name')}
               error={userErrors.last_name?.message}
             />
@@ -196,6 +251,7 @@ export const ProfilePage: React.FC = () => {
             <FormField
               label="Username"
               placeholder="sitagharti"
+              disabled={!isEditingPersonal}
               {...registerUser('username')}
               error={userErrors.username?.message}
             />
@@ -223,81 +279,131 @@ export const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-end pt-2">
-            <Button type="submit" isLoading={isSubmittingUser} className="gap-2 px-6">
-              <Save className="w-4 h-4" /> Save Personal Info
-            </Button>
-          </div>
+          {isEditingPersonal && (
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancelPersonalEdit}
+                disabled={isSubmittingUser}
+                className="gap-1 px-5"
+              >
+                <X className="w-4 h-4" /> Cancel
+              </Button>
+              <Button type="submit" isLoading={isSubmittingUser} className="gap-2 px-6">
+                <Save className="w-4 h-4" /> Save Personal Info
+              </Button>
+            </div>
+          )}
         </form>
       </div>
 
-      {/* Change Password Card */}
+      {/* Security & Password Card */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center justify-center font-bold">
-            <Key className="w-5 h-5 text-indigo-600" />
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center justify-center font-bold">
+              <Key className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Security & Password</h2>
+              <p className="text-xs text-slate-500 font-medium">
+                Manage your login password to keep your account secure.
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">Change Password</h2>
-            <p className="text-xs text-slate-500 font-medium">
-              Update your password by entering your current password below.
-            </p>
-          </div>
+          {!isChangingPassword && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsChangingPassword(true)}
+              className="gap-1.5 text-xs font-bold"
+            >
+              <Key className="w-3.5 h-3.5" /> Change Password
+            </Button>
+          )}
         </div>
 
-        <form onSubmit={handleSubmitPass(onChangePassword)} className="space-y-4">
-          <FormField
-            label="Current Password"
-            type="password"
-            placeholder="••••••••"
-            {...registerPass('old_password')}
-            error={passErrors.old_password?.message}
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {isChangingPassword ? (
+          <form onSubmit={handleSubmitPass(onChangePassword)} className="space-y-4">
             <FormField
-              label="New Password"
+              label="Current Password"
               type="password"
               placeholder="••••••••"
-              {...registerPass('new_password')}
-              error={passErrors.new_password?.message}
+              {...registerPass('old_password')}
+              error={passErrors.old_password?.message}
             />
-            <FormField
-              label="Confirm New Password"
-              type="password"
-              placeholder="••••••••"
-              {...registerPass('new_password_confirm')}
-              error={passErrors.new_password_confirm?.message}
-            />
-          </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-            <p className="text-xs text-slate-500 font-medium">
-              Forgot your current password?{' '}
-              <Link to="/forgot-password" className="font-bold text-karyakram-purple-600 hover:underline">
-                Reset via OTP
-              </Link>
-            </p>
-            <Button type="submit" isLoading={isSubmittingPass} className="gap-2 px-6 w-full sm:w-auto">
-              <Lock className="w-4 h-4" /> Update Password
-            </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                label="New Password"
+                type="password"
+                placeholder="••••••••"
+                {...registerPass('new_password')}
+                error={passErrors.new_password?.message}
+              />
+              <FormField
+                label="Confirm New Password"
+                type="password"
+                placeholder="••••••••"
+                {...registerPass('new_password_confirm')}
+                error={passErrors.new_password_confirm?.message}
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancelPasswordChange}
+                disabled={isSubmittingPass}
+                className="gap-1 px-5"
+              >
+                <X className="w-4 h-4" /> Cancel
+              </Button>
+              <Button type="submit" isLoading={isSubmittingPass} className="gap-2 px-6">
+                <Lock className="w-4 h-4" /> Update Password
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+              <span className="text-xs font-bold text-slate-700">Account Password Status: Configured & Protected</span>
+            </div>
+            <span className="text-xs text-slate-400 font-medium hidden sm:inline">••••••••••••</span>
           </div>
-        </form>
+        )}
       </div>
 
       {/* Organizer Profile & Locked Fields (Only for Organizers) */}
       {user?.role === 'ORGANIZER' && (
         <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center font-bold">
-              <Building2 className="w-5 h-5 text-amber-600" />
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center font-bold">
+                <Building2 className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Organization Profile</h2>
+                <p className="text-xs text-slate-500 font-medium">
+                  Public details shown on your published event listings.
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">Organization Profile</h2>
-              <p className="text-xs text-slate-500 font-medium">
-                Manage organization details shown on your published event listings.
-              </p>
-            </div>
+            {!isEditingOrg && !isLoadingProfile && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditingOrg(true)}
+                className="gap-1.5 text-xs font-bold"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Edit Organization Info
+              </Button>
+            )}
           </div>
 
           {isLoadingProfile ? (
@@ -310,6 +416,7 @@ export const ProfilePage: React.FC = () => {
                 <FormField
                   label="Organization Name"
                   placeholder="Karyakram Events Team"
+                  disabled={!isEditingOrg}
                   {...registerOrg('organization_name')}
                   error={orgErrors.organization_name?.message}
                 />
@@ -319,8 +426,13 @@ export const ProfilePage: React.FC = () => {
                   <textarea
                     rows={3}
                     placeholder="Tell attendees about your organization and event hosting history..."
+                    disabled={!isEditingOrg}
                     {...registerOrg('organization_description')}
-                    className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-900 focus:border-karyakram-red-600 focus:ring-2 focus:ring-karyakram-red-600/20 outline-none transition-all font-medium"
+                    className={`w-full border rounded-xl p-3 text-sm transition-all font-medium ${
+                      !isEditingOrg
+                        ? 'bg-slate-100 border-slate-200 text-slate-600 cursor-not-allowed'
+                        : 'bg-white border-slate-300 text-slate-900 focus:border-karyakram-red-600 focus:ring-2 focus:ring-karyakram-red-600/20 outline-none'
+                    }`}
                   />
                   {orgErrors.organization_description && (
                     <p className="text-xs font-medium text-red-600">{orgErrors.organization_description.message}</p>
@@ -330,16 +442,28 @@ export const ProfilePage: React.FC = () => {
                 <FormField
                   label="Website URL"
                   placeholder="https://example.com"
+                  disabled={!isEditingOrg}
                   {...registerOrg('website_url')}
                   error={orgErrors.website_url?.message}
                 />
               </div>
 
-              <div className="flex justify-end">
-                <Button type="submit" isLoading={isSubmittingOrg} className="gap-2 px-6">
-                  <Save className="w-4 h-4" /> Save Organization Info
-                </Button>
-              </div>
+              {isEditingOrg && (
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelOrgEdit}
+                    disabled={isSubmittingOrg}
+                    className="gap-1 px-5"
+                  >
+                    <X className="w-4 h-4" /> Cancel
+                  </Button>
+                  <Button type="submit" isLoading={isSubmittingOrg} className="gap-2 px-6">
+                    <Save className="w-4 h-4" /> Save Organization Info
+                  </Button>
+                </div>
+              )}
 
               {/* Locked Verification Data Section */}
               <div className="mt-8 border-t border-slate-200 pt-6 space-y-4">
