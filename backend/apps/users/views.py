@@ -13,7 +13,8 @@ from drf_spectacular.utils import (
 )
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
@@ -28,6 +29,7 @@ from .serializers import (
     LogoutSerializer,
     OrganizerApprovalActionSerializer,
     OrganizerProfileSerializer,
+    OrganizerProfileUpdateSerializer,
     OrganizerRegisterSerializer,
     OTPRequestSerializer,
     OTPVerifySerializer,
@@ -37,6 +39,7 @@ from .serializers import (
     UserPublicSerializer,
     UserRegisterSerializer,
     UserTokenObtainPairSerializer,
+    UserUpdateSerializer,
 )
 
 _DETAIL_RESPONSE = inline_serializer(
@@ -246,11 +249,15 @@ class CustomTokenRefreshView(TokenRefreshView):
 # ==================== PROFILE ====================
 
 
-class MeView(RetrieveAPIView):
-    """Return the authenticated user's own profile."""
+class MeView(RetrieveUpdateAPIView):
+    """Return or update the authenticated user's own profile."""
 
     permission_classes = [IsAuthenticated]
-    serializer_class = UserPublicSerializer
+
+    def get_serializer_class(self):
+        if self.request.method in ["PUT", "PATCH"]:
+            return UserUpdateSerializer
+        return UserPublicSerializer
 
     def get_object(self) -> User:
         return self.request.user
@@ -258,21 +265,40 @@ class MeView(RetrieveAPIView):
     @extend_schema(
         operation_id="getCurrentUser",
         summary="Get current user profile",
-        description=(
-                "Return the authenticated user's profile information."
-        ),
+        description="Return the authenticated user's profile information.",
         tags=["Profile"],
-        responses=UserPublicSerializer)
-
+        responses=UserPublicSerializer,
+    )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
+    @extend_schema(
+        operation_id="updateCurrentUser",
+        summary="Update current user profile",
+        description="Update current user's name or username. Email and role are read-only.",
+        tags=["Profile"],
+        request=UserUpdateSerializer,
+        responses=UserPublicSerializer,
+    )
+    def patch(self, request, *args, **kwargs):
+        response = super().patch(request, *args, **kwargs)
+        # Ensure representation returns full UserPublicSerializer response format
+        user = self.get_object()
+        return Response(UserPublicSerializer(user).data)
 
-class MyOrganizerProfileView(RetrieveAPIView):
-    """Return the authenticated organizer's OrganizerProfile."""
+    def put(self, request, *args, **kwargs):
+        return self.patch(request, *args, **kwargs)
+
+
+class MyOrganizerProfileView(RetrieveUpdateAPIView):
+    """Return or update the authenticated organizer's OrganizerProfile."""
 
     permission_classes = [IsAuthenticated, IsOrganizer]
-    serializer_class = OrganizerProfileSerializer
+
+    def get_serializer_class(self):
+        if self.request.method in ["PUT", "PATCH"]:
+            return OrganizerProfileUpdateSerializer
+        return OrganizerProfileSerializer
 
     def get_object(self) -> OrganizerProfile:
         return get_object_or_404(OrganizerProfile, user=self.request.user)
@@ -280,15 +306,28 @@ class MyOrganizerProfileView(RetrieveAPIView):
     @extend_schema(
         operation_id="getOrganizerProfile",
         summary="Get organizer profile",
-        description=(
-                "Return the authenticated organizer's profile information."
-        ),
+        description="Return the authenticated organizer's profile information.",
         tags=["Profile"],
         responses=OrganizerProfileSerializer,
     )
-
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+    @extend_schema(
+        operation_id="updateOrganizerProfile",
+        summary="Update organizer profile",
+        description="Update organizer organization info. Legal & financial details are read-only.",
+        tags=["Profile"],
+        request=OrganizerProfileUpdateSerializer,
+        responses=OrganizerProfileSerializer,
+    )
+    def patch(self, request, *args, **kwargs):
+        response = super().patch(request, *args, **kwargs)
+        profile = self.get_object()
+        return Response(OrganizerProfileSerializer(profile).data)
+
+    def put(self, request, *args, **kwargs):
+        return self.patch(request, *args, **kwargs)
 
 
 # ==================== ADMIN: ORGANIZER APPROVAL ====================

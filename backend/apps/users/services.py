@@ -216,13 +216,13 @@ def _validate_otp(user: User, *, code: str, purpose: str) -> EmailOTP:
         otp = EmailOTP.objects.select_for_update().get(user=user, purpose=purpose)
     except EmailOTP.DoesNotExist:
         raise ValidationError(
-            {"code": "No verification code found. Please request a new one."}
+            {"code": "No verification code found. Please request a new code."}
         )
 
     if otp.is_expired:
         otp.delete()
         raise ValidationError(
-            {"code": "This code has expired. Please request a new one."}
+            {"code": "This code has expired. Please request a new code."}
         )
 
     if otp.attempts_remaining <= 0:
@@ -234,8 +234,13 @@ def _validate_otp(user: User, *, code: str, purpose: str) -> EmailOTP:
     if otp.code != code:
         otp.attempts += 1
         otp.save(update_fields=["attempts"])
+        if otp.attempts >= EmailOTP.MAX_ATTEMPTS:
+            otp.delete()
+            raise ValidationError(
+                {"code": f"Too many incorrect attempts ({EmailOTP.MAX_ATTEMPTS}/{EmailOTP.MAX_ATTEMPTS}). This verification code has been invalidated. Please request a new code."}
+            )
         raise ValidationError(
-            {"code": f"Incorrect code. {otp.attempts_remaining} attempt(s) remaining."}
+            {"code": f"Incorrect verification code. {otp.attempts_remaining} attempt(s) remaining out of {EmailOTP.MAX_ATTEMPTS}."}
         )
     return otp
 
@@ -273,14 +278,11 @@ def verify_email_otp(user: User, *, code: str) -> OTPVerificationResult:
 def request_password_reset(*, email: str) -> None:
     """
     Request a password reset OTP. Fails silently if the user doesn't exist
-    or isn't active, to prevent email enumeration.
+    to prevent email enumeration.
     """
     try:
         user = User.objects.get(email=email)
     except User.DoesNotExist:
-        return
-
-    if not user.is_active:
         return
 
     # Check cooldown
@@ -308,9 +310,6 @@ def verify_password_reset_code(*, email: str, code: str) -> None:
     except User.DoesNotExist:
         raise ValidationError({"code": "Invalid request."})
 
-    if not user.is_active:
-        raise ValidationError({"code": "Invalid request."})
-
     _validate_otp(user, code=code, purpose=EmailOTP.Purpose.PASSWORD_RESET)
 
 
@@ -318,19 +317,21 @@ def verify_password_reset_code(*, email: str, code: str) -> None:
 def confirm_password_reset(*, email: str, code: str, new_password: str) -> None:
     """
     Validates the code and changes the user's password.
+    Also verifies email ownership and activates standard user accounts.
     """
     try:
         user = User.objects.get(email=email)
     except User.DoesNotExist:
         raise ValidationError({"code": "Invalid request."})
 
-    if not user.is_active:
-        raise ValidationError({"code": "Invalid request."})
-
     otp = _validate_otp(user, code=code, purpose=EmailOTP.Purpose.PASSWORD_RESET)
 
     user.set_password(new_password)
-    user.save(update_fields=["password"])
+    user.is_email_verified = True
+    if user.role == User.Role.USER:
+        user.is_active = True
+
+    user.save(update_fields=["password", "is_email_verified", "is_active"])
     otp.delete()
 
     send_password_reset_success_email(user)

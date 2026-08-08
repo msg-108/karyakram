@@ -44,6 +44,31 @@ class UserPublicSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """Allows updating first_name, last_name, and username. Email and role remain read-only."""
+
+    username = serializers.CharField(
+        max_length=150,
+        required=False,
+        validators=[validate_username_format],
+    )
+
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "username", "email", "role"]
+        read_only_fields = ["email", "role"]
+
+    def validate_username(self, value: str) -> str:
+        request = self.context.get("request")
+        user = request.user if request else None
+        qs = User.objects.filter(username__iexact=value)
+        if user and user.pk:
+            qs = qs.exclude(pk=user.pk)
+        if qs.exists():
+            raise serializers.ValidationError("A user with that username already exists.")
+        return value
+
+
 # ==================== REGISTRATION ====================
 
 
@@ -235,6 +260,36 @@ class OrganizerProfileSerializer(serializers.ModelSerializer):
             "rejection_reason",
         ]
         read_only_fields = fields
+
+
+class OrganizerProfileUpdateSerializer(serializers.ModelSerializer):
+    """
+    Allows updating organization_name, organization_description, and website_url.
+    Sensitive legal & payout fields (citizenship_number, pan_number, bank details, docs)
+    are strictly read-only once created.
+    """
+
+    class Meta:
+        model = OrganizerProfile
+        fields = [
+            "organization_name",
+            "organization_description",
+            "website_url",
+            "citizenship_number",
+            "pan_number",
+            "bank_name",
+            "bank_account_number",
+            "citizenship_document",
+            "pan_document",
+        ]
+        read_only_fields = [
+            "citizenship_number",
+            "pan_number",
+            "bank_name",
+            "bank_account_number",
+            "citizenship_document",
+            "pan_document",
+        ]
 
 
 class OrganizerApprovalActionSerializer(serializers.Serializer):
