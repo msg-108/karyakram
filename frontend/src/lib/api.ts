@@ -136,10 +136,14 @@ export function parseApiError(error: unknown): string {
     if (typeof data === 'object' && data !== null) {
       const messages: string[] = [];
       for (const [key, value] of Object.entries(data)) {
-        if (Array.isArray(value)) {
-          messages.push(`${key}: ${value.join(' ')}`);
-        } else if (typeof value === 'string') {
-          messages.push(`${key}: ${value}`);
+        const valStr = Array.isArray(value) ? value.join(' ') : typeof value === 'string' ? value : '';
+        if (valStr) {
+          if (key === 'old_password' || key === 'new_password' || valStr.toLowerCase().includes('password')) {
+            messages.push(valStr);
+          } else {
+            const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+            messages.push(`${formattedKey}: ${valStr}`);
+          }
         }
       }
       if (messages.length) return messages.join(' | ');

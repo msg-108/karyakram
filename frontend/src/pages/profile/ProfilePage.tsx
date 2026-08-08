@@ -67,6 +67,7 @@ export const ProfilePage: React.FC = () => {
     register: registerPass,
     handleSubmit: handleSubmitPass,
     reset: resetPassForm,
+    setError: setPassError,
     formState: { errors: passErrors, isSubmitting: isSubmittingPass },
   } = useForm<PasswordChangeFormData>({
     resolver: zodResolver(passwordChangeSchema),
@@ -126,7 +127,20 @@ export const ProfilePage: React.FC = () => {
       await authService.changePassword(data);
       toast.success('Password updated successfully!');
       resetPassForm();
-    } catch (err) {
+    } catch (err: any) {
+      const fieldErrors = err?.response?.data;
+      if (fieldErrors && typeof fieldErrors === 'object') {
+        if (fieldErrors.old_password) {
+          const msg = Array.isArray(fieldErrors.old_password) ? fieldErrors.old_password[0] : fieldErrors.old_password;
+          setPassError('old_password', { type: 'manual', message: msg });
+          return;
+        }
+        if (fieldErrors.new_password) {
+          const msg = Array.isArray(fieldErrors.new_password) ? fieldErrors.new_password[0] : fieldErrors.new_password;
+          setPassError('new_password', { type: 'manual', message: msg });
+          return;
+        }
+      }
       toast.error(parseApiError(err));
     }
   };
