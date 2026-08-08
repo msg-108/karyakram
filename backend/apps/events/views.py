@@ -90,14 +90,21 @@ class PublicEventListView(ListAPIView):
             start_date_from=self.request.query_params.get("start_date_from"),
             start_date_to=self.request.query_params.get("start_date_to"),
         )
+
+        ordering = self.request.query_params.get("ordering")
+        if ordering == "trending":
+            queryset = services.list_trending_events(limit=100)
+        elif ordering == "upcoming":
+            queryset = queryset.order_by("start_datetime")
+
         return queryset
 
     @extend_schema(
         operation_id="listPublicEvents",
         summary="Browse published events",
         description=(
-            "Return published, publicly-visible events. Supports free-text search "
-            "and filtering by category, city, and date range via query parameters."
+            "Return published, publicly-visible events. Supports free-text search, "
+            "ordering (trending/upcoming), and filtering by category, city, and date range."
         ),
         tags=["Events: Public"],
         parameters=[
@@ -114,6 +121,66 @@ class PublicEventListView(ListAPIView):
             OpenApiParameter(
                 "start_date_to", str, description="ISO 8601 datetime upper bound."
             ),
+            OpenApiParameter(
+                "ordering", str, description="Sort order: 'trending' or 'upcoming'."
+            ),
+        ],
+        responses=PublicEventListSerializer(many=True),
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+class PublicTrendingEventListView(ListAPIView):
+    """
+    Return top trending published events.
+    Ranked by recent sales, total sales, and upcoming start datetime.
+    Fallback: Orders chronologically by start_datetime if sales are low.
+    """
+
+    permission_classes = []
+    serializer_class = PublicEventListSerializer
+
+    def get_queryset(self):
+        limit = int(self.request.query_params.get("limit", 10))
+        return services.list_trending_events(limit=limit)
+
+    @extend_schema(
+        operation_id="listTrendingEvents",
+        summary="List trending events",
+        description="Return top trending published events scored by sales velocity and upcoming start date.",
+        tags=["Events: Public"],
+        parameters=[
+            OpenApiParameter("limit", int, description="Max number of trending events to return (default 10)."),
+        ],
+        responses=PublicEventListSerializer(many=True),
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+class PublicRecommendedEventListView(ListAPIView):
+    """
+    Return personalized event recommendations.
+    Authenticated Users: Matches user's top booked categories (excluding already booked events).
+    Cold-Start Fallback: Automatically backfills with top trending/upcoming events for new/anonymous users.
+    """
+
+    permission_classes = []
+    serializer_class = PublicEventListSerializer
+
+    def get_queryset(self):
+        limit = int(self.request.query_params.get("limit", 10))
+        user = self.request.user if self.request.user.is_authenticated else None
+        return services.list_recommended_events(user=user, limit=limit)
+
+    @extend_schema(
+        operation_id="listRecommendedEvents",
+        summary="List recommended events",
+        description="Return personalized event recommendations with cold-start fallbacks to trending events.",
+        tags=["Events: Public"],
+        parameters=[
+            OpenApiParameter("limit", int, description="Max number of recommended events to return (default 10)."),
         ],
         responses=PublicEventListSerializer(many=True),
     )

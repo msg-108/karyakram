@@ -158,3 +158,41 @@ class EventServicesTest(TransactionTestCase):
         event.refresh_from_db()
         self.assertEqual(event.status, Event.Status.ARCHIVED)
 
+    def test_list_trending_and_recommended_events_cold_start_fallback(self):
+        from apps.events.services import list_trending_events, list_recommended_events
+
+        cat = create_category(validated_data={"name": "Tech & AI"})
+        start = timezone.now() + timezone.timedelta(days=5)
+        end = start + timezone.timedelta(hours=2)
+
+        event_data = {
+            "title": "AI Summit 2026",
+            "short_description": "Tech conference",
+            "description": "Desc",
+            "venue": "Venue",
+            "address": "Address",
+            "city": "Kathmandu",
+            "capacity": 500,
+            "category": cat,
+            "start_datetime": start,
+            "end_datetime": end,
+            "ticket_tiers": [{"name": "GA", "price": "100", "quantity": 50}],
+        }
+        event = create_event(organizer=self.organizer, validated_data=event_data)
+        event.status = Event.Status.PUBLISHED
+        event.save()
+
+        # 1. Test Trending fallback with 0 sales
+        trending = list(list_trending_events(limit=5))
+        self.assertIn(event, trending)
+
+        # 2. Test Recommendation cold-start for anonymous user
+        recs_anon = list_recommended_events(user=None, limit=5)
+        self.assertIn(event, recs_anon)
+
+        # 3. Test Recommendation for authenticated user with no bookings
+        user = UserFactory()
+        recs_user = list_recommended_events(user=user, limit=5)
+        self.assertIn(event, recs_user)
+
+

@@ -13,6 +13,8 @@ from .views import (
     PublicCategoryListView,
     PublicEventDetailView,
     PublicEventListView,
+    PublicRecommendedEventListView,
+    PublicTrendingEventListView,
 )
 
 # Rule: raw resource CRUD lives here under public, organizer/, and admin/ sub-paths.
@@ -24,6 +26,8 @@ app_name = "events"
 urlpatterns = [
     # Public: event browsing
     path("", PublicEventListView.as_view(), name="public-event-list"),
+    path("trending/", PublicTrendingEventListView.as_view(), name="public-trending-event-list"),
+    path("recommendations/", PublicRecommendedEventListView.as_view(), name="public-recommended-event-list"),
     path("categories/", PublicCategoryListView.as_view(), name="public-category-list"),
     # Organizer: event CRUD
     path(

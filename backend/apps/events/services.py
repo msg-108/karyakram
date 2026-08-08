@@ -17,8 +17,9 @@ from __future__ import annotations
 
 import logging
 
+from datetime import timedelta
 from django.db import transaction
-from django.db.models import Q, QuerySet
+from django.db.models import Count, Q, QuerySet
 from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -577,6 +578,100 @@ def delete_ticket_tier(tier: TicketTier) -> None:
             {"detail": "Ticket tiers can only be removed while the event is a draft."}
         )
     tier.delete()
+
+
+# ==================== TRENDING & RECOMMENDATIONS ====================
+
+
+def list_trending_events(*, limit: int = 10) -> QuerySet[Event]:
+    """
+    Return trending published events scored by recent ticket sales (last 7 days),
+    overall confirmed ticket sales, and upcoming start datetime.
+    Fallback: If zero tickets have been sold, orders chronologically by start_datetime.
+    """
+    now = timezone.now()
+    seven_days_ago = now - timedelta(days=7)
+    from apps.bookings.models import Booking
+    from apps.tickets.models import Ticket
+
+    queryset = (
+        list_public_events()
+        .annotate(
+            recent_sales=Count(
+                "bookings__tickets",
+                filter=Q(
+                    bookings__status=Booking.Status.CONFIRMED,
+                    bookings__tickets__status__in=[
+                        Ticket.Status.VALID,
+                        Ticket.Status.CHECKED_IN,
+                    ],
+                    bookings__created_at__gte=seven_days_ago,
+                ),
+                distinct=True,
+            ),
+            total_sales=Count(
+                "bookings__tickets",
+                filter=Q(
+                    bookings__status=Booking.Status.CONFIRMED,
+                    bookings__tickets__status__in=[
+                        Ticket.Status.VALID,
+                        Ticket.Status.CHECKED_IN,
+                    ],
+                ),
+                distinct=True,
+            ),
+        )
+        .order_by("-recent_sales", "-total_sales", "start_datetime")
+    )
+    return queryset[:limit]
+
+
+def list_recommended_events(*, user: User | None = None, limit: int = 10) -> list[Event]:
+    """
+    Personalized event recommendations based on user's booking history categories.
+    Cold-start / Fallback: If user is anonymous, has no booking history, or fewer
+    category matches exist, automatically backfills with top trending/upcoming events.
+    """
+    public_events = list_public_events()
+    recommended_ids = []
+
+    if user and user.is_authenticated:
+        from apps.bookings.models import Booking
+
+        favorite_category_ids = list(
+            Booking.objects.filter(user=user, status=Booking.Status.CONFIRMED)
+            .values_list("event__category_id", flat=True)
+            .distinct()
+        )
+
+        if favorite_category_ids:
+            booked_event_ids = list(
+                Booking.objects.filter(
+                    user=user,
+                    status__in=[Booking.Status.CONFIRMED, Booking.Status.PENDING],
+                ).values_list("event_id", flat=True)
+            )
+
+            matched_events = (
+                public_events.filter(category_id__in=favorite_category_ids)
+                .exclude(id__in=booked_event_ids)
+                .order_by("start_datetime")[:limit]
+            )
+
+            recommended_ids = list(matched_events.values_list("id", flat=True))
+
+    # Cold-start fallback: Backfill with trending events if recommendations are under limit
+    if len(recommended_ids) < limit:
+        trending_list = list(list_trending_events(limit=limit))
+        for event in trending_list:
+            if event.id not in recommended_ids:
+                recommended_ids.append(event.id)
+                if len(recommended_ids) >= limit:
+                    break
+
+    events_by_id = {e.id: e for e in public_events.filter(id__in=recommended_ids)}
+    return [events_by_id[eid] for eid in recommended_ids if eid in events_by_id]
+
 
 
 

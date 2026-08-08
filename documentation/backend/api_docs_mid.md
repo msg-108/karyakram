@@ -342,17 +342,27 @@ Error response (403):
 5.2 Public events and categories
 Method	Path	Auth	Summary	Status codes
 GET	/api/events/	No	List published public events	200, 400, 500
-GET	/api/events//	No	Get one published public event	200, 404, 500
+GET	/api/events/trending/	No	Top trending published events	200, 500
+GET	/api/events/recommendations/	Optional	Personalized recommendations (with cold-start fallbacks)	200, 500
+GET	/api/events/<slug>/	No	Get one published public event	200, 404, 500
 GET	/api/categories/	No	List active categories	200, 500
+
 Query parameters for GET /api/events/
 q: string (free-text search)
 category: string (category slug)
 city: string (exact city match)
 start_date_from: ISO-8601 datetime
 start_date_to: ISO-8601 datetime
-Example:
+ordering: string ('trending' or 'upcoming')
+limit: integer (max items for trending/recommendations endpoints, default 10)
 
-curl "http://127.0.0.1:8000/api/events/?q=music&city=Kathmandu&category=concerts"
+Algorithm Guarantees & Edge-Case Fallbacks:
+- Trending Algorithm: Ranks events by 7-day sales velocity, total confirmed tickets sold, and upcoming start datetime. If zero tickets have been sold across the platform, ordering falls back gracefully to start_datetime (soonest upcoming events first).
+- Recommendation Algorithm: For logged-in users, matches top booked categories (excluding already booked events). For anonymous/new users (cold-start), automatically backfills with top trending/upcoming events so new users always see a full, curated list.
+- Empty Platform State: If zero or very few events are published, endpoints safely return all available published events or an empty array (count: 0) without erroring.
+
+Example:
+curl "http://127.0.0.1:8000/api/events/?q=music&city=Kathmandu&category=concerts&ordering=trending"
 Success response (200):
 
 [
