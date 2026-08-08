@@ -59,18 +59,18 @@ export const SESSION_KEYS = {
   PAYMENT_PROVIDER: 'karyakram_payment_provider',
 } as const;
 
-// Status colors for badges
-export const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  DRAFT:     { bg: 'bg-slate-100',      text: 'text-slate-700' },
-  SUBMITTED: { bg: 'bg-blue-100',       text: 'text-blue-700' },
-  APPROVED:  { bg: 'bg-emerald-100',    text: 'text-emerald-700' },
-  REJECTED:  { bg: 'bg-red-100',        text: 'text-red-700' },
-  PUBLISHED: { bg: 'bg-green-100',      text: 'text-green-700' },
-  ARCHIVED:  { bg: 'bg-gray-100',       text: 'text-gray-700' },
-  PENDING:   { bg: 'bg-yellow-100',     text: 'text-yellow-700' },
-  CONFIRMED: { bg: 'bg-green-100',      text: 'text-green-700' },
-  CANCELLED: { bg: 'bg-red-100',        text: 'text-red-700' },
-  EXPIRED:   { bg: 'bg-gray-100',       text: 'text-gray-500' },
-  VALID:     { bg: 'bg-green-100',      text: 'text-green-700' },
-  CHECKED_IN:{ bg: 'bg-indigo-100',     text: 'text-indigo-700' },
+// Status colors for badges: Green for success, Orange for error or warning
+export const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  DRAFT:     { bg: 'bg-stone-100', text: 'text-stone-800', border: 'border-stone-300' },
+  SUBMITTED: { bg: 'bg-amber-50', text: 'text-amber-900', border: 'border-amber-300' }, // Orange warning
+  APPROVED:  { bg: 'bg-emerald-50', text: 'text-emerald-900', border: 'border-emerald-300' }, // Green success
+  REJECTED:  { bg: 'bg-orange-50', text: 'text-orange-900', border: 'border-orange-300' }, // Orange error
+  PUBLISHED: { bg: 'bg-emerald-50', text: 'text-emerald-900', border: 'border-emerald-300' }, // Green success
+  ARCHIVED:  { bg: 'bg-stone-100', text: 'text-stone-700', border: 'border-stone-300' },
+  PENDING:   { bg: 'bg-amber-50', text: 'text-amber-900', border: 'border-amber-300' }, // Orange warning
+  CONFIRMED: { bg: 'bg-emerald-50', text: 'text-emerald-900', border: 'border-emerald-300' }, // Green success
+  CANCELLED: { bg: 'bg-orange-50', text: 'text-orange-900', border: 'border-orange-300' }, // Orange error
+  EXPIRED:   { bg: 'bg-orange-50', text: 'text-orange-900', border: 'border-orange-300' }, // Orange error
+  VALID:     { bg: 'bg-emerald-50', text: 'text-emerald-900', border: 'border-emerald-300' }, // Green success
+  CHECKED_IN:{ bg: 'bg-emerald-50', text: 'text-emerald-900', border: 'border-emerald-300' }, // Green success
 };

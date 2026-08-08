@@ -7,7 +7,7 @@ export const featureFlags = {
   PAYMENT_ESEWA_ENABLED: import.meta.env.VITE_FF_ESEWA !== 'false',
 
   /** Khalti payment gateway */
-  PAYMENT_KHALTI_ENABLED: import.meta.env.VITE_FF_KHALTI !== 'false',
+  PAYMENT_KHALTI_ENABLED: false,
 
   /** CSV/PDF report export (backend returns 501 until implemented) */
   EXPORT_REPORTS_ENABLED: import.meta.env.VITE_FF_EXPORTS === 'true',

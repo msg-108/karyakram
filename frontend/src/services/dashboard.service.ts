@@ -105,7 +105,8 @@ export const dashboardService = {
     return res.data;
   },
 
-  // Admin approval endpoints
+  // Admin dashboard & approval endpoints
+
   async listPendingOrganizers(): Promise<OrganizerProfile[]> {
     const res = await api.get<OrganizerProfile[]>('/admin/organizers/pending/');
     return res.data;

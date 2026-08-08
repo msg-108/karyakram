@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { parseApiError } from '../lib/api';
 import { ApprovalActionFormData } from '../schemas/event.schema';
 
+
 export function usePendingOrganizers() {
   return useQuery({
     queryKey: queryKeys.admin.pendingOrganizers(),

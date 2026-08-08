@@ -16,6 +16,7 @@
     "@tanstack/react-query-devtools": "^5.101.4",
     "axios": "^1.19.0",
     "clsx": "^2.1.1",
+    "html5-qrcode": "^2.3.8",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^1.29.0",
     "qrcode.react": "^4.2.0",

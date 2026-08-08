@@ -15,8 +15,15 @@ import { AdminEventReview } from '../types/dashboard.types';
 
 export const eventService = {
   async listCategories(): Promise<EventCategory[]> {
-    const res = await api.get<EventCategory[]>('/events/categories/');
-    return res.data;
+    const res = await api.get('/events/categories/');
+    const data = res.data;
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data && Array.isArray((data as any).results)) {
+      return (data as any).results;
+    }
+    return [];
   },
 
   async listPublicEvents(params?: EventFilterParams): Promise<PaginatedResponse<PublicEventList>> {

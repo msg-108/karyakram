@@ -7,6 +7,7 @@ export interface UserPublic {
   first_name: string;
   last_name: string;
   role: RoleEnum;
+  is_staff?: boolean;
   is_superuser?: boolean;
   is_email_verified: boolean;
   is_approved: boolean;

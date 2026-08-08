@@ -62,6 +62,12 @@ export interface Ticket {
   status_display: string;
   qr_code_payload?: string;
   qr_code_image?: string | null;
+  event_title?: string;
+  event_start_datetime?: string;
+  event_end_datetime?: string;
+  event_venue?: string;
+  event_address?: string;
+  event_city?: string;
   checked_in_at?: string | null;
   created_at: string;
 }
