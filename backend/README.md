@@ -43,7 +43,8 @@ Karyakram is an event ticketing and management platform backend built with Djang
    ```
 7. Start the Celery worker & beat (Terminal 2):
    ```bash
-   celery -A config worker --beat -l INFO
+   bash start_celery.sh
+   # Or manually: celery -A config worker --beat --queues=celery,email -l INFO
    ```
 
 ### Running Tests

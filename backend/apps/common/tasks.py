@@ -15,11 +15,9 @@ _RETRY_DELAYS = [30, 300, 900]
 @shared_task(
     bind=True,
     max_retries=3,
-    # Hard rate limit: no more than 2 emails per minute sent by ALL workers combined.
-    # Gmail free accounts allow ~500/day; 2/min = 2880/day so there is plenty of
-    # headroom, and a registration burst of e.g. 10 users won't fire 10 simultaneous
-    # SMTP connections that all count as separate sends against the quota.
-    rate_limit="2/m",
+    # Rate limit: allow up to 30 emails per minute so OTPs are sent without long delays,
+    # while still preventing runaway connection spikes against Gmail's limits.
+    rate_limit="30/m",
     # Drop the task from the queue rather than silently lose it if the broker
     # restarts while the task is waiting in the rate-limit window.
     acks_late=True,
