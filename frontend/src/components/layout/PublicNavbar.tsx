@@ -36,26 +36,31 @@ export const PublicNavbar: React.FC = () => {
           </span>
         </Link>
 
-        {/* Enlarge Search Bar in Navbar (Hidden on /events search page) */}
-        {!isEventsListingPage && (
-          <form onSubmit={handleNavSearchSubmit} className="hidden sm:flex items-center relative max-w-md lg:max-w-xl w-full mx-2 sm:mx-6">
-            <input
-              type="text"
-              placeholder="Search events, concerts, tech summits, or cities..."
-              value={navSearch}
-              onChange={(e) => setNavSearch(e.target.value)}
-              className="w-full bg-karyakram-red-800/80 border border-karyakram-red-200/30 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder:text-karyakram-red-200 focus:outline-none focus:border-karyakram-gold-600 focus:ring-2 focus:ring-karyakram-gold-600/30 transition-all font-medium shadow-inner"
-            />
-            <Search className="w-4 h-4 text-karyakram-red-200 absolute left-3.5 pointer-events-none" />
-          </form>
-        )}
-
-        {/* Desktop Links */}
-        <div className="hidden md:flex items-center gap-6">
-          <Link to="/events" className="text-sm font-semibold text-karyakram-red-50 hover:text-white transition-colors">
+        {/* Browse Events + Search Bar Container */}
+        <div className="flex items-center gap-4 flex-1 max-w-lg lg:max-w-xl mx-2 sm:mx-4">
+          <Link
+            to="/events"
+            className="hidden sm:inline-flex items-center text-sm font-bold text-karyakram-red-50 hover:text-white transition-colors shrink-0 whitespace-nowrap"
+          >
             Browse Events
           </Link>
 
+          {!isEventsListingPage && (
+            <form onSubmit={handleNavSearchSubmit} className="flex items-center relative w-full">
+              <input
+                type="text"
+                placeholder="Search events, concerts, tech summits, or cities..."
+                value={navSearch}
+                onChange={(e) => setNavSearch(e.target.value)}
+                className="w-full bg-karyakram-red-800/80 border border-karyakram-red-200/30 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder:text-karyakram-red-200 focus:outline-none focus:border-karyakram-gold-600 focus:ring-2 focus:ring-karyakram-gold-600/30 transition-all font-medium shadow-inner"
+              />
+              <Search className="w-4 h-4 text-karyakram-red-200 absolute left-3.5 pointer-events-none" />
+            </form>
+          )}
+        </div>
+
+        {/* Desktop Links (Right Side) */}
+        <div className="hidden md:flex items-center gap-4 shrink-0">
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
               {user?.role === 'ORGANIZER' && (
