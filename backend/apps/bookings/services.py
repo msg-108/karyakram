@@ -292,6 +292,17 @@ def create_booking(*, user: User, event: Event, items: list[dict]) -> Booking:
     booking.total_amount = total_amount
     booking.save(update_fields=["total_amount", "updated_at"])
 
+    # Check if event ticket tiers are now completely sold out
+    total_remaining = sum(
+        t.remaining_quantity for t in booking.event.ticket_tiers.all()
+    )
+    if total_remaining == 0:
+        from apps.events.services import send_event_sold_out_email
+
+        transaction.on_commit(
+            lambda _event=booking.event: send_event_sold_out_email(_event)
+        )
+
     transaction.on_commit(
         lambda _id=booking.id: send_booking_email_by_id(_id, action="created")
     )

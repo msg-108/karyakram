@@ -711,7 +711,6 @@ class AdminRevenueStatistics:
 
     total_revenue: Decimal
     total_successful_payments: int
-    total_refunds: int
 
 
 def get_admin_revenue_statistics(user: User) -> AdminRevenueStatistics:
@@ -727,5 +726,4 @@ def get_admin_revenue_statistics(user: User) -> AdminRevenueStatistics:
     return AdminRevenueStatistics(
         total_revenue=total_rev,
         total_successful_payments=completed_payments.count(),
-        total_refunds=Payment.objects.filter(status=Payment.Status.REFUNDED).count(),
     )

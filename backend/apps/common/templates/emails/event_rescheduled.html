@@ -1,0 +1,17 @@
+{% extends "emails/base.html" %}
+
+{% block subject %}UPDATE: Schedule Change for {{ event.title }}{% endblock %}
+
+{% block content %}
+<h2>Event Schedule Update</h2>
+<p>Hello {{ user.get_full_name|default:user.username }},</p>
+<p>Please note that the details for <strong>{{ event.title }}</strong> have been updated by the organizer.</p>
+
+<div style="background-color: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 20px 0;">
+    <p style="margin: 0 0 10px 0;"><strong>New Date & Time:</strong> {{ event.start_datetime|date:"F j, Y, g:i a" }}</p>
+    <p style="margin: 0 0 10px 0;"><strong>New Venue:</strong> {{ event.venue }}</p>
+    <p style="margin: 0;"><strong>Address:</strong> {{ event.address }}, {{ event.city }}</p>
+</div>
+
+<p>Your existing tickets remain valid for the updated schedule. No further action is required.</p>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "emails/base.html" %}
+
+{% block subject %}IMPORTANT: {{ event.title }} Has Been Cancelled{% endblock %}
+
+{% block content %}
+<h2 style="color: #d9534f;">Event Cancelled</h2>
+<p>Hello {{ user.get_full_name|default:user.username }},</p>
+<p>We regret to inform you that <strong>{{ event.title }}</strong> scheduled for {{ event.start_datetime|date:"F j, Y, g:i a" }} has been cancelled by the event organizer.</p>
+
+{% if reason %}
+<div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+    <p style="margin: 0;"><strong>Organizer Note:</strong> {{ reason }}</p>
+</div>
+{% endif %}
+
+<p>Your tickets for this event are no longer valid. If you have any questions, please contact the event organizer or reach out to support.</p>
+{% endblock %}

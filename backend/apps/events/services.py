@@ -275,6 +275,82 @@ def send_event_published_email(event: Event) -> None:
     )
 
 
+def send_event_sold_out_email(event: Event) -> None:
+    try:
+        send_email(
+            to=event.organizer.user.email,
+            subject=f"{event.title} is Officially Sold Out!",
+            template_prefix="emails/event_sold_out",
+            context={"event": event, "organizer": event.organizer},
+            user=event.organizer.user,
+            fail_silently=True,
+        )
+    except Exception:
+        logger.exception("Failed to send event sold out email")
+
+
+def send_event_cancelled_email_to_attendees(event: Event, reason: str = "") -> None:
+    from apps.bookings.models import Booking
+
+    confirmed_bookings = Booking.objects.filter(
+        event=event, status=Booking.Status.CONFIRMED
+    ).select_related("user")
+
+    for booking in confirmed_bookings:
+        try:
+            send_email(
+                to=booking.user.email,
+                subject=f"IMPORTANT: {event.title} Has Been Cancelled",
+                template_prefix="emails/event_cancelled",
+                context={"user": booking.user, "event": event, "reason": reason},
+                user=booking.user,
+                fail_silently=True,
+            )
+        except Exception:
+            logger.exception(
+                f"Failed to send event cancellation email to user {booking.user_id}"
+            )
+
+
+def send_event_rescheduled_email_to_attendees(event: Event) -> None:
+    from apps.bookings.models import Booking
+
+    confirmed_bookings = Booking.objects.filter(
+        event=event, status=Booking.Status.CONFIRMED
+    ).select_related("user")
+
+    for booking in confirmed_bookings:
+        try:
+            send_email(
+                to=booking.user.email,
+                subject=f"UPDATE: Schedule Change for {event.title}",
+                template_prefix="emails/event_rescheduled",
+                context={"user": booking.user, "event": event},
+                user=booking.user,
+                fail_silently=True,
+            )
+        except Exception:
+            logger.exception(
+                f"Failed to send event rescheduled email to user {booking.user_id}"
+            )
+
+
+def send_event_reminder_email(booking) -> None:
+    try:
+        send_email(
+            to=booking.user.email,
+            subject=f"Reminder: {booking.event.title} is Tomorrow!",
+            template_prefix="emails/event_reminder",
+            context={"user": booking.user, "event": booking.event},
+            user=booking.user,
+            fail_silently=True,
+        )
+    except Exception:
+        logger.exception(
+            f"Failed to send event reminder email for booking {booking.id}"
+        )
+
+
 @transaction.atomic
 def approve_event(event: Event, *, admin: User) -> Event:
     if event.status != Event.Status.SUBMITTED:

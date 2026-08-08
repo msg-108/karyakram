@@ -179,4 +179,4 @@ class AdminRevenueStatisticsSerializer(serializers.Serializer):
         max_digits=12, decimal_places=2, read_only=True
     )
     total_successful_payments = serializers.IntegerField(read_only=True)
-    total_refunds = serializers.IntegerField(read_only=True)
+

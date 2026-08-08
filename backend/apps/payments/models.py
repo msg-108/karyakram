@@ -11,13 +11,6 @@ class Payment(models.Model):
         PENDING = "PENDING", "Pending"
         COMPLETED = "COMPLETED", "Completed"
         FAILED = "FAILED", "Failed"
-        REFUNDED = "REFUNDED", "Refunded"
-
-    class RefundStatus(models.TextChoices):
-        NONE = "NONE", "None"
-        PENDING = "PENDING", "Pending"
-        SUCCESS = "SUCCESS", "Success"
-        FAILED = "FAILED", "Failed"
 
     booking = models.OneToOneField(
         Booking, on_delete=models.CASCADE, related_name="payment"
@@ -25,9 +18,6 @@ class Payment(models.Model):
     provider = models.CharField(max_length=20, choices=Provider.choices)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.PENDING
-    )
-    refund_status = models.CharField(
-        max_length=20, choices=RefundStatus.choices, default=RefundStatus.NONE
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
 
