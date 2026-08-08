@@ -130,6 +130,7 @@ export function parseApiError(error: unknown): string {
     }
     const data = error.response?.data;
     if (typeof data === 'string') return data;
+    if (Array.isArray(data?.detail)) return data.detail.join(' ');
     if (data?.detail) return data.detail;
     if (data?.non_field_errors?.length) return data.non_field_errors.join(', ');
     if (typeof data === 'object' && data !== null) {

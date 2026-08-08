@@ -49,15 +49,29 @@ export const LoginPage: React.FC = () => {
     } catch (err: any) {
       const errorData = err?.response?.data;
       const errorMsg = parseApiError(err);
-      if (
+
+      let unverifiedEmail = '';
+      if (typeof errorData?.email === 'string') {
+        unverifiedEmail = errorData.email;
+      } else if (Array.isArray(errorData?.email) && errorData.email.length > 0) {
+        unverifiedEmail = errorData.email[0];
+      } else if (data.username.includes('@')) {
+        unverifiedEmail = data.username;
+      }
+
+      const isUnverified =
         errorData?.is_email_verified === false ||
-        errorMsg.toLowerCase().includes('verify your email')
-      ) {
-        const unverifiedEmail = errorData?.email || (data.username.includes('@') ? data.username : '');
+        errorData?.is_email_verified === 'False' ||
+        (Array.isArray(errorData?.is_email_verified) &&
+          (errorData.is_email_verified.includes('False') || errorData.is_email_verified.includes(false))) ||
+        errorMsg.toLowerCase().includes('verify your email');
+
+      if (isUnverified && unverifiedEmail) {
         toast.error('Please verify your email address before logging in.');
         navigate('/verify-otp', { state: { email: unverifiedEmail } });
         return;
       }
+
       toast.error(errorMsg);
     }
   };
