@@ -300,7 +300,7 @@ export const ProfilePage: React.FC = () => {
 
       {/* Security & Password Card */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className={`flex items-center justify-between ${isChangingPassword ? 'border-b border-slate-100 pb-4' : ''}`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center justify-center font-bold">
               <Key className="w-5 h-5 text-indigo-600" />
@@ -325,7 +325,7 @@ export const ProfilePage: React.FC = () => {
           )}
         </div>
 
-        {isChangingPassword ? (
+        {isChangingPassword && (
           <form onSubmit={handleSubmitPass(onChangePassword)} className="space-y-4">
             <FormField
               label="Current Password"
@@ -367,14 +367,6 @@ export const ProfilePage: React.FC = () => {
               </Button>
             </div>
           </form>
-        ) : (
-          <div className="flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-              <span className="text-xs font-bold text-slate-700">Account Password Status: Configured & Protected</span>
-            </div>
-            <span className="text-xs text-slate-400 font-medium hidden sm:inline">••••••••••••</span>
-          </div>
         )}
       </div>
 
