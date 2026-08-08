@@ -44,8 +44,8 @@ export const registerOrganizerSchema = z
     website_url: z.string().url('Invalid URL format').or(z.literal('')).optional(),
     citizenship_number: z
       .string()
-      .min(1, 'Citizenship number is required')
-      .max(150)
+      .min(5, 'Citizenship number must be between 5 and 20 characters')
+      .max(20, 'Citizenship number must be between 5 and 20 characters')
       .regex(/^(?:\d{1,4}[-/\s]?){2,4}\d{1,7}$|^\d{5,16}$/, "Enter a valid Nepal citizenship number (e.g. '27-01-75-01234')"),
     pan_number: z
       .string()

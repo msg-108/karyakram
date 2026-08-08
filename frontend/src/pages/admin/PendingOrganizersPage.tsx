@@ -82,36 +82,40 @@ export const PendingOrganizersPage: React.FC = () => {
 
       {/* Detail & Action Modal */}
       {selectedOrg && (
-        <Modal isOpen={Boolean(selectedOrg)} onClose={() => setSelectedOrg(null)} title="Inspect Organizer Application">
+        <Modal isOpen={Boolean(selectedOrg)} onClose={() => setSelectedOrg(null)} title="Inspect Organizer Application" maxWidth="2xl">
           <div className="space-y-4 text-xs">
-            <div className="p-3 bg-[#F3F4F6] border border-slate-300 rounded-xl space-y-1">
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
               <p className="font-bold text-slate-900 text-sm">{selectedOrg.organization_name}</p>
-              <p className="text-slate-700">{selectedOrg.organization_description || 'No description provided.'}</p>
+              <p className="text-slate-600 leading-relaxed">{selectedOrg.organization_description || 'No description provided.'}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-slate-800 bg-white p-3 border border-slate-200 rounded-xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-slate-800 bg-white p-4 border border-slate-200 rounded-xl shadow-xs">
               <div>
-                <span className="text-slate-500 block font-medium">Applicant Name</span>
-                <span className="font-bold text-slate-900">{selectedOrg.user.first_name} {selectedOrg.user.last_name}</span>
+                <span className="text-slate-500 block font-medium text-[11px]">Applicant Name</span>
+                <span className="font-bold text-slate-900 text-sm">{selectedOrg.user.first_name} {selectedOrg.user.last_name}</span>
               </div>
               <div>
-                <span className="text-slate-500 block font-medium">Email / Username</span>
-                <span className="font-bold text-slate-900">{selectedOrg.user.email}</span>
+                <span className="text-slate-500 block font-medium text-[11px]">Username</span>
+                <span className="font-bold text-slate-900 font-mono text-xs">{selectedOrg.user.username}</span>
+              </div>
+              <div className="sm:col-span-2">
+                <span className="text-slate-500 block font-medium text-[11px]">Registered Email</span>
+                <span className="font-bold text-slate-900 break-all text-xs">{selectedOrg.user.email}</span>
               </div>
               <div>
-                <span className="text-slate-500 block font-medium">Bank Name</span>
-                <span className="font-bold text-slate-900">{selectedOrg.bank_name}</span>
+                <span className="text-slate-500 block font-medium text-[11px]">Bank Name</span>
+                <span className="font-bold text-slate-900 text-xs">{selectedOrg.bank_name}</span>
               </div>
               <div>
-                <span className="text-slate-500 block font-medium">Bank Account Number</span>
+                <span className="text-slate-500 block font-medium text-[11px]">Bank Account Number</span>
                 <span className="font-bold text-slate-900 font-mono text-xs">{selectedOrg.bank_account_number || 'N/A'}</span>
               </div>
               <div>
-                <span className="text-slate-500 block font-medium">Citizenship Number</span>
+                <span className="text-slate-500 block font-medium text-[11px]">Citizenship Number</span>
                 <span className="font-bold text-slate-900 font-mono text-xs">{selectedOrg.citizenship_number || 'N/A'}</span>
               </div>
               <div>
-                <span className="text-slate-500 block font-medium">PAN Number</span>
+                <span className="text-slate-500 block font-medium text-[11px]">PAN Number</span>
                 <span className="font-bold text-slate-900 font-mono text-xs">{selectedOrg.pan_number || 'N/A'}</span>
               </div>
             </div>
