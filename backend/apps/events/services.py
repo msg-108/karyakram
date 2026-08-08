@@ -388,10 +388,11 @@ def auto_archive_ended_events() -> int:
 
 
 def list_public_events() -> QuerySet[Event]:
-    """Base queryset for anything public-facing: approved/published + public visibility only."""
+    """Base queryset for anything public-facing: approved/published + public visibility + future/ongoing events only."""
     return Event.objects.filter(
         status=Event.Status.PUBLISHED,
         visibility=Event.Visibility.PUBLIC,
+        end_datetime__gte=timezone.now(),
     ).select_related("organizer", "category")
 
 

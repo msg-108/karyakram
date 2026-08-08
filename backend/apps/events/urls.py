@@ -24,7 +24,6 @@ app_name = "events"
 urlpatterns = [
     # Public: event browsing
     path("", PublicEventListView.as_view(), name="public-event-list"),
-    path("<slug:slug>/", PublicEventDetailView.as_view(), name="public-event-detail"),
     path("categories/", PublicCategoryListView.as_view(), name="public-category-list"),
     # Organizer: event CRUD
     path(
@@ -59,6 +58,8 @@ urlpatterns = [
         OrganizerEventImageListCreateView.as_view(),
         name="organizer-event-image-list-create",
     ),
+    # Public Event Detail: dynamic slug matcher must go last so it doesn't intercept organizer/ or categories/
+    path("<slug:slug>/", PublicEventDetailView.as_view(), name="public-event-detail"),
 ]
 
 # Admin-only patterns — mounted separately at api/admin/events/ in config/urls.py
