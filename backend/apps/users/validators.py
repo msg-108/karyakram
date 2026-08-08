@@ -38,7 +38,12 @@ def validate_username_format(value: str) -> None:
 
 
 def validate_citizenship_number(value: str) -> None:
-    if not _CITIZENSHIP_RE.match(value.strip()):
+    stripped = value.strip()
+    if not (5 <= len(stripped) <= 20):
+        raise ValidationError(
+            "Citizenship number must be between 5 and 20 characters long."
+        )
+    if not _CITIZENSHIP_RE.match(stripped):
         raise ValidationError(
             "Enter a valid Nepal citizenship number, e.g. '27-01-75-01234' or '12-34/5678'."
         )
