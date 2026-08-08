@@ -228,9 +228,14 @@ EMAIL_USE_TLS = False
 EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = config("EMAIL_HOST_USER", default="noreply@karyakram.com")
+# Keep the SMTP connection open for 10 s so multiple emails in the same Celery
+# task burst share one connection and don't each count separately against Gmail
+# connection limits.
+EMAIL_TIMEOUT = 10
 
-# Site URL (used in email templates for links)
+# Site & Frontend URL (used in email templates and payment callback redirects)
 SITE_URL = config("SITE_URL", default="http://localhost:5173")
+FRONTEND_URL = config("FRONTEND_URL", default=SITE_URL)
 
 # Static & Media files
 STATIC_URL = "static/"
@@ -246,6 +251,17 @@ CELERY_RESULT_BACKEND = config(
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
+
+# Route all email tasks to a dedicated low-concurrency queue so non-email
+# tasks (booking expiry, archiving) are never delayed by the 2/min email rate.
+CELERY_TASK_ROUTES = {
+    "apps.common.tasks.dispatch_email_task": {"queue": "email"},
+}
+
+# Email queue: 1 worker thread so emails are serialized and the rate_limit
+# on the task actually takes effect (parallel workers each get their own
+# bucket, so 4 workers + 2/min = 8/min which defeats the purpose).
+CELERY_WORKER_CONCURRENCY = 1
 
 from celery.schedules import crontab
 

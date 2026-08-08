@@ -234,3 +234,22 @@ backend/media/
 node_modules/
 frontend/node_modules/
 
+# Agent directories
+.agent/
+.agents/
+.claude/
+.codebuddy/
+.codex/
+.continue/
+.cursor/
+.gemini/
+.github/
+.kiro/
+.opencode/
+.qoder/
+.roo/
+.trae/
+.windsurf/
+design-system/
+
+
