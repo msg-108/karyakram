@@ -53,7 +53,7 @@ export const PublicNavbar: React.FC = () => {
 
           <Link
             to="/events"
-            className="text-sm font-bold text-karyakram-red-50 hover:text-white transition-colors shrink-0 whitespace-nowrap"
+            className="text-sm font-semibold text-karyakram-red-50 hover:text-white transition-colors shrink-0 whitespace-nowrap"
           >
             Browse Events
           </Link>
@@ -62,7 +62,7 @@ export const PublicNavbar: React.FC = () => {
             <div className="flex items-center gap-3 shrink-0">
               {user?.role === 'ORGANIZER' && (
                 <Link to="/organizer/events/new">
-                  <Button size="sm" className="gap-1.5 shadow-md border-0">
+                  <Button size="sm" className="gap-1.5 shadow-md border-0 text-sm font-semibold">
                     <PlusCircle className="w-4 h-4" />
                     Create Event
                   </Button>
@@ -89,12 +89,12 @@ export const PublicNavbar: React.FC = () => {
           ) : (
             <div className="flex items-center gap-3 shrink-0">
               <Link to="/login">
-                <Button variant="ghost" size="sm" className="text-karyakram-red-50 hover:text-white hover:bg-karyakram-red-800">
+                <Button variant="ghost" size="sm" className="text-sm font-semibold text-karyakram-red-50 hover:text-white hover:bg-karyakram-red-800">
                   Sign In
                 </Button>
               </Link>
               <Link to="/register">
-                <Button size="sm" className="shadow-md">
+                <Button size="sm" className="text-sm font-semibold shadow-md">
                   Get Started
                 </Button>
               </Link>
@@ -117,7 +117,7 @@ export const PublicNavbar: React.FC = () => {
           <Link
             to="/events"
             onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-xl text-base font-medium text-white hover:bg-karyakram-purple-800"
+            className="block px-3 py-2 rounded-xl text-sm font-semibold text-white hover:bg-karyakram-purple-800"
           >
             Browse Events
           </Link>
@@ -127,7 +127,7 @@ export const PublicNavbar: React.FC = () => {
               <Link
                 to={isStaff ? '/admin/dashboard' : user?.role === 'ORGANIZER' ? '/organizer/dashboard' : '/dashboard'}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-xl text-base font-medium text-white hover:bg-karyakram-purple-800"
+                className="block px-3 py-2 rounded-xl text-sm font-semibold text-white hover:bg-karyakram-purple-800"
               >
                 Dashboard
               </Link>
@@ -135,7 +135,7 @@ export const PublicNavbar: React.FC = () => {
                 <Link
                   to="/my-tickets"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 rounded-xl text-base font-medium text-white hover:bg-karyakram-purple-800"
+                  className="block px-3 py-2 rounded-xl text-sm font-semibold text-white hover:bg-karyakram-purple-800"
                 >
                   My Tickets
                 </Link>
@@ -144,12 +144,12 @@ export const PublicNavbar: React.FC = () => {
           ) : (
             <div className="pt-2 flex flex-col gap-2">
               <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="outline" className="w-full justify-center">
+                <Button variant="outline" className="w-full justify-center text-sm font-semibold">
                   Sign In
                 </Button>
               </Link>
               <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full justify-center">Get Started</Button>
+                <Button className="w-full justify-center text-sm font-semibold">Get Started</Button>
               </Link>
             </div>
           )}
