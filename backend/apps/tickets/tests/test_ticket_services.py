@@ -158,3 +158,16 @@ class TicketServicesTest(TransactionTestCase):
         output = out.getvalue()
         self.assertIn("Legacy tickets remaining: 0", output)
         self.assertIn("Safe to retire legacy key fallback: YES", output)
+
+    def test_check_in_fails_for_cancelled_booking(self):
+        generate_tickets_for_booking(self.booking)
+        ticket = self.booking.tickets.first()
+
+        self.booking.status = Booking.Status.CANCELLED
+        self.booking.save()
+
+        with self.assertRaises(ValidationError) as context:
+            check_in_ticket(ticket.qr_code_payload, self.event.id)
+
+        self.assertIn("Ticket has been cancelled.", str(context.exception))
+

@@ -349,9 +349,17 @@ def cancel_booking(booking: Booking, *, user: User) -> Booking:
             {"detail": "Only pending or confirmed bookings can be cancelled."}
         )
 
-    if booking.event.start_datetime <= timezone.now():
+    cancellation_cutoff = booking.event.start_datetime - timedelta(hours=3)
+    if timezone.now() > cancellation_cutoff:
         raise ValidationError(
-            {"detail": "Cannot cancel a booking after the event has started."}
+            {"detail": "Bookings can only be cancelled at least 3 hours before the event starts."}
+        )
+
+    from apps.tickets.models import Ticket
+
+    if booking.tickets.filter(status=Ticket.Status.CHECKED_IN).exists():
+        raise ValidationError(
+            {"detail": "Cannot cancel booking because one or more tickets have already been checked in."}
         )
 
     item_tier_ids_sorted = sorted(
@@ -368,14 +376,8 @@ def cancel_booking(booking: Booking, *, user: User) -> Booking:
     booking.cancelled_at = timezone.now()
     booking.save(update_fields=["status", "cancelled_at", "updated_at"])
 
-    # If the booking had a completed payment, initiate a refund
-    if hasattr(booking, "payment"):
-        if booking.payment.status == "COMPLETED":
-            from apps.payments.services import initiate_esewa_refund
-            from apps.payments.models import Payment
-
-            if booking.payment.provider == Payment.Provider.ESEWA:
-                initiate_esewa_refund(booking.payment)
+    # Invalidate active tickets for this booking
+    booking.tickets.filter(status=Ticket.Status.VALID).update(status=Ticket.Status.CANCELLED)
 
     transaction.on_commit(
         lambda _id=booking.id: send_booking_email_by_id(_id, action="cancelled")

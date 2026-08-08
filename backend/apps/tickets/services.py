@@ -172,7 +172,12 @@ def check_in_ticket(qr_payload: str, event_id: int) -> Ticket:
     if ticket.booking.event_id != event_id:
         raise ValidationError("Ticket is not valid for this event.")
 
-    if ticket.status == Ticket.Status.CANCELLED:
+    from apps.bookings.models import Booking
+
+    if (
+        ticket.booking.status == Booking.Status.CANCELLED
+        or ticket.status == Ticket.Status.CANCELLED
+    ):
         raise ValidationError("Ticket has been cancelled.")
 
     if ticket.status == Ticket.Status.CHECKED_IN:

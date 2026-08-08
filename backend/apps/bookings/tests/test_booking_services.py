@@ -121,3 +121,83 @@ class BookingServicesTest(TransactionTestCase):
         
         # Payment verification should have been called
         mock_verify.assert_called_once()
+
+    def test_cancel_booking_success_restores_inventory_and_invalidates_tickets(self):
+        from apps.bookings.services import cancel_booking
+        from apps.tickets.models import Ticket
+
+        user = UserFactory()
+        # Event starts 5 hours from now (> 3 hours cutoff)
+        event = EventFactory(
+            start_datetime=timezone.now() + timezone.timedelta(hours=5),
+            end_datetime=timezone.now() + timezone.timedelta(hours=8),
+        )
+        tier = TicketTierFactory(event=event, quantity=10, remaining_quantity=8)
+
+        booking = create_booking(
+            user=user, event=event, items=[{"ticket_tier_id": tier.id, "quantity": 2}]
+        )
+        tier.refresh_from_db()
+        self.assertEqual(tier.remaining_quantity, 6)
+
+        confirmed_booking = confirm_booking(booking)
+        self.assertEqual(confirmed_booking.tickets.count(), 2)
+
+        # Cancel the booking
+        cancelled_booking = cancel_booking(confirmed_booking, user=user)
+        self.assertEqual(cancelled_booking.status, Booking.Status.CANCELLED)
+
+        # Seats restored
+        tier.refresh_from_db()
+        self.assertEqual(tier.remaining_quantity, 8)
+
+        # Tickets invalidated
+        for ticket in cancelled_booking.tickets.all():
+            self.assertEqual(ticket.status, Ticket.Status.CANCELLED)
+
+    def test_cancel_booking_fails_within_3_hours_of_event(self):
+        from apps.bookings.services import cancel_booking
+
+        user = UserFactory()
+        # Event starts in 2 hours (< 3 hours cutoff)
+        event = EventFactory(
+            start_datetime=timezone.now() + timezone.timedelta(hours=2),
+            end_datetime=timezone.now() + timezone.timedelta(hours=5),
+        )
+        tier = TicketTierFactory(event=event, quantity=10, remaining_quantity=10)
+
+        booking = create_booking(
+            user=user, event=event, items=[{"ticket_tier_id": tier.id, "quantity": 1}]
+        )
+        confirmed_booking = confirm_booking(booking)
+
+        with self.assertRaises(ValidationError) as ctx:
+            cancel_booking(confirmed_booking, user=user)
+
+        self.assertIn("at least 3 hours before", str(ctx.exception))
+
+    def test_cancel_booking_fails_if_ticket_already_checked_in(self):
+        from apps.bookings.services import cancel_booking
+        from apps.tickets.models import Ticket
+
+        user = UserFactory()
+        event = EventFactory(
+            start_datetime=timezone.now() + timezone.timedelta(hours=5),
+            end_datetime=timezone.now() + timezone.timedelta(hours=8),
+        )
+        tier = TicketTierFactory(event=event, quantity=10, remaining_quantity=10)
+
+        booking = create_booking(
+            user=user, event=event, items=[{"ticket_tier_id": tier.id, "quantity": 1}]
+        )
+        confirmed_booking = confirm_booking(booking)
+
+        ticket = confirmed_booking.tickets.first()
+        ticket.status = Ticket.Status.CHECKED_IN
+        ticket.save()
+
+        with self.assertRaises(ValidationError) as ctx:
+            cancel_booking(confirmed_booking, user=user)
+
+        self.assertIn("already been checked in", str(ctx.exception))
+
