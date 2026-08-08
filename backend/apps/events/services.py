@@ -26,7 +26,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from apps.users.models import OrganizerProfile, User
 from apps.common.email import send_email
 
-from .models import Event, EventCategory, EventImage, TicketTier
+from .models import Event, EventCategory, TicketTier
 from .validators import validate_event_schedule, validate_remaining_quantity
 
 logger = logging.getLogger(__name__)
@@ -503,25 +503,4 @@ def delete_ticket_tier(tier: TicketTier) -> None:
     tier.delete()
 
 
-# ==================== GALLERY IMAGES ====================
 
-
-@transaction.atomic
-def create_event_image(event: Event, *, validated_data: dict) -> EventImage:
-    if not event.is_editable:
-        raise ValidationError(
-            {"detail": "Gallery images can only be added while the event is a draft."}
-        )
-    image = EventImage(event=event, **validated_data)
-    image.full_clean()
-    image.save()
-    return image
-
-
-@transaction.atomic
-def delete_event_image(image: EventImage) -> None:
-    if not image.event.is_editable:
-        raise ValidationError(
-            {"detail": "Gallery images can only be removed while the event is a draft."}
-        )
-    image.delete()

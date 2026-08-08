@@ -213,32 +213,7 @@ class Event(models.Model):
         return self.status in (self.Status.DRAFT, self.Status.REJECTED)
 
 
-class EventImage(models.Model):
-    """Optional gallery image belonging to an Event, beyond its single banner."""
 
-    event = models.ForeignKey(
-        Event, on_delete=models.CASCADE, related_name="gallery_images"
-    )
-    image = models.ImageField(
-        upload_to="events/gallery/", validators=[validate_event_image]
-    )
-    caption = models.CharField(max_length=255, blank=True)
-    display_order = models.PositiveSmallIntegerField(default=0)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = "event_images"
-        verbose_name = "Event Image"
-        verbose_name_plural = "Event Images"
-        ordering = ["display_order", "id"]
-        indexes = [
-            models.Index(fields=["event", "display_order"]),
-        ]
-
-    def __str__(self) -> str:
-        return f"Image for {self.event.title} (#{self.display_order})"
 
 
 class TicketTier(models.Model):

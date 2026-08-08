@@ -2,21 +2,7 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html
 
-from .models import Event, EventCategory, EventImage, TicketTier
-
-
-class EventImageInline(admin.TabularInline):
-    model = EventImage
-    extra = 1
-    fields = ("image", "image_preview", "caption", "display_order")
-    readonly_fields = ("image_preview",)
-
-    def image_preview(self, obj: EventImage):
-        if not obj.pk or not obj.image:
-            return "—"
-        return format_html('<img src="{}" style="max-height: 60px;" />', obj.image.url)
-
-    image_preview.short_description = "Preview"
+from .models import Event, EventCategory, TicketTier
 
 
 class TicketTierInline(admin.TabularInline):
@@ -83,7 +69,7 @@ class EventAdmin(admin.ModelAdmin):
         "banner_preview",
     )
 
-    inlines = [TicketTierInline, EventImageInline]
+    inlines = [TicketTierInline]
 
     fieldsets = (
         (
@@ -109,8 +95,6 @@ class EventAdmin(admin.ModelAdmin):
                     "city",
                     "district",
                     "province",
-                    "latitude",
-                    "longitude",
                 )
             },
         ),
@@ -169,10 +153,6 @@ class EventAdmin(admin.ModelAdmin):
 
     @admin.action(description="Reject selected events (submitted only)")
     def bulk_reject(self, request, queryset):
-        # Bulk actions have no form input to collect a rejection reason,
-        # so a generic one is applied here; anything more specific should
-        # go through the single-event admin change form or the API's
-        # reject action, which both require an explicit reason.
         updated = queryset.filter(status=Event.Status.SUBMITTED).update(
             status=Event.Status.REJECTED,
             approved_by=request.user,
@@ -203,17 +183,3 @@ class TicketTierAdmin(admin.ModelAdmin):
     list_filter = ("is_active",)
     search_fields = ("name", "event__title")
     readonly_fields = ("created_at", "updated_at")
-
-
-@admin.register(EventImage)
-class EventImageAdmin(admin.ModelAdmin):
-    list_display = ("event", "caption", "display_order", "image_preview")
-    search_fields = ("event__title", "caption")
-    readonly_fields = ("created_at", "updated_at", "image_preview")
-
-    def image_preview(self, obj: EventImage):
-        if not obj.image:
-            return "—"
-        return format_html('<img src="{}" style="max-height: 60px;" />', obj.image.url)
-
-    image_preview.short_description = "Preview"

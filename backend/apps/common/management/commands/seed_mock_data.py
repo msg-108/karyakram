@@ -7,7 +7,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.users.models import User, OrganizerProfile, EmailOTP
-from apps.events.models import EventCategory, Event, TicketTier, EventImage
+from apps.events.models import EventCategory, Event, TicketTier
 from apps.bookings.models import Booking, BookingItem
 from apps.payments.models import Payment
 from apps.tickets.models import Ticket
@@ -27,7 +27,6 @@ class Command(BaseCommand):
         BookingItem.objects.all().delete()
         Booking.objects.all().delete()
         TicketTier.objects.all().delete()
-        EventImage.objects.all().delete()
         Event.objects.all().delete()
         EventCategory.objects.all().delete()
         OrganizerProfile.objects.all().delete()
