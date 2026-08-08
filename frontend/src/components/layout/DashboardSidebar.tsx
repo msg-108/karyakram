@@ -9,6 +9,7 @@ import {
   Users,
   CheckSquare,
   Ticket,
+  User as UserIcon,
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -30,6 +31,7 @@ export const DashboardSidebar: React.FC = () => {
     { label: 'Overview', path: '/dashboard', icon: LayoutDashboard },
     { label: 'My Bookings', path: '/my-bookings', icon: Calendar },
     { label: 'My Tickets', path: '/my-tickets', icon: Ticket },
+    { label: 'Profile', path: '/profile', icon: UserIcon },
   ];
 
   const organizerNav = [
@@ -38,12 +40,14 @@ export const DashboardSidebar: React.FC = () => {
     { label: 'Create Event', path: '/organizer/events/new', icon: PlusCircle },
     { label: 'QR Scanner', path: '/organizer/check-in', icon: QrCode },
     { label: 'Analytics', path: '/organizer/analytics', icon: BarChart3 },
+    { label: 'Profile', path: '/organizer/profile', icon: UserIcon },
   ];
 
   const adminNav = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Pending Organizers', path: '/admin/organizers/pending', icon: Users },
     { label: 'Pending Events', path: '/admin/events/pending', icon: CheckSquare },
+    { label: 'Profile', path: '/admin/profile', icon: UserIcon },
   ];
 
   const currentNav = isAdmin ? adminNav : isOrganizer ? organizerNav : attendeeNav;

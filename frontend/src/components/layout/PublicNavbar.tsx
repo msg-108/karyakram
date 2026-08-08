@@ -83,14 +83,6 @@ export const PublicNavbar: React.FC = () => {
                 </div>
                 <span className="text-sm font-semibold text-white hover:text-karyakram-gold-200 transition-colors">{user?.first_name}</span>
               </Link>
-
-              <button
-                onClick={handleLogout}
-                title="Log out"
-                className="p-2 text-karyakram-red-200 hover:text-white hover:bg-karyakram-red-800 rounded-xl transition-colors cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
             </div>
           ) : (
             <div className="flex items-center gap-3">
@@ -146,15 +138,6 @@ export const PublicNavbar: React.FC = () => {
                   My Tickets
                 </Link>
               )}
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  handleLogout();
-                }}
-                className="w-full text-left px-3 py-2 rounded-xl text-base font-medium text-karyakram-gold-200 hover:bg-karyakram-purple-800 cursor-pointer"
-              >
-                Log Out
-              </button>
             </>
           ) : (
             <div className="pt-2 flex flex-col gap-2">

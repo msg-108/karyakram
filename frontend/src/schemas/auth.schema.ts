@@ -98,3 +98,23 @@ export const passwordResetConfirmSchema = z
   });
 
 export type PasswordResetConfirmFormData = z.infer<typeof passwordResetConfirmSchema>;
+
+export const updateUserSchema = z.object({
+  first_name: z.string().min(1, 'First name is required').max(150),
+  last_name: z.string().min(1, 'Last name is required').max(150),
+  username: z
+    .string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(150)
+    .regex(/^[-a-zA-Z0-9_.]+$/, 'Letters, digits, dot, underscore, hyphen only'),
+});
+
+export type UpdateUserFormData = z.infer<typeof updateUserSchema>;
+
+export const updateOrganizerProfileSchema = z.object({
+  organization_name: z.string().min(1, 'Organization name is required').max(255),
+  organization_description: z.string().optional(),
+  website_url: z.string().url('Invalid URL format').or(z.literal('')).optional(),
+});
+
+export type UpdateOrganizerProfileFormData = z.infer<typeof updateOrganizerProfileSchema>;

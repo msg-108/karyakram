@@ -47,6 +47,9 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { PendingOrganizersPage } from './pages/admin/PendingOrganizersPage';
 import { PendingEventsPage } from './pages/admin/PendingEventsPage';
 
+// Shared Profile Page
+import { ProfilePage } from './pages/profile/ProfilePage';
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -118,6 +121,9 @@ export default function App() {
             </ProtectedRoute>
           }
         >
+          {/* Shared Profile Route for all roles */}
+          <Route path="/profile" element={<ProfilePage />} />
+
           {/* Attendee */}
           <Route path="/dashboard" element={<AttendeeDashboard />} />
           <Route path="/my-bookings" element={<MyBookingsPage />} />
@@ -134,6 +140,14 @@ export default function App() {
             element={
               <RoleGuard allowedRoles={['ORGANIZER']}>
                 <OrganizerDashboard />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/organizer/profile"
+            element={
+              <RoleGuard allowedRoles={['ORGANIZER']}>
+                <ProfilePage />
               </RoleGuard>
             }
           />
@@ -194,6 +208,14 @@ export default function App() {
             element={
               <RoleGuard requireStaff={true}>
                 <AdminDashboard />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/admin/profile"
+            element={
+              <RoleGuard requireStaff={true}>
+                <ProfilePage />
               </RoleGuard>
             }
           />

@@ -7,6 +7,8 @@ import {
   ResendOtpFormData,
   PasswordResetRequestFormData,
   PasswordResetConfirmFormData,
+  UpdateUserFormData,
+  UpdateOrganizerProfileFormData,
 } from '../schemas/auth.schema';
 import { LoginResponse, UserPublic, OrganizerProfile } from '../types/auth.types';
 import { DetailResponse } from '../types/common.types';
@@ -65,8 +67,18 @@ export const authService = {
     return res.data;
   },
 
+  async updateCurrentUser(data: UpdateUserFormData): Promise<UserPublic> {
+    const res = await api.patch<UserPublic>('/me/', data);
+    return res.data;
+  },
+
   async getOrganizerProfile(): Promise<OrganizerProfile> {
     const res = await api.get<OrganizerProfile>('/me/organizer-profile/');
+    return res.data;
+  },
+
+  async updateOrganizerProfile(data: UpdateOrganizerProfileFormData): Promise<OrganizerProfile> {
+    const res = await api.patch<OrganizerProfile>('/me/organizer-profile/', data);
     return res.data;
   },
 };

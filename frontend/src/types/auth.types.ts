@@ -44,3 +44,15 @@ export interface JWTClaims {
   is_staff: boolean;
   exp: number;
 }
+
+export interface UpdateUserData {
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+}
+
+export interface UpdateOrganizerProfileData {
+  organization_name?: string;
+  organization_description?: string;
+  website_url?: string;
+}
