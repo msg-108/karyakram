@@ -5,8 +5,8 @@ import {
   PublicEventDetail,
   OrganizerEventList,
   OrganizerEventDetail,
+  AdminEventDetail,
   TicketTier,
-  EventImage,
   EventFilterParams,
 } from '../types/event.types';
 import { PaginatedResponse } from '../types/common.types';
@@ -97,25 +97,14 @@ export const eventService = {
     await api.delete(`/events/organizer/${eventId}/tiers/${tierId}/`);
   },
 
-  async listGalleryImages(eventId: number): Promise<EventImage[]> {
-    const res = await api.get<EventImage[]>(`/events/organizer/${eventId}/images/`);
-    return res.data;
-  },
-
-  async uploadGalleryImage(eventId: number, file: File, caption?: string): Promise<EventImage> {
-    const formData = new FormData();
-    formData.append('image', file);
-    if (caption) formData.append('caption', caption);
-
-    const res = await api.post<EventImage>(`/events/organizer/${eventId}/images/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return res.data;
-  },
-
   // Admin endpoints
   async listPendingEvents(): Promise<AdminEventReview[]> {
     const res = await api.get<AdminEventReview[]>('/admin/events/pending/');
+    return res.data;
+  },
+
+  async getAdminEventDetail(id: number): Promise<AdminEventDetail> {
+    const res = await api.get<AdminEventDetail>(`/admin/events/${id}/`);
     return res.data;
   },
 

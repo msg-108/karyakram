@@ -25,15 +25,6 @@ export interface TicketTier {
   updated_at: string;
 }
 
-export interface EventImage {
-  id: number;
-  event: number;
-  image: string;
-  caption: string;
-  display_order: number;
-  created_at: string;
-}
-
 export interface PublicEventList {
   id: number;
   slug: string;
@@ -62,14 +53,11 @@ export interface PublicEventDetail {
   city: string;
   district: string;
   province: string;
-  latitude: string | null;
-  longitude: string | null;
   banner: string | null;
   start_datetime: string;
   end_datetime: string;
   registration_deadline: string | null;
   capacity: number;
-  gallery_images: EventImage[];
   ticket_tiers: TicketTier[];
 }
 
@@ -88,6 +76,18 @@ export interface OrganizerEventList {
 export interface OrganizerEventDetail extends PublicEventDetail {
   visibility: VisibilityEnum;
   status: StatusDd4Enum;
+  rejection_reason: string;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminEventDetail extends PublicEventDetail {
+  organizer_email: string;
+  visibility: VisibilityEnum;
+  status: StatusDd4Enum;
+  approved_by_username: string | null;
+  approved_at: string | null;
   rejection_reason: string;
   published_at: string | null;
   created_at: string;
