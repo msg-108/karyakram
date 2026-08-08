@@ -58,6 +58,9 @@ class EventSummarySerializer(serializers.Serializer):
     date_time = serializers.DateTimeField(read_only=True)
     location = serializers.CharField(read_only=True)
     organizer_name = serializers.CharField(read_only=True)
+    total_tickets_issued = serializers.IntegerField(read_only=True, default=0)
+    checked_in_count = serializers.IntegerField(read_only=True, default=0)
+    attendance_percentage = serializers.FloatField(read_only=True, default=0.0)
 
 
 class ActivityItemSerializer(serializers.Serializer):
@@ -137,6 +140,7 @@ class TicketSalesSummarySerializer(serializers.Serializer):
 class CheckInStatisticsSerializer(serializers.Serializer):
     total_checked_in = serializers.IntegerField(read_only=True)
     total_expected = serializers.IntegerField(read_only=True)
+    attendance_percentage = serializers.FloatField(read_only=True, default=0.0)
 
 
 class QRScanStatisticsSerializer(serializers.Serializer):

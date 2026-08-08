@@ -132,6 +132,7 @@ class PublicEventListSerializer(serializers.ModelSerializer):
     organizer_name = serializers.CharField(
         source="organizer.organization_name", read_only=True
     )
+    total_remaining_tickets = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -147,8 +148,12 @@ class PublicEventListSerializer(serializers.ModelSerializer):
             "banner",
             "start_datetime",
             "end_datetime",
+            "total_remaining_tickets",
         ]
         read_only_fields = fields
+
+    def get_total_remaining_tickets(self, obj: Event) -> int:
+        return sum(tier.remaining_quantity for tier in obj.ticket_tiers.all())
 
 
 class PublicEventDetailSerializer(serializers.ModelSerializer):
@@ -159,6 +164,7 @@ class PublicEventDetailSerializer(serializers.ModelSerializer):
         source="organizer.organization_name", read_only=True
     )
     ticket_tiers = TicketTierSerializer(many=True, read_only=True)
+    total_remaining_tickets = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -181,9 +187,13 @@ class PublicEventDetailSerializer(serializers.ModelSerializer):
             "end_datetime",
             "registration_deadline",
             "capacity",
+            "total_remaining_tickets",
             "ticket_tiers",
         ]
         read_only_fields = fields
+
+    def get_total_remaining_tickets(self, obj: Event) -> int:
+        return sum(tier.remaining_quantity for tier in obj.ticket_tiers.all())
 
 
 # ==================== EVENT: ORGANIZER ====================
@@ -193,6 +203,8 @@ class OrganizerEventListSerializer(serializers.ModelSerializer):
     """Compact shape for an organizer's own event list — includes status/review fields a public list never shows."""
 
     category = EventCategorySerializer(read_only=True)
+    total_remaining_tickets = serializers.SerializerMethodField()
+    attendance = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -206,8 +218,30 @@ class OrganizerEventListSerializer(serializers.ModelSerializer):
             "start_datetime",
             "end_datetime",
             "rejection_reason",
+            "total_remaining_tickets",
+            "attendance",
         ]
         read_only_fields = fields
+
+    def get_total_remaining_tickets(self, obj: Event) -> int:
+        return sum(tier.remaining_quantity for tier in obj.ticket_tiers.all())
+
+    def get_attendance(self, obj: Event) -> dict:
+        from apps.tickets.models import Ticket
+
+        tickets = Ticket.objects.filter(booking__event=obj).exclude(
+            status=Ticket.Status.CANCELLED
+        )
+        total_issued = tickets.count()
+        checked_in = tickets.filter(status=Ticket.Status.CHECKED_IN).count()
+        pct = (
+            round((checked_in / total_issued * 100), 1) if total_issued > 0 else 0.0
+        )
+        return {
+            "total_tickets_issued": total_issued,
+            "checked_in_count": checked_in,
+            "attendance_percentage": pct,
+        }
 
 
 class OrganizerEventDetailSerializer(serializers.ModelSerializer):
@@ -215,6 +249,8 @@ class OrganizerEventDetailSerializer(serializers.ModelSerializer):
 
     category = EventCategorySerializer(read_only=True)
     ticket_tiers = TicketTierSerializer(many=True, read_only=True)
+    total_remaining_tickets = serializers.SerializerMethodField()
+    attendance = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -240,6 +276,8 @@ class OrganizerEventDetailSerializer(serializers.ModelSerializer):
             "status",
             "rejection_reason",
             "published_at",
+            "total_remaining_tickets",
+            "attendance",
             "ticket_tiers",
             "created_at",
             "updated_at",
@@ -254,6 +292,26 @@ class OrganizerEventDetailSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+    def get_total_remaining_tickets(self, obj: Event) -> int:
+        return sum(tier.remaining_quantity for tier in obj.ticket_tiers.all())
+
+    def get_attendance(self, obj: Event) -> dict:
+        from apps.tickets.models import Ticket
+
+        tickets = Ticket.objects.filter(booking__event=obj).exclude(
+            status=Ticket.Status.CANCELLED
+        )
+        total_issued = tickets.count()
+        checked_in = tickets.filter(status=Ticket.Status.CHECKED_IN).count()
+        pct = (
+            round((checked_in / total_issued * 100), 1) if total_issued > 0 else 0.0
+        )
+        return {
+            "total_tickets_issued": total_issued,
+            "checked_in_count": checked_in,
+            "attendance_percentage": pct,
+        }
 
 
 class OrganizerEventWriteSerializer(serializers.ModelSerializer):

@@ -205,13 +205,6 @@ class EventSummary:
     """
     One row of an events list (upcoming events a user might attend, or an
     organizer's own events).
-
-    apps.events.models.Event exists. `users` already has a migration
-    dependency on an `events` app (see users/migrations/0003, which
-    depends on events.0003_alter_event_organizer), so that app's schema
-    may already exist in the wider project even though it wasn't included
-    in what was shared for this task — confirm its actual field names
-    before wiring this up for real, rather than assuming these ones match.
     """
 
     event_id: int
@@ -219,6 +212,9 @@ class EventSummary:
     date_time: datetime
     location: str
     organizer_name: str
+    total_tickets_issued: int = 0
+    checked_in_count: int = 0
+    attendance_percentage: float = 0.0
 
 
 def list_upcoming_events(user: User) -> list[EventSummary]:
@@ -346,38 +342,66 @@ def get_organizer_profile_summary(profile: OrganizerProfile) -> OrganizerProfile
 
 def list_organizer_events(profile: OrganizerProfile) -> list[EventSummary]:
     from apps.events.models import Event
+    from apps.tickets.models import Ticket
 
     events = Event.objects.filter(organizer=profile).order_by("-start_datetime")
-    return [
-        EventSummary(
-            event_id=e.id,
-            title=e.title,
-            date_time=e.start_datetime,
-            location=e.venue,
-            organizer_name=profile.user.username,
+    result = []
+    for e in events:
+        tickets = Ticket.objects.filter(booking__event=e).exclude(
+            status=Ticket.Status.CANCELLED
         )
-        for e in events
-    ]
+        total_issued = tickets.count()
+        checked_in = tickets.filter(status=Ticket.Status.CHECKED_IN).count()
+        pct = (
+            round((checked_in / total_issued * 100), 1) if total_issued > 0 else 0.0
+        )
+        result.append(
+            EventSummary(
+                event_id=e.id,
+                title=e.title,
+                date_time=e.start_datetime,
+                location=e.venue,
+                organizer_name=profile.user.username,
+                total_tickets_issued=total_issued,
+                checked_in_count=checked_in,
+                attendance_percentage=pct,
+            )
+        )
+    return result
 
 
 def list_organizer_upcoming_events(profile: OrganizerProfile) -> list[EventSummary]:
     from apps.events.models import Event
+    from apps.tickets.models import Ticket
     from django.utils import timezone
 
     events = Event.objects.filter(
         organizer=profile, start_datetime__gte=timezone.now()
     ).order_by("start_datetime")
 
-    return [
-        EventSummary(
-            event_id=e.id,
-            title=e.title,
-            date_time=e.start_datetime,
-            location=e.venue,
-            organizer_name=profile.user.username,
+    result = []
+    for e in events:
+        tickets = Ticket.objects.filter(booking__event=e).exclude(
+            status=Ticket.Status.CANCELLED
         )
-        for e in events
-    ]
+        total_issued = tickets.count()
+        checked_in = tickets.filter(status=Ticket.Status.CHECKED_IN).count()
+        pct = (
+            round((checked_in / total_issued * 100), 1) if total_issued > 0 else 0.0
+        )
+        result.append(
+            EventSummary(
+                event_id=e.id,
+                title=e.title,
+                date_time=e.start_datetime,
+                location=e.venue,
+                organizer_name=profile.user.username,
+                total_tickets_issued=total_issued,
+                checked_in_count=checked_in,
+                attendance_percentage=pct,
+            )
+        )
+    return result
 
 
 # Deliberately no create_event / update_event / delete_event here. Event
@@ -496,9 +520,9 @@ def get_ticket_sales_summary(profile: OrganizerProfile) -> TicketSalesSummary:
 
 @dataclass(frozen=True)
 class CheckInStatistics:
-
     total_checked_in: int = 0
     total_expected: int = 0
+    attendance_percentage: float = 0.0
 
 
 def get_checkin_statistics(profile: OrganizerProfile) -> CheckInStatistics:
@@ -509,10 +533,16 @@ def get_checkin_statistics(profile: OrganizerProfile) -> CheckInStatistics:
     )
     total_expected = tickets.count()
     total_checked_in = tickets.filter(status=Ticket.Status.CHECKED_IN).count()
+    pct = (
+        round((total_checked_in / total_expected * 100), 1)
+        if total_expected > 0
+        else 0.0
+    )
 
     return CheckInStatistics(
         total_checked_in=total_checked_in,
         total_expected=total_expected,
+        attendance_percentage=pct,
     )
 
 
