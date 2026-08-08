@@ -16,7 +16,7 @@ from __future__ import annotations
 from rest_framework import serializers
 
 from . import services
-from .models import Event, EventCategory, EventImage, TicketTier
+from .models import Event, EventCategory, TicketTier
 from .validators import validate_capacity, validate_ticket_quantity
 
 # ==================== CATEGORIES ====================
@@ -115,18 +115,7 @@ class TicketTierCreateInputSerializer(serializers.ModelSerializer):
         ]
 
 
-# ==================== GALLERY IMAGES ====================
 
-
-class EventImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = EventImage
-        fields = ["id", "event", "image", "caption", "display_order", "created_at"]
-        read_only_fields = ["id", "event", "created_at"]
-
-    def create(self, validated_data: dict) -> EventImage:
-        event = self.context["event"]
-        return services.create_event_image(event, validated_data=validated_data)
 
 
 # ==================== EVENT: PUBLIC ====================
@@ -169,7 +158,6 @@ class PublicEventDetailSerializer(serializers.ModelSerializer):
     organizer_name = serializers.CharField(
         source="organizer.organization_name", read_only=True
     )
-    gallery_images = EventImageSerializer(many=True, read_only=True)
     ticket_tiers = TicketTierSerializer(many=True, read_only=True)
 
     class Meta:
@@ -193,7 +181,6 @@ class PublicEventDetailSerializer(serializers.ModelSerializer):
             "end_datetime",
             "registration_deadline",
             "capacity",
-            "gallery_images",
             "ticket_tiers",
         ]
         read_only_fields = fields
@@ -227,7 +214,6 @@ class OrganizerEventDetailSerializer(serializers.ModelSerializer):
     """Full read shape for one of an organizer's own events, including gallery/tiers and review state."""
 
     category = EventCategorySerializer(read_only=True)
-    gallery_images = EventImageSerializer(many=True, read_only=True)
     ticket_tiers = TicketTierSerializer(many=True, read_only=True)
 
     class Meta:
@@ -254,7 +240,6 @@ class OrganizerEventDetailSerializer(serializers.ModelSerializer):
             "status",
             "rejection_reason",
             "published_at",
-            "gallery_images",
             "ticket_tiers",
             "created_at",
             "updated_at",
@@ -265,7 +250,6 @@ class OrganizerEventDetailSerializer(serializers.ModelSerializer):
             "status",
             "rejection_reason",
             "published_at",
-            "gallery_images",
             "ticket_tiers",
             "created_at",
             "updated_at",
@@ -421,6 +405,59 @@ class AdminEventReviewSerializer(serializers.ModelSerializer):
             "approved_at",
             "rejection_reason",
             "created_at",
+        ]
+        read_only_fields = fields
+
+
+class AdminEventDetailSerializer(serializers.ModelSerializer):
+    """
+    Full read shape for admin event review — surfaces all content, location, schedule,
+    ticket tiers, banner image, and review state.
+    """
+
+    category = EventCategorySerializer(read_only=True)
+    organizer_name = serializers.CharField(
+        source="organizer.organization_name", read_only=True
+    )
+    organizer_email = serializers.CharField(
+        source="organizer.user.email", read_only=True
+    )
+    approved_by_username = serializers.CharField(
+        source="approved_by.username", read_only=True, default=None
+    )
+    ticket_tiers = TicketTierSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Event
+        fields = [
+            "id",
+            "slug",
+            "title",
+            "short_description",
+            "description",
+            "terms_and_conditions",
+            "category",
+            "organizer_name",
+            "organizer_email",
+            "venue",
+            "address",
+            "city",
+            "district",
+            "province",
+            "banner",
+            "start_datetime",
+            "end_datetime",
+            "registration_deadline",
+            "capacity",
+            "visibility",
+            "status",
+            "approved_by_username",
+            "approved_at",
+            "rejection_reason",
+            "published_at",
+            "ticket_tiers",
+            "created_at",
+            "updated_at",
         ]
         read_only_fields = fields
 

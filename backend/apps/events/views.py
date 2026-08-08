@@ -23,10 +23,10 @@ from apps.common.permissions import (
     IsOrganizer,
 )
 from .serializers import (
+    AdminEventDetailSerializer,
     AdminEventReviewSerializer,
     EventApprovalActionSerializer,
     EventCategorySerializer,
-    EventImageSerializer,
     OrganizerEventDetailSerializer,
     OrganizerEventListSerializer,
     OrganizerEventWriteSerializer,
@@ -408,52 +408,7 @@ class OrganizerTicketTierDetailView(APIView):
 # ==================== ORGANIZER: GALLERY IMAGES ====================
 
 
-class OrganizerEventImageListCreateView(APIView):
-    """List or add gallery images for one of the authenticated organizer's own events."""
 
-    permission_classes = [IsAuthenticated, IsOrganizer, IsEventOwner]
-
-    def get_event(self, pk: int) -> Event:
-        event = get_object_or_404(Event, pk=pk)
-        self.check_object_permissions(self.request, event)
-        return event
-
-    @extend_schema(
-        operation_id="listEventGalleryImages",
-        summary="List an event's gallery images",
-        description="Return every gallery image attached to the given event.",
-        tags=["Events: Organizer"],
-        responses=EventImageSerializer(many=True),
-    )
-    def get(self, request, pk: int):
-        event = self.get_event(pk)
-        return Response(
-            EventImageSerializer(event.gallery_images.all(), many=True).data
-        )
-
-    @extend_schema(
-        operation_id="createEventGalleryImage",
-        summary="Add a gallery image",
-        description="Add a gallery image to the given event. Only permitted while the event is a draft.",
-        tags=["Events: Organizer"],
-        request=EventImageSerializer,
-        responses={
-            201: OpenApiResponse(
-                EventImageSerializer, description="Gallery image added."
-            ),
-            400: OpenApiResponse(
-                description="Validation error, or event is not a draft."
-            ),
-        },
-    )
-    def post(self, request, pk: int):
-        event = self.get_event(pk)
-        serializer = EventImageSerializer(data=request.data, context={"event": event})
-        serializer.is_valid(raise_exception=True)
-        image = serializer.save()
-        return Response(
-            EventImageSerializer(image).data, status=status.HTTP_201_CREATED
-        )
 
 
 # ==================== ADMIN: EVENT REVIEW ====================
@@ -474,6 +429,26 @@ class AdminPendingEventListView(APIView):
     def get(self, request):
         events = services.list_pending_events()
         return Response(AdminEventReviewSerializer(events, many=True).data)
+
+
+class AdminEventDetailView(APIView):
+    """Retrieve full details of any event for admin review."""
+
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(
+        operation_id="getAdminEventDetail",
+        summary="Get full event details for admin review",
+        description="Return complete details of any event for admin review regardless of status.",
+        tags=["Admin: Events"],
+        responses={
+            200: AdminEventDetailSerializer,
+            404: OpenApiResponse(description="Event not found."),
+        },
+    )
+    def get(self, request, pk: int):
+        event = get_object_or_404(Event, pk=pk)
+        return Response(AdminEventDetailSerializer(event).data)
 
 
 class AdminEventApprovalView(APIView):

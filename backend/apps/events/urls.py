@@ -2,10 +2,10 @@ from django.urls import path
 
 from .views import (
     AdminEventApprovalView,
+    AdminEventDetailView,
     AdminEventPublishView,
     AdminPendingEventListView,
     OrganizerEventDetailView,
-    OrganizerEventImageListCreateView,
     OrganizerEventListCreateView,
     OrganizerEventSubmitView,
     OrganizerTicketTierDetailView,
@@ -52,12 +52,7 @@ urlpatterns = [
         OrganizerTicketTierDetailView.as_view(),
         name="organizer-ticket-tier-detail",
     ),
-    # Organizer: gallery images
-    path(
-        "organizer/<int:pk>/images/",
-        OrganizerEventImageListCreateView.as_view(),
-        name="organizer-event-image-list-create",
-    ),
+
     # Public Event Detail: dynamic slug matcher must go last so it doesn't intercept organizer/ or categories/
     path("<slug:slug>/", PublicEventDetailView.as_view(), name="public-event-detail"),
 ]
@@ -66,6 +61,7 @@ urlpatterns = [
 # so all admin surfaces live under a single discoverable api/admin/ namespace.
 admin_urlpatterns = [
     path("pending/", AdminPendingEventListView.as_view(), name="admin-event-pending"),
+    path("<int:pk>/", AdminEventDetailView.as_view(), name="admin-event-detail"),
     path(
         "<int:pk>/approve/",
         AdminEventApprovalView.as_view(),
