@@ -62,6 +62,4 @@ python manage.py test apps
 
 ## Deployment
 
-For step-by-step instructions on deploying the backend (Django + PostgreSQL + Redis + Celery) to Render.com, see the [Render Deployment Guide](../documentation/backend/render_deployment_guide.md).
-
-For more deep-dive technical details, read [Architecture Guide](../documentation/backend/architecture.md).
+For deep-dive technical details, read [Architecture Guide](../documentation/backend/architecture.md).
