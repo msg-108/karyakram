@@ -38,13 +38,6 @@ export const PublicNavbar: React.FC = () => {
 
         {/* Right Navigation & Search Section */}
         <div className="hidden sm:flex items-center gap-3 sm:gap-4 flex-1 justify-end">
-          <Link
-            to="/events"
-            className="text-sm font-bold text-karyakram-red-50 hover:text-white transition-colors shrink-0 whitespace-nowrap"
-          >
-            Browse Events
-          </Link>
-
           {!isEventsListingPage && (
             <form onSubmit={handleNavSearchSubmit} className="flex items-center relative max-w-xs lg:max-w-md w-full">
               <input
@@ -57,6 +50,13 @@ export const PublicNavbar: React.FC = () => {
               <Search className="w-4 h-4 text-karyakram-red-200 absolute left-3.5 pointer-events-none" />
             </form>
           )}
+
+          <Link
+            to="/events"
+            className="text-sm font-bold text-karyakram-red-50 hover:text-white transition-colors shrink-0 whitespace-nowrap"
+          >
+            Browse Events
+          </Link>
 
           {isAuthenticated ? (
             <div className="flex items-center gap-3 shrink-0">
