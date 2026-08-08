@@ -187,12 +187,19 @@ def issue_otp(user: User, *, purpose: str) -> EmailOTP:
     return otp
 
 
+def _dispatch_otp_email(user: User, otp: EmailOTP, purpose: str) -> None:
+    if purpose == EmailOTP.Purpose.PASSWORD_RESET:
+        send_password_reset_email(user, otp)
+    else:
+        send_otp_email(user, otp)
+
+
 def resend_otp(user: User, *, purpose: str) -> EmailOTP:
     try:
         existing = EmailOTP.objects.get(user=user, purpose=purpose)
     except EmailOTP.DoesNotExist:
         otp = issue_otp(user, purpose=purpose)
-        send_otp_email(user, otp)
+        _dispatch_otp_email(user, otp, purpose)
         return otp
 
     remaining = existing.seconds_until_resend_allowed
@@ -202,7 +209,7 @@ def resend_otp(user: User, *, purpose: str) -> EmailOTP:
         )
 
     otp = issue_otp(user, purpose=purpose)
-    send_otp_email(user, otp)
+    _dispatch_otp_email(user, otp, purpose)
     return otp
 
 

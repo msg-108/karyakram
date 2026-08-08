@@ -197,8 +197,9 @@ class ResendOTPView(APIView):
         serializer = OTPRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = get_object_or_404(User, email=serializer.validated_data["email"])
+        purpose = serializer.validated_data.get("purpose", EmailOTP.Purpose.EMAIL_VERIFICATION)
 
-        services.resend_otp(user, purpose=EmailOTP.Purpose.EMAIL_VERIFICATION)
+        services.resend_otp(user, purpose=purpose)
         return Response({"detail": "A new verification code has been sent."})
 
 

@@ -12,7 +12,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.validators import UniqueValidator
 
 from . import services
-from .models import OrganizerProfile, User
+from .models import EmailOTP, OrganizerProfile, User
 from .validators import (
     validate_otp_format,
     validate_username_format,
@@ -186,6 +186,11 @@ class OTPRequestSerializer(serializers.Serializer):
     the user isn't authenticated yet at this point in the flow."""
 
     email = serializers.EmailField()
+    purpose = serializers.ChoiceField(
+        choices=EmailOTP.Purpose.choices,
+        default=EmailOTP.Purpose.EMAIL_VERIFICATION,
+        required=False,
+    )
 
     def validate_email(self, value: str) -> str:
         if not User.objects.filter(email=value).exists():
