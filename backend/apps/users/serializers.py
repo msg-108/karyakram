@@ -201,7 +201,10 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Temporarily bypass SimpleJWT's own is_active check so we can
         # surface our own, more specific error messages first (e.g.
         # "pending approval" instead of a generic "no active account").
-        user = User.objects.filter(username=attrs.get(self.username_field)).first()
+        val = attrs.get(self.username_field)
+        user = User.objects.filter(username=val).first()
+        if user is None and "@" in str(val):
+            user = User.objects.filter(email__iexact=val).first()
         if user is not None:
             services.assert_can_login(user)
         return super().validate(attrs)

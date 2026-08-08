@@ -346,7 +346,11 @@ def assert_can_login(user: User) -> None:
     the caller doesn't need its own branching/messages.
     """
     if not user.is_email_verified:
-        raise ValidationError({"detail": "Please verify your email before logging in."})
+        raise ValidationError({
+            "detail": "Please verify your email before logging in.",
+            "is_email_verified": False,
+            "email": user.email,
+        })
 
     if user.is_organizer and not user.is_approved:
         raise PermissionDenied("Your organizer account is pending admin approval.")
