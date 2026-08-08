@@ -14,6 +14,7 @@ from .views import (
     PasswordResetRequestView,
     PasswordResetVerifyView,
     PasswordResetConfirmView,
+    PasswordChangeView,
     LogoutView,
 )
 
@@ -52,6 +53,7 @@ urlpatterns = [
     ),
     # Profile
     path("me/", MeView.as_view(), name="me"),
+    path("me/change-password/", PasswordChangeView.as_view(), name="change-password"),
     path(
         "me/organizer-profile/",
         MyOrganizerProfileView.as_view(),

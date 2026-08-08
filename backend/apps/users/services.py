@@ -409,3 +409,15 @@ def reject_organizer(
 
     transaction.on_commit(lambda: send_organizer_rejected_email(user, reason))
     return profile
+
+
+@transaction.atomic
+def change_password(user: User, *, old_password: str, new_password: str) -> None:
+    """
+    Allows an authenticated user to change their password provided they know their current password.
+    """
+    if not user.check_password(old_password):
+        raise ValidationError({"old_password": "Current password is incorrect."})
+
+    user.set_password(new_password)
+    user.save(update_fields=["password"])

@@ -33,6 +33,7 @@ from .serializers import (
     OrganizerRegisterSerializer,
     OTPRequestSerializer,
     OTPVerifySerializer,
+    PasswordChangeSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     PasswordResetVerifySerializer,
@@ -509,3 +510,30 @@ class LogoutView(APIView):
         except TokenError:
             raise ValidationError({"refresh_token": "Token is invalid or expired."})
         return Response({"detail": "Successfully logged out."})
+
+
+class PasswordChangeView(APIView):
+    """Change password for an authenticated user using their current password."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        operation_id="changePassword",
+        summary="Change password",
+        description="Change password for the authenticated user using their current password.",
+        tags=["Profile"],
+        request=PasswordChangeSerializer,
+        responses={
+            200: OpenApiResponse(_DETAIL_RESPONSE, description="Password updated successfully."),
+            400: OpenApiResponse(description="Validation error or incorrect current password."),
+        },
+    )
+    def post(self, request):
+        serializer = PasswordChangeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        services.change_password(
+            user=request.user,
+            old_password=serializer.validated_data["old_password"],
+            new_password=serializer.validated_data["new_password"],
+        )
+        return Response({"detail": "Password has been updated successfully."})
