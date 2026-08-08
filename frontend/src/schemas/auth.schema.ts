@@ -75,6 +75,7 @@ export type OTPVerifyFormData = z.infer<typeof otpVerifySchema>;
 
 export const resendOtpSchema = z.object({
   email: z.string().email('Invalid email address'),
+  purpose: z.enum(['EMAIL_VERIFICATION', 'PASSWORD_RESET']).optional(),
 });
 
 export type ResendOtpFormData = z.infer<typeof resendOtpSchema>;

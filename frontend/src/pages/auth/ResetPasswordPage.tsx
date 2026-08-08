@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
@@ -15,15 +15,27 @@ export const ResetPasswordPage: React.FC = () => {
   const toast = useToast();
 
   const defaultEmail = location.state?.email || '';
+  const [cooldown, setCooldown] = useState(60);
+  const [isResending, setIsResending] = useState(false);
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<PasswordResetConfirmFormData>({
     resolver: zodResolver(passwordResetConfirmSchema),
     defaultValues: { email: defaultEmail },
   });
+
+  const watchEmail = watch('email');
 
   const onSubmit = async (data: PasswordResetConfirmFormData) => {
     try {
@@ -32,6 +44,23 @@ export const ResetPasswordPage: React.FC = () => {
       navigate('/login');
     } catch (err) {
       toast.error(parseApiError(err));
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (!watchEmail) {
+      toast.error('Please enter your email address to resend the code.');
+      return;
+    }
+    setIsResending(true);
+    try {
+      await authService.resendOTP({ email: watchEmail, purpose: 'PASSWORD_RESET' });
+      toast.success('A new password reset code has been sent to your email.');
+      setCooldown(60);
+    } catch (err) {
+      toast.error(parseApiError(err));
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -50,13 +79,31 @@ export const ResetPasswordPage: React.FC = () => {
           error={errors.email?.message}
         />
 
-        <FormField
-          label="6-Digit Reset Code"
-          placeholder="123456"
-          maxLength={6}
-          {...register('code')}
-          error={errors.code?.message}
-        />
+        <div className="space-y-1.5">
+          <FormField
+            label="6-Digit Reset Code"
+            placeholder="123456"
+            maxLength={6}
+            {...register('code')}
+            error={errors.code?.message}
+          />
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={cooldown > 0 || isResending}
+              onClick={handleResendCode}
+              className="text-xs font-bold text-slate-700 hover:text-karyakram-red-600 disabled:text-slate-400 p-0 h-auto"
+            >
+              {isResending
+                ? 'Sending code...'
+                : cooldown > 0
+                ? `Resend code in ${cooldown}s`
+                : 'Resend password reset code'}
+            </Button>
+          </div>
+        </div>
 
         <FormField
           label="New Password"
