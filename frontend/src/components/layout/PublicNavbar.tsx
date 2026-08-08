@@ -67,7 +67,7 @@ export const PublicNavbar: React.FC = () => {
                 </Link>
               )}
 
-              {user?.role === 'USER' && (
+              {!isStaff && user?.role === 'USER' && (
                 <Link to="/my-tickets" className="text-sm font-semibold text-karyakram-red-50 hover:text-white flex items-center gap-1.5 transition-colors">
                   <Ticket className="w-4 h-4 text-karyakram-gold-200" />
                   My Tickets
@@ -137,7 +137,7 @@ export const PublicNavbar: React.FC = () => {
               >
                 Dashboard
               </Link>
-              {user?.role === 'USER' && (
+              {!isStaff && user?.role === 'USER' && (
                 <Link
                   to="/my-tickets"
                   onClick={() => setMobileMenuOpen(false)}
