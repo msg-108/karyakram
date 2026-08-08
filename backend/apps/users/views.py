@@ -314,6 +314,8 @@ class PendingOrganizerListView(APIView):
             user__role=User.Role.ORGANIZER,
             user__is_email_verified=True,
             user__is_approved=False,
+            approved_by__isnull=True,
+            rejection_reason="",
         ).select_related("user")
         return Response(OrganizerProfileSerializer(pending, many=True).data)
 
