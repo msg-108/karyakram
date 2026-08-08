@@ -88,7 +88,7 @@ export const OTPInput: React.FC<OTPInputProps> = ({
             value={digits[index]}
             onChange={(e) => handleChange(e, index)}
             onKeyDown={(e) => handleKeyDown(e, index)}
-            className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-bold bg-white border border-slate-300 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-colors"
+            className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-black text-slate-900 bg-[#F3F4F6] border border-slate-300 rounded-xl focus:border-karyakram-red-600 focus:ring-2 focus:ring-karyakram-red-600/30 focus:bg-white outline-none transition-colors"
           />
         ))}
       </div>
@@ -96,13 +96,13 @@ export const OTPInput: React.FC<OTPInputProps> = ({
       {/* Resend Cooldown Section */}
       {onResend && (
         <div className="text-center space-y-1">
-          <p className="text-xs text-slate-500">Didn't receive the code?</p>
+          <p className="text-xs text-slate-600 font-medium">Didn't receive the code?</p>
           <Button
             variant="ghost"
             size="sm"
             disabled={cooldown > 0 || isResending}
             onClick={handleResendClick}
-            className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 disabled:text-slate-400"
+            className="text-xs font-bold text-slate-900 hover:text-karyakram-red-600 disabled:text-slate-400"
           >
             {isResending
               ? 'Sending...'
