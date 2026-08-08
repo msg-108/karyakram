@@ -42,10 +42,20 @@ export const registerOrganizerSchema = z
     organization_name: z.string().min(1, 'Organization name is required').max(255),
     organization_description: z.string().optional(),
     website_url: z.string().url('Invalid URL format').or(z.literal('')).optional(),
-    citizenship_number: z.string().min(1, 'Citizenship number is required').max(150),
-    pan_number: z.string().min(1, 'PAN number is required'),
+    citizenship_number: z
+      .string()
+      .min(1, 'Citizenship number is required')
+      .max(150)
+      .regex(/^(?:\d{1,4}[-/\s]?){2,4}\d{1,7}$|^\d{5,16}$/, "Enter a valid Nepal citizenship number (e.g. '27-01-75-01234')"),
+    pan_number: z
+      .string()
+      .min(1, 'PAN number is required')
+      .regex(/^\d{9}$/, 'PAN number must be exactly 9 digits'),
     bank_name: z.string().min(1, 'Bank name is required').max(255),
-    bank_account_number: z.string().min(1, 'Bank account number is required'),
+    bank_account_number: z
+      .string()
+      .min(1, 'Bank account number is required')
+      .regex(/^[A-Za-z0-9]{8,20}$/, 'Enter a valid Nepal bank account number (8 to 20 digits)'),
     citizenship_document: z.custom<File>((val) => val instanceof File, 'Citizenship document is required'),
     pan_document: z.custom<File>((val) => val instanceof File, 'PAN document is required'),
   })

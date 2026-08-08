@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Mail } from 'lucide-react';
+import { Mail, ShieldCheck, CheckCircle2, Clock, FileText, Sparkles } from 'lucide-react';
 import { OTPInput } from '../../components/forms/OTPInput';
 import { Button } from '../../components/ui/Button';
 import { authService } from '../../services/auth.service';
@@ -58,39 +58,89 @@ export const VerifyOTPPage: React.FC = () => {
 
   if (isSuccess) {
     return isOrganizer ? (
-      /* Organizer Post-Registration Outcome Screen (Purple Accent) */
-      <div className="space-y-6 text-center p-6 bg-karyakram-purple-50 border border-karyakram-purple-200 rounded-2xl shadow-xs">
-        <div className="w-16 h-16 bg-karyakram-purple-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-md">
-          <Mail className="w-8 h-8 text-white" />
+      /* Organizer Post-Registration Outcome Screen (Rich Gradient Card) */
+      <div className="space-y-6 text-center p-8 bg-gradient-to-b from-purple-950 via-slate-900 to-purple-950 text-white rounded-3xl border border-purple-800/40 shadow-2xl relative overflow-hidden">
+        {/* Ambient glow background */}
+        <div className="absolute -top-12 -right-12 w-40 h-40 bg-purple-600/30 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Hero Icon */}
+        <div className="relative mx-auto w-20 h-20 rounded-3xl bg-gradient-to-tr from-purple-600 to-indigo-500 p-0.5 shadow-lg shadow-purple-500/30">
+          <div className="w-full h-full bg-slate-900 rounded-[22px] flex items-center justify-center">
+            <ShieldCheck className="w-10 h-10 text-purple-300" />
+          </div>
         </div>
-        <div className="space-y-2">
-          <h2 className="text-2xl font-black text-karyakram-purple-900">Application Sent for Approval</h2>
-          <p className="text-xs text-karyakram-purple-800 max-w-sm mx-auto leading-relaxed">
-            Your organizer account & documents have been submitted to admin review. You will receive an email update once verified.
+
+        {/* Header */}
+        <div className="space-y-2 relative z-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-300 border border-purple-400/30">
+            <Sparkles className="w-3.5 h-3.5" /> Verification Completed
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            Application Sent for Approval!
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
+            Your email is confirmed and your organizer documents have been submitted for administrator review.
           </p>
         </div>
+
+        {/* Status Pipeline Stepper */}
+        <div className="bg-slate-800/80 border border-purple-500/20 rounded-2xl p-4 text-left space-y-3 shadow-inner relative z-10">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-purple-300">Application Pipeline</p>
+          <div className="space-y-2.5 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-emerald-400 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> 1. Email Verification
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">VERIFIED</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-amber-300 font-medium">
+                <Clock className="w-4 h-4 text-amber-400" /> 2. Document & Admin Review
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">IN REVIEW</span>
+            </div>
+            <div className="flex items-center justify-between opacity-60">
+              <span className="flex items-center gap-2 text-slate-400 font-medium">
+                <FileText className="w-4 h-4 text-slate-400" /> 3. Organizer Portal Access
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-700 text-slate-400">PENDING</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Button */}
         <Button
           onClick={() => navigate('/login')}
-          className="w-full py-3 text-base bg-karyakram-purple-600 text-white hover:bg-karyakram-purple-800 shadow-sm border-0"
+          className="w-full py-4 text-base font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl shadow-lg shadow-purple-900/50 border-0 transition-all transform hover:-translate-y-0.5 relative z-10"
         >
-          Return to Sign In
+          Return to Sign In →
         </Button>
       </div>
     ) : (
-      /* Regular User Post-Registration Outcome Screen (Gold Accent) */
-      <div className="space-y-6 text-center p-6 bg-karyakram-gold-50 border border-karyakram-gold-200 rounded-2xl shadow-xs">
-        <div className="w-16 h-16 bg-karyakram-gold-600 text-karyakram-purple-900 rounded-2xl flex items-center justify-center mx-auto shadow-md font-bold">
-          <Mail className="w-8 h-8 text-karyakram-purple-900" />
+      /* Regular User Post-Registration Outcome Screen (Gold Gradient Card) */
+      <div className="space-y-6 text-center p-8 bg-gradient-to-b from-amber-950 via-slate-900 to-amber-950 text-white rounded-3xl border border-amber-800/40 shadow-2xl relative overflow-hidden">
+        <div className="absolute -top-12 -right-12 w-40 h-40 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative mx-auto w-20 h-20 rounded-3xl bg-gradient-to-tr from-amber-500 to-yellow-400 p-0.5 shadow-lg shadow-amber-500/30">
+          <div className="w-full h-full bg-slate-900 rounded-[22px] flex items-center justify-center">
+            <CheckCircle2 className="w-10 h-10 text-amber-400" />
+          </div>
         </div>
-        <div className="space-y-2">
-          <h2 className="text-2xl font-black text-karyakram-gold-900">Account Successfully Registered!</h2>
-          <p className="text-xs text-karyakram-gold-800 max-w-sm mx-auto leading-relaxed">
-            Your email is verified. You can now discover events and book verified tickets instantly.
+
+        <div className="space-y-2 relative z-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-400/30">
+            <Sparkles className="w-3.5 h-3.5" /> Email Confirmed
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">Account Successfully Verified!</h2>
+          <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
+            Your email is confirmed. You can now discover events and book verified tickets instantly.
           </p>
         </div>
+
         <Button
           onClick={() => navigate('/login')}
-          className="w-full py-3 text-base shadow-md border-0"
+          className="w-full py-4 text-base font-bold bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 rounded-xl shadow-lg shadow-amber-900/50 border-0 transition-all transform hover:-translate-y-0.5 relative z-10"
         >
           Sign In Now →
         </Button>
