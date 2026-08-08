@@ -258,10 +258,11 @@ def verify_email_otp(user: User, *, code: str) -> OTPVerificationResult:
     user.save(update_fields=["is_email_verified", "is_active"])
     otp.delete()
 
-    if activated:
-        # Only send welcome email to normal users or upon full activation
-        # For organizers, the organizer_approved email acts as the welcome.
-        send_welcome_email(user)
+    transaction.on_commit(lambda: send_welcome_email(user))
+    if user.role == User.Role.ORGANIZER and hasattr(user, "organizer_profile"):
+        transaction.on_commit(
+            lambda: send_admin_organizer_pending_email(user.organizer_profile)
+        )
 
     return OTPVerificationResult(user=user, activated=activated)
 

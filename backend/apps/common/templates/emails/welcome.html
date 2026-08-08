@@ -1,7 +1,11 @@
 {% extends "emails/base.html" %}
-{% block subject %}Welcome to Karyakram!{% endblock %}
+{% block subject %}Your Karyakram email is verified{% endblock %}
 {% block content %}
 <h2>Welcome, {{ user.username }}!</h2>
-<p>Your email has been successfully verified, and your account is now active.</p>
-<p>Explore upcoming events and start booking your tickets today!</p>
+<p>Your email has been successfully verified.</p>
+{% if user.role == "ORGANIZER" %}
+<p>Your organizer application and submitted documents are now queued for admin approval. You will receive an email notification once your organizer account is reviewed.</p>
+{% else %}
+<p>Your account is now active. Explore upcoming events and start booking your tickets today!</p>
+{% endif %}
 {% endblock %}
