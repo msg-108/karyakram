@@ -30,3 +30,7 @@ CORS_ALLOW_CREDENTIALS = True
 # Allows running Celery tasks synchronously in local dev if configured via env
 CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", cast=bool, default=False)
 
+# Relax DRF burst throttling in development mode (100 requests/min)
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["auth_burst"] = config("THROTTLE_AUTH_BURST", default="100/min")
+
+

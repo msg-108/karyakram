@@ -169,10 +169,10 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.ScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "100/day",
-        "user": "1000/day",
-        "auth_burst": "5/min",
-        "auth_sustained": "100/hour",
+        "anon": config("THROTTLE_ANON", default="100/day"),
+        "user": config("THROTTLE_USER", default="1000/day"),
+        "auth_burst": config("THROTTLE_AUTH_BURST", default="30/min"),
+        "auth_sustained": config("THROTTLE_AUTH_SUSTAINED", default="100/hour"),
     },
 }
 
