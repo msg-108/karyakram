@@ -1,0 +1,13 @@
+Action Required: Complete Your Payment
+
+Hello {{ user.username }},
+
+You have successfully reserved tickets for {{ event.title }}. Your seats are locked for 10 minutes. Please complete the payment to confirm your booking.
+
+Order Summary:
+{% for item in items %}
+- {{ item.quantity }}x {{ item.ticket_tier.name }} @ Rs. {{ item.price_at_purchase }} = Rs. {{ item.line_total }}
+{% endfor %}
+Total Amount: Rs. {{ booking.total_amount }}
+
+Please visit your dashboard to complete the payment.

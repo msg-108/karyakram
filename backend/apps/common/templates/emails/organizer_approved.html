@@ -1,0 +1,8 @@
+{% extends "emails/base.html" %}
+{% block subject %}Your organizer account has been approved{% endblock %}
+{% block content %}
+<h2>Application Approved!</h2>
+<p>Hello {{ user.username }},</p>
+<p>Great news! Your organizer account for <strong>{{ user.organizer_profile.organization_name }}</strong> has been approved by our admin team.</p>
+<p>You can now log in and start creating events.</p>
+{% endblock %}

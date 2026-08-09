@@ -1,0 +1,10 @@
+{% extends "emails/base.html" %}
+{% block subject %}Update on your event submission{% endblock %}
+{% block content %}
+<h2>Event Submission Update</h2>
+<p>Hello {{ organizer.user.username }},</p>
+<p>We have reviewed your event <strong>{{ event.title }}</strong>. Unfortunately, it cannot be approved at this time.</p>
+<p><strong>Reason provided:</strong></p>
+<p><em>{{ reason }}</em></p>
+<p>Please log in to your dashboard to make the necessary changes and resubmit.</p>
+{% endblock %}

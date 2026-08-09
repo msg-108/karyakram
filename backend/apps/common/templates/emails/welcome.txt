@@ -1,0 +1,8 @@
+Welcome, {{ user.username }}!
+
+Your email has been successfully verified.
+{% if user.role == "ORGANIZER" %}
+Your organizer application and submitted documents are now queued for admin approval. You will receive an email notification once your organizer account is reviewed.
+{% else %}
+Your account is now active. Explore upcoming events and start booking your tickets today!
+{% endif %}

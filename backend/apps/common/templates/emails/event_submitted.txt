@@ -1,0 +1,5 @@
+Event Submitted
+
+Hello {{ organizer.user.username }},
+
+Your event "{{ event.title }}" has been successfully submitted and is currently pending admin approval. We will notify you once it has been reviewed.

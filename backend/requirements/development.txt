@@ -1,0 +1,13 @@
+-r base.txt
+
+# Testing
+pytest>=8.3
+pytest-django>=4.9
+factory-boy>=3.3
+
+# Code quality
+flake8>=7.1
+black>=24.8
+
+# Debug toolbar
+django-debug-toolbar>=4.4

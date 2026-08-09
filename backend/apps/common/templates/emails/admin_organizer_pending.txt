@@ -1,0 +1,10 @@
+Pending Organizer Approval
+
+Hello Admin,
+
+A new organizer application has been submitted and requires your review.
+- Organization: {{ profile.organization_name }}
+- Username: {{ profile.user.username }}
+- Email: {{ profile.user.email }}
+
+Please log in to the admin portal to review this application.

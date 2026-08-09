@@ -1,0 +1,11 @@
+UPDATE: Schedule Change for {{ event.title }}
+
+Hello {{ user.get_full_name|default:user.username }},
+
+Please note that the details for {{ event.title }} have been updated by the organizer.
+
+New Date & Time: {{ event.start_datetime|date:"F j, Y, g:i a" }}
+New Venue: {{ event.venue }}
+Address: {{ event.address }}, {{ event.city }}
+
+Your existing tickets remain valid for the updated schedule. No further action is required.

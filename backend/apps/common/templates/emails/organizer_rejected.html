@@ -1,0 +1,10 @@
+{% extends "emails/base.html" %}
+{% block subject %}Update on your organizer application{% endblock %}
+{% block content %}
+<h2>Application Update</h2>
+<p>Hello {{ user.username }},</p>
+<p>We have reviewed your organizer account application for <strong>{{ user.organizer_profile.organization_name }}</strong>. Unfortunately, we cannot approve it at this time.</p>
+<p><strong>Reason provided:</strong></p>
+<p><em>{{ reason }}</em></p>
+<p>You may contact support for further clarification.</p>
+{% endblock %}

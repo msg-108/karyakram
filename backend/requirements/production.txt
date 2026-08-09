@@ -1,0 +1,10 @@
+-r base.txt
+
+# Production WSGI server
+gunicorn>=22.0
+
+# Database URL parser
+dj-database-url>=2.2
+
+# Static file serving
+whitenoise>=6.7

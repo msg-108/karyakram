@@ -1,0 +1,10 @@
+Great News! {{ event.title }} is Officially Sold Out!
+
+Hello {{ event.organizer.user.get_full_name|default:event.organizer.user.username }},
+
+Congratulations! Your event {{ event.title }} has officially sold out of all available ticket tiers!
+
+Event: {{ event.title }}
+Event Date: {{ event.start_datetime|date:"F j, Y, g:i a" }}
+
+You can manage attendee lists and track check-in readiness directly from your Organizer Dashboard.

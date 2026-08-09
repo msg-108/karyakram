@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* ============================================
+   KARYAKRAM DESIGN SYSTEM
+   Exact Color Ramp & Strict Application Rules
+   ============================================ */
+
+@theme {
+  /* === Mandatory Karyakram Color System === */
+  /* Primary: Crimson */
+  --color-karyakram-red-50:  #FCEBEB;
+  --color-karyakram-red-200: #F09595;
+  --color-karyakram-red-600: #C41E3A;
+  --color-karyakram-red-800: #791F1F;
+  --color-karyakram-red-900: #501313;
+
+  /* Accent: Gold */
+  --color-karyakram-gold-50:  #FDF6E3;
+  --color-karyakram-gold-200: #F0DBA3;
+  --color-karyakram-gold-600: #D4AF37;
+  --color-karyakram-gold-800: #8A6E1E;
+  --color-karyakram-gold-900: #5C4A14;
+
+  /* Secondary: Indigo */
+  --color-karyakram-indigo-50:  #EEF2FF;
+  --color-karyakram-indigo-200: #C7D2FE;
+  --color-karyakram-indigo-600: #4F46E5;
+  --color-karyakram-indigo-800: #3730A3;
+  --color-karyakram-indigo-900: #312E81;
+
+  /* === Font Family === */
+  --font-sans: 'Plus Jakarta Sans', 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Outfit', 'Poppins', system-ui, sans-serif;
+
+  /* === Shadows === */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 10px 30px -5px rgba(0, 0, 0, 0.06);
+  --shadow-cta: 0 4px 14px 0 rgba(212, 175, 55, 0.35);
+}
+
+/* === Base Styles === */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', 'Poppins', system-ui, -apple-system, sans-serif;
+    @apply bg-[#FAFAFA] text-slate-900 min-h-screen selection:bg-[#C41E3A] selection:text-white;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+    @apply text-slate-900;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #F09595;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #C41E3A;
+  }
+}
+
+/* === Utility Classes === */
+@layer utilities {
+  .container-app {
+    @apply mx-auto w-full max-w-[1536px] px-2.5 sm:px-4 lg:px-6;
+  }
+
+  /* Badge Utilities following 50-tint bg / 800-shade text rule */
+  .badge-red {
+    @apply bg-karyakram-red-50 text-karyakram-red-800 border border-karyakram-red-200/60 font-semibold px-2.5 py-0.5 rounded-full text-xs;
+  }
+
+  .badge-gold {
+    @apply bg-karyakram-gold-50 text-karyakram-gold-800 border border-karyakram-gold-200/60 font-semibold px-2.5 py-0.5 rounded-full text-xs;
+  }
+
+  .badge-indigo {
+    @apply bg-karyakram-indigo-50 text-karyakram-indigo-800 border border-karyakram-indigo-200/60 font-semibold px-2.5 py-0.5 rounded-full text-xs;
+  }
+
+  .badge-purple {
+    @apply bg-karyakram-red-50 text-karyakram-red-800 border border-karyakram-red-200/60 font-semibold px-2.5 py-0.5 rounded-full text-xs;
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded-xl bg-slate-200/80;
+  }
+}

@@ -1,0 +1,5 @@
+Event Published!
+
+Hello {{ organizer.user.username }},
+
+Congratulations! Your event "{{ event.title }}" is now live and public. Users can now discover your event and start booking tickets.

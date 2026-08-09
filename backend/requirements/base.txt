@@ -1,0 +1,43 @@
+# Django
+django>=5.1,<7.0
+
+# REST Framework
+djangorestframework>=3.15
+djangorestframework-simplejwt>=5.3
+
+# CORS
+django-cors-headers>=4.4
+
+# Filtering
+django-filter>=24.3
+
+# API Documentation
+drf-spectacular>=0.28
+drf-spectacular-sidecar>=2024.7
+
+# Configuration
+python-decouple>=3.8
+
+# Database
+psycopg2-binary>=2.9
+
+# Image handling
+Pillow>=10.4
+
+# Encryption (OrganizerProfile field-level encryption)
+cryptography>=43.0
+
+# Password hashing
+bcrypt>=4.2
+
+# HTTP client (payment gateway verification)
+requests>=2.32
+requests==2.34.2
+
+# Async Tasks
+celery>=5.4
+redis>=5.0
+
+# Images / QR Codes
+Pillow>=11.1
+qrcode>=7.4

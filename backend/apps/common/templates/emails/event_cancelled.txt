@@ -1,0 +1,9 @@
+IMPORTANT: {{ event.title }} Has Been Cancelled
+
+Hello {{ user.get_full_name|default:user.username }},
+
+We regret to inform you that {{ event.title }} scheduled for {{ event.start_datetime|date:"F j, Y, g:i a" }} has been cancelled by the event organizer.
+
+{% if reason %}Organizer Note: {{ reason }}{% endif %}
+
+Your tickets for this event are no longer valid. If you have any questions, please contact support.

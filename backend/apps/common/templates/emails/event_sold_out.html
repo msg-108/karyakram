@@ -1,0 +1,16 @@
+{% extends "emails/base.html" %}
+
+{% block subject %}{{ event.title }} is Officially Sold Out!{% endblock %}
+
+{% block content %}
+<h2>Great News! Event Sold Out</h2>
+<p>Hello {{ event.organizer.user.get_full_name|default:event.organizer.user.username }},</p>
+<p>Congratulations! Your event <strong>{{ event.title }}</strong> has officially sold out of all available ticket tiers!</p>
+
+<div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0;">
+    <p style="margin: 0 0 10px 0;"><strong>Event:</strong> {{ event.title }}</p>
+    <p style="margin: 0;"><strong>Event Date:</strong> {{ event.start_datetime|date:"F j, Y, g:i a" }}</p>
+</div>
+
+<p>You can manage attendee lists and track check-in readiness directly from your Organizer Dashboard.</p>
+{% endblock %}

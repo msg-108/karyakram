@@ -1,0 +1,13 @@
+Event Reminder: {{ event.title }}
+
+Hello {{ user.get_full_name|default:user.username }},
+
+This is a friendly reminder that {{ event.title }} is happening tomorrow!
+
+Date & Time: {{ event.start_datetime|date:"F j, Y, g:i a" }}
+Venue: {{ event.venue }}
+Address: {{ event.address }}, {{ event.city }}
+
+Please remember to bring your digital QR ticket for entry scan at the venue doors.
+
+We look forward to seeing you there!
