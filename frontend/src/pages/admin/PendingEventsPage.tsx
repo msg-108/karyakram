@@ -90,7 +90,7 @@ export const PendingEventsPage: React.FC = () => {
 
       {/* Review Modal */}
       {selectedEvent && (
-        <Modal isOpen={Boolean(selectedEvent)} onClose={() => setSelectedEvent(null)} title="Review Event Submission">
+        <Modal isOpen={Boolean(selectedEvent)} onClose={() => setSelectedEvent(null)} title="Review Event Submission" maxWidth="4xl">
           <div className="space-y-5 text-xs max-h-[75vh] overflow-y-auto pr-1">
             {isDetailLoading ? (
               <div className="flex items-center justify-center py-12">
@@ -100,7 +100,7 @@ export const PendingEventsPage: React.FC = () => {
               <>
                 {/* Banner preview if available */}
                 {(eventDetail?.banner || selectedEvent) && (
-                  <div className="relative rounded-xl overflow-hidden bg-slate-900 aspect-video max-h-48 border border-slate-200 shadow-2xs">
+                  <div className="relative rounded-xl overflow-hidden bg-slate-900 aspect-video max-h-56 border border-slate-200 shadow-2xs">
                     {eventDetail?.banner ? (
                       <img src={eventDetail.banner} alt={eventDetail.title} className="w-full h-full object-cover" />
                     ) : (
@@ -184,7 +184,9 @@ export const PendingEventsPage: React.FC = () => {
                         <span>Ticket Tiers ({eventDetail.ticket_tiers.length})</span>
                       </div>
                       <span className="flex items-center gap-1 text-slate-500 font-normal">
-                        <Users className="w-3.5 h-3.5" /> Total Capacity: <strong>{eventDetail.capacity}</strong>
+                        <Users className="w-3.5 h-3.5" /> Total Capacity: <strong>{(
+                          eventDetail.ticket_tiers.reduce((acc, tier) => acc + (tier.quantity || 0), 0)
+                        ).toLocaleString()}</strong>
                       </span>
                     </div>
 

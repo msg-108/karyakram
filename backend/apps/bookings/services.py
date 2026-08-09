@@ -94,7 +94,7 @@ def send_booking_confirmed_email(booking: Booking) -> None:
         send_email(
             to=booking.user.email,
             subject=f"Booking Confirmed - {booking.event.title} (#{booking.id})",
-            template_prefix="emails/booking_created",
+            template_prefix="emails/booking_confirmed",
             context=context,
             fail_silently=True,
         )
@@ -389,6 +389,13 @@ def cancel_booking(booking: Booking, *, user: User) -> Booking:
 
     # Invalidate active tickets for this booking
     booking.tickets.filter(status=Ticket.Status.VALID).update(status=Ticket.Status.CANCELLED)
+
+    # Transition associated payment to REFUNDED to deduct revenue from dashboard
+    if hasattr(booking, "payment") and booking.payment:
+        from apps.payments.models import Payment
+        if booking.payment.status in (Payment.Status.COMPLETED, Payment.Status.PENDING):
+            booking.payment.status = Payment.Status.REFUNDED
+            booking.payment.save(update_fields=["status", "updated_at"])
 
     transaction.on_commit(
         lambda _id=booking.id: send_booking_email_by_id(_id, action="cancelled")

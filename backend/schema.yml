@@ -4,12 +4,123 @@ info:
   version: 1.0.0
   description: Event management and ticket booking
 paths:
+  /api/admin/events/{id}/:
+    get:
+      operationId: getAdminEventDetail
+      description: Return complete details of any event for admin review regardless
+        of status.
+      summary: Get full event details for admin review
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - 'Admin: Events'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminEventDetail'
+          description: ''
+        '404':
+          description: Event not found.
+  /api/admin/events/{id}/approve/:
+    post:
+      operationId: approveOrRejectEvent
+      description: Approve or reject a SUBMITTED event. Approving does not publish
+        it — publishing is a separate admin action. Rejecting requires a reason and
+        returns the event to the organizer for edits.
+      summary: Approve or reject event
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - 'Admin: Events'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventApprovalActionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EventApprovalActionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EventApprovalActionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminEventReview'
+          description: Event review status updated.
+        '400':
+          description: Invalid approval request, or event is not submitted.
+        '404':
+          description: Event not found.
+  /api/admin/events/{id}/publish/:
+    post:
+      operationId: publishEvent
+      description: Publish an APPROVED event, making it visible to the public (subject
+        to its visibility setting). Organizers cannot call this endpoint directly
+        — only an admin can publish.
+      summary: Publish event
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - 'Admin: Events'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminEventReview'
+          description: Event published.
+        '400':
+          description: Event is not approved.
+        '404':
+          description: Event not found.
+  /api/admin/events/pending/:
+    get:
+      operationId: listPendingEvents
+      description: Return all events currently awaiting admin review.
+      summary: List pending events
+      tags:
+      - 'Admin: Events'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminEventReview'
+          description: ''
   /api/admin/organizers/{user_id}/approval/:
     post:
       operationId: approveOrRejectOrganizer
       description: Approve or reject an organizer registration request. Approving
-        activates the account. Rejecting keeps the account inactive and stores the
-        rejection reason.
+        activates the account. Rejecting sends a rejection email and removes the account
+        data from the database.
       summary: Approve or reject organizer
       parameters:
       - in: path
@@ -18,7 +129,7 @@ paths:
           type: integer
         required: true
       tags:
-      - Admin
+      - 'Admin: Organizers'
       requestBody:
         content:
           application/json:
@@ -35,11 +146,7 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrganizerProfile'
-          description: Organizer approval status updated.
+          description: Organizer approved (returns profile) or rejected (account deleted).
         '400':
           description: Invalid approval request.
         '404':
@@ -51,7 +158,7 @@ paths:
         are still waiting for administrator approval.
       summary: List pending organizers
       tags:
-      - Admin
+      - 'Admin: Organizers'
       security:
       - jwtAuth: []
       responses:
@@ -84,6 +191,8 @@ paths:
             schema:
               $ref: '#/components/schemas/UserTokenObtainPairRequest'
         required: true
+      security:
+      - {}
       responses:
         '200':
           description: Returns `access` and `refresh` JWTs.
@@ -138,6 +247,7 @@ paths:
         required: true
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           description: If the email exists and is active, an OTP is sent.
@@ -300,9 +410,7 @@ paths:
   /api/auth/token/refresh/:
     post:
       operationId: auth_token_refresh_create
-      description: |-
-        Takes a refresh type JSON web token and returns an access type JSON web
-        token if the refresh token is valid.
+      description: Refresh JWT access token using a valid refresh token.
       tags:
       - auth
       requestBody:
@@ -317,6 +425,8 @@ paths:
             schema:
               $ref: '#/components/schemas/TokenRefreshRequest'
         required: true
+      security:
+      - {}
       responses:
         '200':
           content:
@@ -357,6 +467,57 @@ paths:
           description: Email verified.
         '400':
           description: Invalid/expired code, or too many attempts.
+  /api/bookings/:
+    get:
+      operationId: listUserBookings
+      description: Return every booking belonging to the authenticated user, in any
+        status.
+      summary: List my bookings
+      tags:
+      - Bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookingList'
+          description: ''
+    post:
+      operationId: createBooking
+      description: Create a booking for one or more ticket tiers of a published event.
+        Validates availability and deducts remaining ticket quantity atomically to
+        prevent overselling.
+      summary: Book tickets for an event
+      tags:
+      - Bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookingCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookingCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingDetail'
+          description: Booking created.
+        '400':
+          description: Validation error — event not published, deadline passed, invalid
+            tier, or insufficient remaining quantity.
   /api/bookings/{booking_id}/payment/initiate/:
     post:
       operationId: initiatePayment
@@ -417,58 +578,7 @@ paths:
           description: Payment verified successfully
         '400':
           description: Payment verification failed
-  /api/bookings/bookings/:
-    get:
-      operationId: listUserBookings
-      description: Return every booking belonging to the authenticated user, in any
-        status.
-      summary: List my bookings
-      tags:
-      - Bookings
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BookingList'
-          description: ''
-    post:
-      operationId: createBooking
-      description: Create a booking for one or more ticket tiers of a published event.
-        Validates availability and deducts remaining ticket quantity atomically to
-        prevent overselling.
-      summary: Book tickets for an event
-      tags:
-      - Bookings
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BookingCreateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BookingCreateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/BookingCreateRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BookingDetail'
-          description: Booking created.
-        '400':
-          description: Validation error — event not published, deadline passed, invalid
-            tier, or insufficient remaining quantity.
-  /api/bookings/bookings/{id}/:
+  /api/bookings/{id}/:
     get:
       operationId: getBooking
       description: Return full details for a single booking owned by the authenticated
@@ -493,7 +603,7 @@ paths:
           description: ''
         '404':
           description: Booking not found.
-  /api/bookings/bookings/{id}/cancel/:
+  /api/bookings/{id}/cancel/:
     post:
       operationId: cancelBooking
       description: Cancel a CONFIRMED booking owned by the authenticated user, restoring
@@ -520,6 +630,36 @@ paths:
           description: Only confirmed bookings can be cancelled.
         '404':
           description: Booking not found.
+  /api/dashboard/admin/revenue/:
+    get:
+      operationId: getAdminRevenueAnalytics
+      summary: Admin platform-wide revenue
+      tags:
+      - 'Dashboard: Admin'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminRevenueStatistics'
+          description: ''
+  /api/dashboard/admin/summary/:
+    get:
+      operationId: getAdminDashboardSummary
+      summary: Admin platform-wide metrics
+      tags:
+      - 'Dashboard: Admin'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPlatformStatistics'
+          description: ''
   /api/dashboard/notifications/:
     get:
       operationId: listNotifications
@@ -541,9 +681,10 @@ paths:
           description: ''
   /api/dashboard/organizer/events/:
     get:
-      operationId: listOrganizerEvents
-      description: Return every event belonging to the authenticated organizer.
-      summary: List organizer's events
+      operationId: listDashboardOrganizerEvents
+      description: Return every event belonging to the authenticated organizer, for
+        the dashboard event-list card.
+      summary: List organizer's events (dashboard)
       tags:
       - 'Dashboard: Organizer'
       security:
@@ -622,9 +763,8 @@ paths:
   /api/dashboard/organizer/reports/{report_type}/export/:
     get:
       operationId: exportReport
-      description: 'Generate and return a downloadable report (CSV/PDF) for one of
-        the organizer''s analytics views. Not yet available: returns 501 until the
-        underlying analytics data sources exist.'
+      description: Generate and return a downloadable CSV report for one of the organizer's
+        analytics views (e.g. 'sales', 'attendees').
       summary: Export report
       parameters:
       - in: path
@@ -638,9 +778,9 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: Report file bytes.
-        '501':
-          description: Report export is not yet available.
+          description: Report file bytes (CSV).
+        '400':
+          description: Invalid report type requested.
   /api/dashboard/organizer/statistics/checkins/:
     get:
       operationId: getCheckInStatistics
@@ -762,42 +902,6 @@ paths:
                 items:
                   $ref: '#/components/schemas/ActivityItem'
           description: ''
-  /api/dashboard/user/events/upcoming/:
-    get:
-      operationId: listUserUpcomingEvents
-      description: Return upcoming events relevant to the authenticated user.
-      summary: List upcoming events
-      tags:
-      - 'Dashboard: User'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EventSummary'
-          description: ''
-  /api/dashboard/user/payments/:
-    get:
-      operationId: listPaymentHistory
-      description: Return every payment made by the authenticated user.
-      summary: List payment history
-      tags:
-      - 'Dashboard: User'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PaymentSummary'
-          description: ''
   /api/dashboard/user/summary/:
     get:
       operationId: getUserDashboardSummary
@@ -815,36 +919,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserProfileSummary'
           description: ''
-  /api/dashboard/user/tickets/{ticket_id}/receipt/:
+  /api/events/:
     get:
-      operationId: downloadTicketReceipt
-      description: 'Return the receipt PDF for a ticket belonging to the authenticated
-        user. Not yet available: returns 501 until the tickets app exists.'
-      summary: Download ticket receipt
+      operationId: listPublicEvents
+      description: Return published, publicly-visible events. Supports free-text search,
+        ordering (trending/upcoming), and filtering by category, city, and date range.
+      summary: Browse published events
       parameters:
-      - in: path
-        name: ticket_id
+      - in: query
+        name: category
         schema:
           type: string
-          format: uuid
-        required: true
+        description: Category slug to filter by.
+      - in: query
+        name: city
+        schema:
+          type: string
+        description: City to filter by (exact match).
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Sort order: ''trending'' or ''upcoming''.'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Free-text search query.
+      - in: query
+        name: start_date_from
+        schema:
+          type: string
+        description: ISO 8601 datetime lower bound.
+      - in: query
+        name: start_date_to
+        schema:
+          type: string
+        description: ISO 8601 datetime upper bound.
       tags:
-      - 'Dashboard: User'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: Receipt PDF bytes.
-        '501':
-          description: Receipt download is not yet available.
-  /api/dashboard/user/tickets/history/:
-    get:
-      operationId: listTicketHistory
-      description: Return every ticket the authenticated user has ever booked, regardless
-        of event date.
-      summary: List ticket history
-      tags:
-      - 'Dashboard: User'
+      - 'Events: Public'
       security:
       - jwtAuth: []
       responses:
@@ -852,28 +971,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TicketSummary'
-          description: ''
-  /api/dashboard/user/tickets/upcoming/:
-    get:
-      operationId: listUpcomingTickets
-      description: Return the authenticated user's tickets for events that haven't
-        happened yet.
-      summary: List upcoming tickets
-      tags:
-      - 'Dashboard: User'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TicketSummary'
+                $ref: '#/components/schemas/PaginatedPublicEventListList'
           description: ''
   /api/events/{event_id}/check-in/:
     post:
@@ -910,160 +1008,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Ticket'
           description: ''
-  /api/events/admin/events/{id}/approve/:
-    post:
-      operationId: approveOrRejectEvent
-      description: Approve or reject a SUBMITTED event. Approving does not publish
-        it — publishing is a separate admin action. Rejecting requires a reason and
-        returns the event to the organizer for edits.
-      summary: Approve or reject event
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - 'Events: Admin'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EventApprovalActionRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/EventApprovalActionRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/EventApprovalActionRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminEventReview'
-          description: Event review status updated.
-        '400':
-          description: Invalid approval request, or event is not submitted.
-        '404':
-          description: Event not found.
-  /api/events/admin/events/{id}/publish/:
-    post:
-      operationId: publishEvent
-      description: Publish an APPROVED event, making it visible to the public (subject
-        to its visibility setting). Organizers cannot call this endpoint directly
-        — only an admin can publish.
-      summary: Publish event
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - 'Events: Admin'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdminEventReview'
-          description: Event published.
-        '400':
-          description: Event is not approved.
-        '404':
-          description: Event not found.
-  /api/events/admin/events/pending/:
-    get:
-      operationId: listPendingEvents
-      description: Return all events currently awaiting admin review.
-      summary: List pending events
-      tags:
-      - 'Events: Admin'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AdminEventReview'
-          description: ''
-  /api/events/categories/:
-    get:
-      operationId: listPublicCategories
-      description: Return all active event categories, for public browsing and filtering.
-      summary: List event categories
-      tags:
-      - 'Events: Public'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EventCategory'
-          description: ''
-  /api/events/events/:
-    get:
-      operationId: listPublicEvents
-      description: Return published, publicly-visible events. Supports free-text search
-        and filtering by category, city, and date range via query parameters.
-      summary: Browse published events
-      parameters:
-      - in: query
-        name: category
-        schema:
-          type: string
-        description: Category slug to filter by.
-      - in: query
-        name: city
-        schema:
-          type: string
-        description: City to filter by (exact match).
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - in: query
-        name: q
-        schema:
-          type: string
-        description: Free-text search query.
-      - in: query
-        name: start_date_from
-        schema:
-          type: string
-        description: ISO 8601 datetime lower bound.
-      - in: query
-        name: start_date_to
-        schema:
-          type: string
-        description: ISO 8601 datetime upper bound.
-      tags:
-      - 'Events: Public'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedPublicEventListList'
-          description: ''
-  /api/events/events/{slug}/:
+  /api/events/{slug}/:
     get:
       operationId: getPublicEvent
       description: Return full details for a single published, publicly-visible event.
@@ -1087,9 +1032,27 @@ paths:
           description: ''
         '404':
           description: Event not found or not publicly visible.
-  /api/events/organizer/events/:
+  /api/events/categories/:
     get:
-      operationId: listOrganizerEvents_2
+      operationId: listPublicCategories
+      description: Return all active event categories, for public browsing and filtering.
+      summary: List event categories
+      tags:
+      - 'Events: Public'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventCategory'
+          description: ''
+  /api/events/organizer/:
+    get:
+      operationId: listOrganizerEvents
       description: Return every event belonging to the authenticated organizer, in
         any status.
       summary: List organizer's events
@@ -1137,7 +1100,73 @@ paths:
           description: Event created.
         '400':
           description: Validation error.
-  /api/events/organizer/events/{id}/:
+  /api/events/organizer/{event_id}/tiers/{tier_id}/:
+    patch:
+      operationId: updateTicketTier
+      description: Update a ticket tier belonging to one of the organizer's own events.
+        Only permitted while the event is a draft.
+      summary: Update a ticket tier
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: tier_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - 'Events: Organizer'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTicketTierRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTicketTierRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTicketTierRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketTier'
+          description: Ticket tier updated.
+        '400':
+          description: Validation error, or event is not a draft.
+    delete:
+      operationId: deleteTicketTier
+      description: Delete a ticket tier belonging to one of the organizer's own events.
+        Only permitted while the event is a draft.
+      summary: Delete a ticket tier
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: tier_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - 'Events: Organizer'
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: Ticket tier deleted.
+        '400':
+          description: Event is not a draft.
+  /api/events/organizer/{id}/:
     get:
       operationId: getOrganizerEvent
       description: Return full details for a single event owned by the authenticated
@@ -1216,67 +1245,7 @@ paths:
           description: Event deleted.
         '400':
           description: Event is not in a deletable status.
-  /api/events/organizer/events/{id}/images/:
-    get:
-      operationId: listEventGalleryImages
-      description: Return every gallery image attached to the given event.
-      summary: List an event's gallery images
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - 'Events: Organizer'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EventImage'
-          description: ''
-    post:
-      operationId: createEventGalleryImage
-      description: Add a gallery image to the given event. Only permitted while the
-        event is a draft.
-      summary: Add a gallery image
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - 'Events: Organizer'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EventImageRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/EventImageRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/EventImageRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventImage'
-          description: Gallery image added.
-        '400':
-          description: Validation error, or event is not a draft.
-  /api/events/organizer/events/{id}/submit/:
+  /api/events/organizer/{id}/submit/:
     post:
       operationId: submitEventForReview
       description: Move a DRAFT or REJECTED event to SUBMITTED, placing it in the
@@ -1304,7 +1273,7 @@ paths:
           description: Event is not in a submittable status, or has no ticket tiers.
         '403':
           description: Organizer account is not approved, or does not own this event.
-  /api/events/organizer/events/{id}/tiers/:
+  /api/events/organizer/{id}/tiers/:
     get:
       operationId: listEventTicketTiers
       description: Return every ticket tier defined for the given event.
@@ -1364,31 +1333,26 @@ paths:
           description: Ticket tier created.
         '400':
           description: Validation error, or event is not a draft.
-  /api/events/organizer/ticket-tiers/{id}/:
-    patch:
-      operationId: updateTicketTier
-      description: Update a ticket tier belonging to one of the organizer's own events.
-        Only permitted while the event is a draft.
-      summary: Update a ticket tier
+  /api/events/recommendations/:
+    get:
+      operationId: listRecommendedEvents
+      description: Return personalized event recommendations with cold-start fallbacks
+        to trending events.
+      summary: List recommended events
       parameters:
-      - in: path
-        name: id
+      - in: query
+        name: limit
         schema:
           type: integer
-        required: true
+        description: Max number of recommended events to return (default 10).
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
       tags:
-      - 'Events: Organizer'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedTicketTierRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedTicketTierRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedTicketTierRequest'
+      - 'Events: Public'
       security:
       - jwtAuth: []
       responses:
@@ -1396,30 +1360,37 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TicketTier'
-          description: Ticket tier updated.
-        '400':
-          description: Validation error, or event is not a draft.
-    delete:
-      operationId: deleteTicketTier
-      description: Delete a ticket tier belonging to one of the organizer's own events.
-        Only permitted while the event is a draft.
-      summary: Delete a ticket tier
+                $ref: '#/components/schemas/PaginatedPublicEventListList'
+          description: ''
+  /api/events/trending/:
+    get:
+      operationId: listTrendingEvents
+      description: Return top trending published events scored by sales velocity and
+        upcoming start date.
+      summary: List trending events
       parameters:
-      - in: path
-        name: id
+      - in: query
+        name: limit
         schema:
           type: integer
-        required: true
+        description: Max number of trending events to return (default 10).
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
       tags:
-      - 'Events: Organizer'
+      - 'Events: Public'
       security:
       - jwtAuth: []
       responses:
-        '204':
-          description: Ticket tier deleted.
-        '400':
-          description: Event is not a draft.
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPublicEventListList'
+          description: ''
   /api/me/:
     get:
       operationId: getCurrentUser
@@ -1436,6 +1407,106 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserPublic'
           description: ''
+    put:
+      operationId: me_update
+      description: Return or update the authenticated user's own profile.
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdate'
+          description: ''
+    patch:
+      operationId: updateCurrentUser
+      description: Update current user's name or username. Email and role are read-only.
+      summary: Update current user profile
+      tags:
+      - Profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPublic'
+          description: ''
+  /api/me/change-password/:
+    post:
+      operationId: changePassword
+      description: Change password for the authenticated user using their current
+        password.
+      summary: Change password
+      tags:
+      - Profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: Password updated successfully.
+        '400':
+          description: Validation error or incorrect current password.
+  /api/me/events/upcoming/:
+    get:
+      operationId: listUserUpcomingEvents
+      description: Return upcoming events relevant to the authenticated user.
+      summary: List upcoming events
+      tags:
+      - 'Me: Events'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventSummary'
+          description: ''
   /api/me/organizer-profile/:
     get:
       operationId: getOrganizerProfile
@@ -1451,6 +1522,77 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrganizerProfile'
+          description: ''
+    put:
+      operationId: me_organizer_profile_update
+      description: Return or update the authenticated organizer's OrganizerProfile.
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizerProfileUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrganizerProfileUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrganizerProfileUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizerProfileUpdate'
+          description: ''
+    patch:
+      operationId: updateOrganizerProfile
+      description: Update organizer organization info. Legal & financial details are
+        read-only.
+      summary: Update organizer profile
+      tags:
+      - Profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrganizerProfileUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrganizerProfileUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrganizerProfileUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizerProfile'
+          description: ''
+  /api/me/payments/:
+    get:
+      operationId: listPaymentHistory
+      description: Return every payment made by the authenticated user.
+      summary: List payment history
+      tags:
+      - 'Me: Payments'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentSummary'
           description: ''
   /api/me/tickets/:
     get:
@@ -1473,6 +1615,69 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedTicketList'
+          description: ''
+  /api/me/tickets/{ticket_id}/receipt/:
+    get:
+      operationId: downloadTicketReceipt
+      description: 'Return the receipt PDF for a ticket belonging to the authenticated
+        user. Not yet available: returns 501 until the tickets app exists.'
+      summary: Download ticket receipt
+      parameters:
+      - in: path
+        name: ticket_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - 'Me: Tickets'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Receipt PDF bytes.
+        '501':
+          description: Receipt download is not yet available.
+  /api/me/tickets/upcoming/:
+    get:
+      operationId: listUpcomingTickets
+      description: Return the authenticated user's tickets for events that haven't
+        happened yet.
+      summary: List upcoming tickets
+      tags:
+      - 'Me: Tickets'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TicketSummary'
+          description: ''
+  /api/payments/{reference_id}/:
+    get:
+      operationId: getPaymentStatus
+      summary: Check payment status
+      parameters:
+      - in: path
+        name: reference_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Payments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
           description: ''
   /api/schema/:
     get:
@@ -1643,6 +1848,144 @@ components:
       required:
       - description
       - occurred_at
+    AdminEventDetail:
+      type: object
+      description: |-
+        Full read shape for admin event review — surfaces all content, location, schedule,
+        ticket tiers, banner image, and review state.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          readOnly: true
+        short_description:
+          type: string
+          readOnly: true
+          description: Short summary shown in listing/search results.
+        description:
+          type: string
+          readOnly: true
+        terms_and_conditions:
+          type: string
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/EventCategory'
+          readOnly: true
+        organizer_name:
+          type: string
+          readOnly: true
+        organizer_email:
+          type: string
+          readOnly: true
+        venue:
+          type: string
+          readOnly: true
+        address:
+          type: string
+          readOnly: true
+        city:
+          type: string
+          readOnly: true
+        district:
+          type: string
+          readOnly: true
+        province:
+          type: string
+          readOnly: true
+        banner:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        start_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        end_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        registration_deadline:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        capacity:
+          type: integer
+          readOnly: true
+        visibility:
+          allOf:
+          - $ref: '#/components/schemas/VisibilityEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusDd4Enum'
+          readOnly: true
+        approved_by_username:
+          type: string
+          readOnly: true
+        approved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        rejection_reason:
+          type: string
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        ticket_tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketTier'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - address
+      - approved_at
+      - approved_by_username
+      - banner
+      - capacity
+      - category
+      - city
+      - created_at
+      - description
+      - district
+      - end_datetime
+      - id
+      - organizer_email
+      - organizer_name
+      - province
+      - published_at
+      - registration_deadline
+      - rejection_reason
+      - short_description
+      - slug
+      - start_datetime
+      - status
+      - terms_and_conditions
+      - ticket_tiers
+      - title
+      - updated_at
+      - venue
+      - visibility
     AdminEventReview:
       type: object
       description: |-
@@ -1707,6 +2050,40 @@ components:
       - start_datetime
       - status
       - title
+    AdminPlatformStatistics:
+      type: object
+      properties:
+        total_users:
+          type: integer
+          readOnly: true
+        total_organizers:
+          type: integer
+          readOnly: true
+        pending_events:
+          type: integer
+          readOnly: true
+        active_events:
+          type: integer
+          readOnly: true
+      required:
+      - active_events
+      - pending_events
+      - total_organizers
+      - total_users
+    AdminRevenueStatistics:
+      type: object
+      properties:
+        total_revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        total_successful_payments:
+          type: integer
+          readOnly: true
+      required:
+      - total_revenue
+      - total_successful_payments
     AttendeeSummary:
       type: object
       properties:
@@ -1800,6 +2177,11 @@ components:
           items:
             $ref: '#/components/schemas/BookingItem'
           readOnly: true
+        hold_expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
         cancelled_at:
           type: string
           format: date-time
@@ -1820,6 +2202,7 @@ components:
       - event_start_datetime
       - event_title
       - event_venue
+      - hold_expires_at
       - id
       - items
       - status
@@ -1945,7 +2328,13 @@ components:
         total_expected:
           type: integer
           readOnly: true
+        attendance_percentage:
+          type: number
+          format: double
+          readOnly: true
+          default: 0.0
       required:
+      - attendance_percentage
       - total_checked_in
       - total_expected
     DetailResponse:
@@ -2009,49 +2398,6 @@ components:
       - name
       - slug
       - updated_at
-    EventImage:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        event:
-          type: integer
-          readOnly: true
-        image:
-          type: string
-          format: uri
-        caption:
-          type: string
-          maxLength: 255
-        display_order:
-          type: integer
-          maximum: 32767
-          minimum: 0
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - created_at
-      - event
-      - id
-      - image
-    EventImageRequest:
-      type: object
-      properties:
-        image:
-          type: string
-          format: binary
-        caption:
-          type: string
-          maxLength: 255
-        display_order:
-          type: integer
-          maximum: 32767
-          minimum: 0
-      required:
-      - image
     EventStatistics:
       type: object
       properties:
@@ -2087,12 +2433,28 @@ components:
         organizer_name:
           type: string
           readOnly: true
+        total_tickets_issued:
+          type: integer
+          readOnly: true
+          default: 0
+        checked_in_count:
+          type: integer
+          readOnly: true
+          default: 0
+        attendance_percentage:
+          type: number
+          format: double
+          readOnly: true
+          default: 0.0
       required:
+      - attendance_percentage
+      - checked_in_count
       - date_time
       - event_id
       - location
       - organizer_name
       - title
+      - total_tickets_issued
     LogoutRequest:
       type: object
       properties:
@@ -2132,6 +2494,10 @@ components:
           type: string
           format: email
           minLength: 1
+        purpose:
+          allOf:
+          - $ref: '#/components/schemas/PurposeEnum'
+          default: EMAIL_VERIFICATION
       required:
       - email
     OTPVerifyRequest:
@@ -2229,16 +2595,6 @@ components:
         province:
           type: string
           maxLength: 150
-        latitude:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
-          nullable: true
-        longitude:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
-          nullable: true
         banner:
           type: string
           format: uri
@@ -2271,10 +2627,12 @@ components:
           format: date-time
           readOnly: true
           nullable: true
-        gallery_images:
-          type: array
-          items:
-            $ref: '#/components/schemas/EventImage'
+        total_remaining_tickets:
+          type: integer
+          readOnly: true
+        attendance:
+          type: object
+          additionalProperties: {}
           readOnly: true
         ticket_tiers:
           type: array
@@ -2291,13 +2649,13 @@ components:
           readOnly: true
       required:
       - address
+      - attendance
       - capacity
       - category
       - city
       - created_at
       - description
       - end_datetime
-      - gallery_images
       - id
       - published_at
       - rejection_reason
@@ -2307,6 +2665,7 @@ components:
       - status
       - ticket_tiers
       - title
+      - total_remaining_tickets
       - updated_at
       - venue
     OrganizerEventList:
@@ -2347,7 +2706,15 @@ components:
         rejection_reason:
           type: string
           readOnly: true
+        total_remaining_tickets:
+          type: integer
+          readOnly: true
+        attendance:
+          type: object
+          additionalProperties: {}
+          readOnly: true
       required:
+      - attendance
       - category
       - end_datetime
       - id
@@ -2356,6 +2723,7 @@ components:
       - start_datetime
       - status
       - title
+      - total_remaining_tickets
       - visibility
     OrganizerEventWriteRequest:
       type: object
@@ -2406,16 +2774,6 @@ components:
         province:
           type: string
           maxLength: 150
-        latitude:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
-          nullable: true
-        longitude:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
-          nullable: true
         banner:
           type: string
           format: binary
@@ -2470,7 +2828,16 @@ components:
           type: string
           format: uri
           readOnly: true
+        citizenship_number:
+          type: string
+          readOnly: true
+        pan_number:
+          type: string
+          readOnly: true
         bank_name:
+          type: string
+          readOnly: true
+        bank_account_number:
           type: string
           readOnly: true
         citizenship_document:
@@ -2500,12 +2867,15 @@ components:
       required:
       - approval_requested_at
       - approved_at
+      - bank_account_number
       - bank_name
       - citizenship_document
+      - citizenship_number
       - id
       - organization_description
       - organization_name
       - pan_document
+      - pan_number
       - rejection_reason
       - user
       - website_url
@@ -2530,6 +2900,79 @@ components:
       - total_events
       - unread_notification_count
       - upcoming_events
+    OrganizerProfileUpdate:
+      type: object
+      description: |-
+        Allows updating organization_name, organization_description, and website_url.
+        Sensitive legal & payout fields (citizenship_number, pan_number, bank details, docs)
+        are strictly read-only once created.
+      properties:
+        organization_name:
+          type: string
+          maxLength: 255
+        organization_description:
+          type: string
+        website_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        citizenship_number:
+          type: string
+          readOnly: true
+        pan_number:
+          type: string
+          readOnly: true
+        bank_name:
+          type: string
+          readOnly: true
+        bank_account_number:
+          type: string
+          readOnly: true
+        citizenship_document:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+          description: Citizenship certificate (image or PDF).
+        pan_document:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+          description: PAN card (image or PDF).
+      required:
+      - bank_account_number
+      - bank_name
+      - citizenship_document
+      - citizenship_number
+      - organization_name
+      - pan_document
+      - pan_number
+    OrganizerProfileUpdateRequest:
+      type: object
+      description: |-
+        Allows updating organization_name, organization_description, and website_url.
+        Sensitive legal & payout fields (citizenship_number, pan_number, bank details, docs)
+        are strictly read-only once created.
+      properties:
+        organization_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        organization_description:
+          type: string
+        website_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+      required:
+      - organization_name
     OrganizerRegisterRequest:
       type: object
       description: |-
@@ -2655,6 +3098,25 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Ticket'
+    PasswordChangeRequest:
+      type: object
+      properties:
+        old_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - new_password
+      - new_password_confirm
+      - old_password
     PasswordResetConfirmRequest:
       type: object
       properties:
@@ -2749,16 +3211,6 @@ components:
         province:
           type: string
           maxLength: 150
-        latitude:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
-          nullable: true
-        longitude:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
-          nullable: true
         banner:
           type: string
           format: binary
@@ -2782,6 +3234,26 @@ components:
           items:
             $ref: '#/components/schemas/TicketTierCreateInputRequest'
           writeOnly: true
+    PatchedOrganizerProfileUpdateRequest:
+      type: object
+      description: |-
+        Allows updating organization_name, organization_description, and website_url.
+        Sensitive legal & payout fields (citizenship_number, pan_number, bank details, docs)
+        are strictly read-only once created.
+      properties:
+        organization_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        organization_description:
+          type: string
+        website_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
     PatchedTicketTierRequest:
       type: object
       description: |-
@@ -2810,13 +3282,83 @@ components:
           type: boolean
           description: Inactive tiers are hidden from public purchase flows without
             deleting their history.
+    PatchedUserUpdateRequest:
+      type: object
+      description: Allows updating first_name, last_name, and username. Email and
+        role remain read-only.
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        username:
+          type: string
+          minLength: 1
+          maxLength: 150
+    Payment:
+      type: object
+      properties:
+        reference_id:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Our internal unique reference passed to the gateway
+        booking_id:
+          type: integer
+          readOnly: true
+        provider:
+          allOf:
+          - $ref: '#/components/schemas/PaymentProviderEnum'
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PaymentStatusEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - booking_id
+      - created_at
+      - provider
+      - reference_id
+      - status
+      - updated_at
     PaymentInitiateRequest:
       type: object
       properties:
         provider:
-          $ref: '#/components/schemas/ProviderEnum'
+          $ref: '#/components/schemas/Provider1c3Enum'
       required:
       - provider
+    PaymentProviderEnum:
+      enum:
+      - ESEWA
+      type: string
+      description: '* `ESEWA` - eSewa'
+    PaymentStatusEnum:
+      enum:
+      - PENDING
+      - COMPLETED
+      - FAILED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `COMPLETED` - Completed
+        * `FAILED` - Failed
     PaymentSummary:
       type: object
       properties:
@@ -2853,21 +3395,14 @@ components:
       type: object
       properties:
         provider:
-          $ref: '#/components/schemas/ProviderEnum'
-        pidx:
-          type: string
-          minLength: 1
-          description: Required for Khalti
+          $ref: '#/components/schemas/Provider1c3Enum'
       required:
       - provider
-    ProviderEnum:
+    Provider1c3Enum:
       enum:
       - ESEWA
-      - KHALTI
       type: string
-      description: |-
-        * `ESEWA` - ESEWA
-        * `KHALTI` - KHALTI
+      description: '* `ESEWA` - ESEWA'
     PublicEventDetail:
       type: object
       description: Full public representation for a single event's detail page, by
@@ -2915,18 +3450,6 @@ components:
         province:
           type: string
           readOnly: true
-        latitude:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
-          readOnly: true
-          nullable: true
-        longitude:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
-          readOnly: true
-          nullable: true
         banner:
           type: string
           format: uri
@@ -2948,10 +3471,8 @@ components:
         capacity:
           type: integer
           readOnly: true
-        gallery_images:
-          type: array
-          items:
-            $ref: '#/components/schemas/EventImage'
+        total_remaining_tickets:
+          type: integer
           readOnly: true
         ticket_tiers:
           type: array
@@ -2967,10 +3488,7 @@ components:
       - description
       - district
       - end_datetime
-      - gallery_images
       - id
-      - latitude
-      - longitude
       - organizer_name
       - province
       - registration_deadline
@@ -2980,6 +3498,7 @@ components:
       - terms_and_conditions
       - ticket_tiers
       - title
+      - total_remaining_tickets
       - venue
     PublicEventList:
       type: object
@@ -3028,6 +3547,9 @@ components:
           type: string
           format: date-time
           readOnly: true
+        total_remaining_tickets:
+          type: integer
+          readOnly: true
       required:
       - banner
       - category
@@ -3039,7 +3561,16 @@ components:
       - slug
       - start_datetime
       - title
+      - total_remaining_tickets
       - venue
+    PurposeEnum:
+      enum:
+      - EMAIL_VERIFICATION
+      - PASSWORD_RESET
+      type: string
+      description: |-
+        * `EMAIL_VERIFICATION` - Email Verification
+        * `PASSWORD_RESET` - Password Reset
     QRScanStatistics:
       type: object
       properties:
@@ -3167,6 +3698,26 @@ components:
           type: string
           format: uri
           nullable: true
+        event_title:
+          type: string
+          readOnly: true
+        event_start_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        event_end_datetime:
+          type: string
+          format: date-time
+          readOnly: true
+        event_venue:
+          type: string
+          readOnly: true
+        event_address:
+          type: string
+          readOnly: true
+        event_city:
+          type: string
+          readOnly: true
         checked_in_at:
           type: string
           format: date-time
@@ -3180,6 +3731,12 @@ components:
       - booking_id
       - booking_item
       - created_at
+      - event_address
+      - event_city
+      - event_end_datetime
+      - event_start_datetime
+      - event_title
+      - event_venue
       - id
       - status_display
     TicketSalesSummary:
@@ -3414,6 +3971,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/RoleEnum'
           readOnly: true
+        is_staff:
+          type: boolean
+          readOnly: true
+          title: Staff status
+          description: Designates whether the user can log into this admin site.
         is_email_verified:
           type: boolean
           readOnly: true
@@ -3432,6 +3994,7 @@ components:
       - id
       - is_approved
       - is_email_verified
+      - is_staff
       - last_name
       - role
       - username
@@ -3488,6 +4051,46 @@ components:
       required:
       - password
       - username
+    UserUpdate:
+      type: object
+      description: Allows updating first_name, last_name, and username. Email and
+        role remain read-only.
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        username:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+      required:
+      - email
+      - role
+    UserUpdateRequest:
+      type: object
+      description: Allows updating first_name, last_name, and username. Email and
+        role remain read-only.
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        username:
+          type: string
+          minLength: 1
+          maxLength: 150
     VisibilityEnum:
       enum:
       - PUBLIC

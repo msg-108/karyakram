@@ -43,8 +43,8 @@ class TicketServicesTest(TransactionTestCase):
         decoded = jwt.decode(
             ticket.qr_code_payload, settings.QR_JWT_SECRET_KEY, algorithms=["HS256"]
         )
-        self.assertEqual(decoded["ticket_id"], str(ticket.id))
-        self.assertEqual(decoded["event_id"], self.event.id)
+        self.assertEqual(decoded.get("t") or decoded.get("ticket_id"), str(ticket.id))
+        self.assertEqual(decoded.get("e") or decoded.get("event_id"), self.event.id)
 
     def test_check_in_ticket_success(self):
         generate_tickets_for_booking(self.booking)

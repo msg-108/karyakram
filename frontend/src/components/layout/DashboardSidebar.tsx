@@ -53,8 +53,8 @@ export const DashboardSidebar: React.FC = () => {
   const currentNav = isAdmin ? adminNav : isOrganizer ? organizerNav : attendeeNav;
 
   return (
-    <aside className="w-64 bg-karyakram-red-600 border-r border-karyakram-red-800 text-white flex flex-col justify-between hidden md:flex shrink-0 min-h-[calc(100vh-4rem)]">
-      <div className="p-4 space-y-6">
+    <aside className="sticky top-20 h-[calc(100vh-6rem)] flex flex-col justify-between hidden md:flex shrink-0 w-64 bg-karyakram-red-600 border border-karyakram-red-800 text-white rounded-3xl shadow-lg p-4 overflow-y-auto">
+      <div className="space-y-6">
         {/* User Info Header */}
         <div className="p-3 bg-karyakram-red-800/80 rounded-xl border border-karyakram-red-200/20 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-karyakram-gold-600 text-karyakram-red-900 flex items-center justify-center font-extrabold text-sm shadow-xs">

@@ -70,6 +70,7 @@ export interface Ticket {
   event_city?: string;
   checked_in_at?: string | null;
   created_at: string;
+  booked_at?: string;
 }
 
 export interface TicketSummary {

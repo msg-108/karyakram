@@ -9,6 +9,7 @@ from apps.events.services import (
     approve_event,
     publish_event,
     reject_event,
+    list_public_events,
 )
 from apps.common.tests.factories import UserFactory, OrganizerProfileFactory
 
@@ -71,12 +72,8 @@ class EventServicesTest(TransactionTestCase):
         event = submit_event_for_review(event, organizer=self.organizer)
         self.assertEqual(event.status, Event.Status.SUBMITTED)
 
-        # 3. Approve Event
+        # 3. Approve Event (auto-publishes)
         event = approve_event(event, admin=self.admin)
-        self.assertEqual(event.status, Event.Status.APPROVED)
-
-        # 4. Publish Event
-        event = publish_event(event, admin=self.admin)
         self.assertEqual(event.status, Event.Status.PUBLISHED)
 
     def test_unapproved_organizer_cannot_submit_event(self):
@@ -194,5 +191,69 @@ class EventServicesTest(TransactionTestCase):
         user = UserFactory()
         recs_user = list_recommended_events(user=user, limit=5)
         self.assertIn(event, recs_user)
+
+    def test_event_write_serializer_querydict_ticket_tiers(self):
+        import json
+        from django.http import QueryDict
+        from apps.events.serializers import OrganizerEventWriteSerializer
+
+        cat = create_category(validated_data={"name": "Conference"})
+        start = timezone.now() + timezone.timedelta(days=5)
+        end = start + timezone.timedelta(hours=2)
+
+        qdict = QueryDict(mutable=True)
+        qdict["title"] = "Test Multipart Event"
+        qdict["short_description"] = "Short summary"
+        qdict["description"] = "Full description text"
+        qdict["category"] = cat.id
+        qdict["venue"] = "Main Hall"
+        qdict["address"] = "123 Street"
+        qdict["city"] = "Kathmandu"
+        qdict["capacity"] = 100
+        qdict["visibility"] = "PUBLIC"
+        qdict["start_datetime"] = start.isoformat()
+        qdict["end_datetime"] = end.isoformat()
+        qdict["ticket_tiers"] = json.dumps([
+            {"name": "VIP", "price": "1000.00", "quantity": 10}
+        ])
+
+        serializer = OrganizerEventWriteSerializer(data=qdict)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertIn("ticket_tiers", serializer.validated_data)
+        self.assertEqual(len(serializer.validated_data["ticket_tiers"]), 1)
+        self.assertEqual(serializer.validated_data["ticket_tiers"][0]["name"], "VIP")
+
+    def test_unlisted_published_event_accessibility(self):
+        cat = create_category(validated_data={"name": "Private Party"})
+        start = timezone.now() + timezone.timedelta(days=3)
+        end = start + timezone.timedelta(hours=3)
+        event = create_event(
+            organizer=self.organizer,
+            validated_data={
+                "title": "VIP Secret Event",
+                "short_description": "Secret",
+                "description": "Secret event details",
+                "venue": "Private Suite",
+                "address": "456 Secret Rd",
+                "city": "Kathmandu",
+                "capacity": 50,
+                "category": cat,
+                "visibility": Event.Visibility.UNLISTED,
+                "start_datetime": start,
+                "end_datetime": end,
+                "ticket_tiers": [{"name": "Private Tier", "price": "200.00", "quantity": 50}],
+            },
+        )
+        submit_event_for_review(event, organizer=self.organizer)
+        approve_event(event, admin=self.admin)
+
+        # 1. Unlisted event SHOULD auto-publish upon approval
+        self.assertEqual(event.status, Event.Status.PUBLISHED)
+        self.assertEqual(event.visibility, Event.Visibility.UNLISTED)
+
+        # 2. Unlisted event should NOT be in public discovery listing
+        public_events = list_public_events()
+        self.assertNotIn(event, public_events)
+
 
 

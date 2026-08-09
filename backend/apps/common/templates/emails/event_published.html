@@ -1,8 +1,14 @@
 {% extends "emails/base.html" %}
-{% block subject %}Your event is now live!{% endblock %}
+{% block subject %}Your event '{{ event.title }}' is now live!{% endblock %}
 {% block content %}
-<h2>Event Published!</h2>
+<h2>Event Approved & Published!</h2>
 <p>Hello {{ organizer.user.username }},</p>
-<p>Congratulations! Your event <strong>{{ event.title }}</strong> is now live and public.</p>
-<p>Users can now discover your event and start booking tickets.</p>
+<p>Great news! Your event <strong>{{ event.title }}</strong> has been approved and is now live.</p>
+<p>Users can view your event, select ticket tiers, and purchase tickets.</p>
+<div style="margin: 24px 0;">
+  <a href="{{ event_url }}" style="background-color: #6366f1; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+    View Live Event Page
+  </a>
+</div>
+<p style="font-size: 12px; color: #64748b;">Direct Link: <a href="{{ event_url }}">{{ event_url }}</a></p>
 {% endblock %}

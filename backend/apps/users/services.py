@@ -393,22 +393,20 @@ def approve_organizer(profile: OrganizerProfile, *, admin: User) -> OrganizerPro
 @transaction.atomic
 def reject_organizer(
     profile: OrganizerProfile, *, admin: User, reason: str
-) -> OrganizerProfile:
+) -> None:
     if not reason.strip():
         raise ValidationError({"reason": "A rejection reason is required."})
 
     user = profile.user
-    user.is_approved = False
-    user.is_active = False
-    user.save(update_fields=["is_approved", "is_active"])
 
-    profile.approved_at = None
-    profile.approved_by = admin
-    profile.rejection_reason = reason
-    profile.save(update_fields=["approved_at", "approved_by", "rejection_reason"])
+    if profile.citizenship_document:
+        profile.citizenship_document.delete(save=False)
+    if profile.pan_document:
+        profile.pan_document.delete(save=False)
 
     transaction.on_commit(lambda: send_organizer_rejected_email(user, reason))
-    return profile
+    user.delete()
+
 
 
 @transaction.atomic

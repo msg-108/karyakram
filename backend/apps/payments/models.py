@@ -11,6 +11,7 @@ class Payment(models.Model):
         PENDING = "PENDING", "Pending"
         COMPLETED = "COMPLETED", "Completed"
         FAILED = "FAILED", "Failed"
+        REFUNDED = "REFUNDED", "Refunded"
 
     booking = models.OneToOneField(
         Booking, on_delete=models.CASCADE, related_name="payment"

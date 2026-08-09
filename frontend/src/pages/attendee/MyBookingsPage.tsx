@@ -1,15 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, Link } from 'react-router-dom';
 import { useUserBookings, useCancelBooking } from '../../hooks/useBookings';
 import { formatCurrency, formatDateTime } from '../../lib/formatters';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Spinner } from '../../components/ui/Spinner';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Pagination } from '../../components/common/Pagination';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 
 export const MyBookingsPage: React.FC = () => {
-  const { data: bookings = [], isLoading, error, refetch } = useUserBookings();
+  const [page, setPage] = useState(1);
+  const location = useLocation();
+  const paymentState = (location.state as { paymentStatus?: string; message?: string }) || {};
+
+  const { data: bookingsData, isLoading, error, refetch } = useUserBookings(page);
   const cancelBookingMutation = useCancelBooking();
+
+  const bookings = bookingsData?.results || [];
+  const totalCount = bookingsData?.count || 0;
+
+  useEffect(() => {
+    if (error && page > 1) {
+      setPage(1);
+    }
+  }, [error, page]);
 
   if (isLoading) {
     return (
@@ -43,6 +58,21 @@ export const MyBookingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {paymentState.paymentStatus === 'success' && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-center justify-between text-xs font-bold shadow-xs">
+          <span>🎉 {paymentState.message || 'Payment verified! Your booking has been confirmed.'}</span>
+          <Link to="/my-tickets" className="underline font-extrabold text-emerald-900 hover:text-emerald-700">
+            View My Tickets &rarr;
+          </Link>
+        </div>
+      )}
+
+      {paymentState.paymentStatus === 'rejected' && (
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl flex items-center justify-between text-xs font-bold shadow-xs">
+          <span>⚠️ {paymentState.message || 'Payment was not completed or rejected by gateway.'}</span>
+        </div>
+      )}
+
       <div>
         <h1 className="text-2xl font-black text-slate-900 font-heading">My Booking History</h1>
         <p className="text-xs text-slate-600 font-medium">Track your pending, confirmed, and cancelled orders</p>
@@ -101,6 +131,16 @@ export const MyBookingsPage: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      <Pagination
+        currentPage={page}
+        totalCount={totalCount}
+        pageSize={10}
+        onPageChange={(p) => {
+          setPage(p);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
     </div>
   );
 };

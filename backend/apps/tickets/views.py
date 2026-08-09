@@ -11,6 +11,15 @@ from .models import Ticket
 from .serializers import TicketSerializer, CheckInSerializer
 
 
+from rest_framework.pagination import PageNumberPagination
+
+
+class StandardTicketPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class UserTicketListView(generics.ListAPIView):
     """
     List all tickets owned by the current user.
@@ -18,6 +27,7 @@ class UserTicketListView(generics.ListAPIView):
 
     permission_classes = [IsAuthenticated]
     serializer_class = TicketSerializer
+    pagination_class = StandardTicketPagination
     queryset = Ticket.objects.none()
 
     def get_queryset(self):

@@ -22,8 +22,8 @@ export const QRDisplay: React.FC<QRDisplayProps> = ({
 
   return (
     <div className="flex flex-col items-center justify-center p-6 bg-[#F3F4F6] rounded-2xl border border-slate-300 shadow-sm space-y-4 text-center">
-      <div className="p-4 bg-white border border-slate-300 rounded-2xl shadow-inner">
-        <QRCodeSVG value={codeValue} size={180} level="H" includeMargin={true} data-ticket-id={ticketId} />
+      <div className="p-5 bg-white border border-slate-300 rounded-3xl shadow-sm">
+        <QRCodeSVG value={codeValue} size={230} level="M" includeMargin={true} data-ticket-id={ticketId} />
       </div>
 
       <div className="space-y-1">

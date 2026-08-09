@@ -5,10 +5,10 @@ import { useToast } from '../context/ToastContext';
 import { parseApiError } from '../lib/api';
 import { BookingCreateRequest, PaymentInitiateRequest, PaymentVerifyRequest } from '../types/booking.types';
 
-export function useUserBookings() {
+export function useUserBookings(page = 1) {
   return useQuery({
-    queryKey: queryKeys.bookings.list(),
-    queryFn: () => bookingService.listUserBookings(),
+    queryKey: queryKeys.bookings.list(page),
+    queryFn: () => bookingService.listUserBookings(page),
     staleTime: 0, // Always refetch for latest booking status
   });
 }

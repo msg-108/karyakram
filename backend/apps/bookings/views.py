@@ -37,7 +37,16 @@ class BookingListCreateView(APIView):
         responses=BookingListSerializer(many=True),
     )
     def get(self, request):
-        bookings = services.list_user_bookings(request.user)
+        from rest_framework.pagination import PageNumberPagination
+
+        bookings = services.list_user_bookings(request.user).order_by("-created_at")
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+        page = paginator.paginate_queryset(bookings, request)
+        if page is not None:
+            serializer = BookingListSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
         return Response(BookingListSerializer(bookings, many=True).data)
 
     @extend_schema(

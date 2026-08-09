@@ -1,0 +1,28 @@
+{% extends "emails/base.html" %}
+{% block subject %}Booking Confirmed — {{ event.title }} (#{{ booking.id }}){% endblock %}
+{% block content %}
+<h2 style="color: #15803d; margin-top: 0;">🎉 Booking Confirmed & Payment Received!</h2>
+<p>Hello {{ user.first_name|default:user.username }},</p>
+<p>Great news! Your payment has been verified and your booking for <strong>{{ event.title }}</strong> is fully confirmed.</p>
+
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 16px 0;">
+  <p style="margin: 4px 0; color: #475569;"><strong>Event:</strong> {{ event.title }}</p>
+  <p style="margin: 4px 0; color: #475569;"><strong>Date & Time:</strong> {{ event.start_datetime|date:"N j, Y, P" }}</p>
+  <p style="margin: 4px 0; color: #475569;"><strong>Venue:</strong> {{ event.venue }} ({{ event.city }})</p>
+  <p style="margin: 4px 0; color: #475569;"><strong>Booking Ref:</strong> #{{ booking.id }}</p>
+</div>
+
+<h3 style="color: #1e293b; font-size: 16px;">Order Summary</h3>
+<ul style="color: #334155; padding-left: 20px;">
+{% for item in items %}
+    <li style="margin-bottom: 6px;">
+      <strong>{{ item.ticket_tier.name }}</strong> &times; {{ item.quantity }} &mdash; NPR {{ item.price_at_purchase }} each (Total: NPR {{ item.line_total }})
+    </li>
+{% endfor %}
+</ul>
+<p style="font-size: 15px; color: #0f172a;"><strong>Total Amount Paid:</strong> NPR {{ booking.total_amount }}</p>
+
+<div style="margin-top: 24px; text-align: center;">
+  <a href="{{ settings.FRONTEND_URL }}/my-tickets" class="btn" style="background-color: #dc2626; color: #ffffff; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: bold; display: inline-block;">View My Digital Passes & QR Codes &rarr;</a>
+</div>
+{% endblock %}

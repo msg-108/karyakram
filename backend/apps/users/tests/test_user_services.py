@@ -100,7 +100,7 @@ class UserServicesTest(TransactionTestCase):
         # Now they can login
         assert_can_login(user)  # Should not raise
 
-    def test_reject_organizer_deactivates_user(self):
+    def test_reject_organizer_removes_account_data(self):
         user = User.objects.create(
             username="org4",
             email="org4@test.com",
@@ -116,7 +116,5 @@ class UserServicesTest(TransactionTestCase):
 
         reject_organizer(profile, admin=admin, reason="Incomplete information.")
 
-        user.refresh_from_db()
-        self.assertFalse(user.is_approved)
-        self.assertFalse(user.is_active)
-        self.assertEqual(profile.rejection_reason, "Incomplete information.")
+        self.assertFalse(User.objects.filter(pk=user.pk).exists())
+        self.assertFalse(OrganizerProfile.objects.filter(pk=profile.pk).exists())

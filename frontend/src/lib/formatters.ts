@@ -90,3 +90,40 @@ export function formatRelativeTime(isoString?: string | null): string {
     return isoString;
   }
 }
+
+/**
+ * Format a Date or ISO string into local `YYYY-MM-DDTHH:mm` format for <input type="datetime-local">.
+ * Preserves local time without converting to UTC.
+ */
+export function formatForDateTimeLocal(dateInput?: Date | string | null): string {
+  if (!dateInput) return '';
+  try {
+    const d = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    if (isNaN(d.getTime())) return '';
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const year = d.getFullYear();
+    const month = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Add specified hours to a local datetime-local string (YYYY-MM-DDTHH:mm) and return the updated string.
+ */
+export function addHoursToDateTimeLocal(datetimeLocalStr: string, hours: number = 2): string {
+  if (!datetimeLocalStr) return '';
+  try {
+    const d = new Date(datetimeLocalStr);
+    if (isNaN(d.getTime())) return '';
+    d.setTime(d.getTime() + hours * 60 * 60 * 1000);
+    return formatForDateTimeLocal(d);
+  } catch {
+    return '';
+  }
+}
+

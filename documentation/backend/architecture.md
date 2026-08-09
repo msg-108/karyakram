@@ -1,67 +1,200 @@
-# Karyakram Architecture
+# Karyakram — System Architecture
 
-## High-Level Principles
+*Version 2.0 — Final Release — August 2026*
 
-### Thin Views, Service-Oriented Logic
-Django views (and DRF ViewSets) contain almost no business logic. Their responsibilities are strictly limited to:
-1. Decoding input and parsing requests.
-2. Validating serializers.
-3. Invoking the appropriate function in the `services.py` layer.
-4. Serializing the output for the response.
+---
 
-All complex operations, multi-model state changes, email triggering, and locking happen in `services.py`.
+## 1. High-Level Architecture
 
-### Exceptions for Flow Control
-We rely on Django REST Framework's standard exceptions (`ValidationError`, `PermissionDenied`, `NotFound`) in the service layer. Views simply let these exceptions bubble up to DRF's default exception handler, eliminating repetitive `try-except` blocks and manual HTTP response crafting.
+Karyakram follows a **clean service-oriented architecture** across two independently deployable applications:
 
-### Asynchronous Execution (Celery)
-To guarantee fast API response times, any long-running or IO-bound operations (e.g., sending emails via SMTP, rendering QR code image files) are offloaded to **Celery**. 
-- The web request instantly queues the task in **Redis** and returns a success response to the user.
-- A background Celery worker processes the queue.
-- Celery Beat is used for periodic maintenance (e.g., cron jobs that sweep the database for expired pending bookings every 5 minutes).
+- **Backend:** Django REST Framework API server
+- **Frontend:** React 18 + TypeScript single-page application
 
-### Atomicity and Concurrency
-Booking tickets is a highly concurrent operation. The `create_booking` service relies on:
-- `@transaction.atomic` for all state changes.
-- `select_for_update()` to place explicit row-level locks on `TicketTier` objects to safely deduct `remaining_quantity`.
-- Sorting by primary key before acquiring locks to prevent deadlocks.
-
-## App Boundaries
-
-1. **Users App (`apps.users`)**:
-   Manages `User` (AbstractUser extension) and `OrganizerProfile`. The profile state machine (PENDING, APPROVED, REJECTED) enforces whether an organizer can create events.
-
-2. **Events App (`apps.events`)**:
-   Manages `EventCategory`, `Event`, and `TicketTier`.
-   Events progress through `DRAFT -> REVIEW -> PUBLISHED -> CANCELLED/COMPLETED`. Event boundaries are strict; you cannot sell tickets to an unpublished event.
-
-3. **Bookings App (`apps.bookings`)**:
-   Manages `Booking` and `BookingItem`.
-   The source of truth for "who holds what tickets." Initial creation reduces `remaining_quantity` and holds the booking in `PENDING` state for a set duration (e.g., 10 minutes). A background Celery worker (or management command) sweeps expired pending bookings and restores ticket quantities.
-
-4. **Payments App (`apps.payments`)**:
-   Responsible strictly for payment lifecycle tracking. It depends on `bookings`, but `bookings` knows as little about `payments` as possible. Once a payment reaches `COMPLETED`, the payment service calls `confirm_booking` to trigger the actual booking fulfillment.
-
-5. **Tickets App (`apps.tickets`)**:
-   QR generation and check-in logic. Generated automatically when a booking is confirmed. The QR string is a self-contained JWT that encodes `ticket_id` and `event_id`, signed symmetrically with the backend secret. Verification requires database access to prevent multi-use (stateful check-in), but the payload itself is cryptographically secure.
-
-## Data Models (ER Overview)
 ```
-[User] 1 ---- 1 [OrganizerProfile]
-  |                   |
-  |                   *
-  |                [Event] 1 ---- * [TicketTier]
-  |                   |                   |
-  *                   |                   |
-[Booking] * ----------+                   |
-  |                   |                   |
-  *                   *                   |
-[Payment]         [Ticket]                |
-  |                   |                   |
-  +--- [BookingItem]--+-------------------+
+Browser (React SPA)
+        │
+        │  HTTP / JWT Bearer Token
+        ▼
+Django REST Framework (DRF) API
+        │
+   ┌────┴────────────────────────────┐
+   │                                 │
+   ▼                                 ▼
+PostgreSQL DB              Celery + Redis
+(Primary Store)         (Background Tasks)
+                                     │
+                         ┌───────────┴───────────┐
+                         ▼                       ▼
+                   SMTP Email             eSewa Gateway
+                   (HTML Passes)         (epay v2 HMAC)
 ```
 
-## Testing Strategy
-Integration tests are favored over mocked unit tests for core services (like bookings). 
-- **Tools:** `pytest`, `factory_boy`, `pytest-django`.
-- **Database:** Standard SQLite memory DB or PostgreSQL. Test classes inherit from `TransactionTestCase` when they need to test row locks or advanced commit hooks properly.
+---
+
+## 2. Design Principles
+
+### 2.1 Thin Views — Service-Oriented Logic
+DRF views contain **zero business logic**. Their sole responsibilities are:
+1. Parsing and validating incoming request data via serializers.
+2. Delegating to a `services.py` function.
+3. Returning the serialized response.
+
+All multi-model state changes, locking, email triggers, and payment orchestration live in `services.py`.
+
+### 2.2 Exception-Driven Flow Control
+Service functions raise DRF's standard exceptions (`ValidationError`, `PermissionDenied`, `NotFound`) on failure. Views allow these to bubble up to DRF's default exception handler — no manual HTTP response crafting, no duplicated error code boilerplate.
+
+### 2.3 Asynchronous Execution (Celery + Redis)
+Long-running or IO-bound work is offloaded to Celery background workers:
+- **Email delivery** — OTP codes, booking confirmations, QR ticket passes
+- **QR image generation** — PNG rendering of ticket QR codes
+- **Hold expiration sweep** — Celery Beat cron runs every 5 minutes, expires unpaid holds, and reconciles payment status with eSewa server-to-server API
+
+> **Development shortcut:** Setting `CELERY_TASK_ALWAYS_EAGER=True` in `development.py` executes all tasks synchronously in-process, so a separate Celery worker process is not needed during local development.
+
+### 2.4 Atomicity & Concurrency Control
+The booking system operates under high concurrency. The `create_booking` service guarantees zero overselling via:
+
+1. **`@transaction.atomic`** — All `TicketTier` quantity deductions and `Booking` record creation happen in a single atomic database transaction.
+2. **`select_for_update()`** — Explicit pessimistic row-level lock placed on each `TicketTier` row before reading `remaining_quantity`.
+3. **Sorted lock acquisition** — Tiers are sorted ascending by primary key before locking, preventing circular deadlocks between concurrent transactions.
+
+```python
+# Simplified booking lock pattern
+with transaction.atomic():
+    tiers = TicketTier.objects.select_for_update().filter(
+        id__in=tier_ids
+    ).order_by("id")
+    # Deduct remaining_quantity — guaranteed exclusive access
+```
+
+---
+
+## 3. Django App Boundaries
+
+| App | Responsibility | Key Models |
+|-----|---------------|------------|
+| `apps.users` | User accounts, OTP verification, JWT auth, role management, organizer profile approval state machine | `User`, `OrganizerProfile` |
+| `apps.events` | Event lifecycle, multi-tier pricing, image attachments, category taxonomy | `Event`, `TicketTier`, `EventCategory`, `EventImage` |
+| `apps.bookings` | Ticket reservation, 10-min hold timer, booking status state machine, cancellation/seat restore | `Booking`, `BookingItem` |
+| `apps.payments` | Payment initiation, eSewa HMAC-SHA256 signature, server-to-server verification, auto-reconciliation | `Payment` |
+| `apps.tickets` | Compact JWT QR generation, Base64 email embedding, single-use check-in atomic state machine | `Ticket` |
+| `apps.dashboard` | Analytics aggregation — revenue, ticket sales, check-in rates for organizer & admin | (No models — query layer only) |
+| `apps.common` | Shared email engine (`send_email`, `_send_email_direct` fallback), shared permission classes | (No models) |
+
+---
+
+## 4. Booking State Machine
+
+```
+[POST /api/bookings/]
+         │
+         ▼
+    [PENDING] ──── hold_expires_at stamped
+         │
+    ┌────┴─────────────────┬───────────────────────┐
+    │                      │                       │
+    ▼                      ▼                       ▼
+[CONFIRMED]           [CANCELLED]            [EXPIRED]
+(eSewa verified)   (user cancelled)    (hold expired, unpaid)
+         │
+         ▼
+   Tickets Issued
+   QR Email Sent
+```
+
+---
+
+## 5. QR Ticket Architecture
+
+### Generation
+1. On booking confirmation, `generate_tickets_for_booking()` creates one `Ticket` record per quantity per tier.
+2. For each ticket, `generate_qr_jwt(ticket)` signs a compact JWT payload:
+   ```json
+   { "t": "<uuid>", "e": <event_id>, "exp": <unix_timestamp> }
+   ```
+3. `generate_qr_image()` renders a **Version 2, 25×25 matrix, 500×500px PNG** (`box_size=16`, `border=2`, `ERROR_CORRECT_M`).
+4. The PNG is Base64-encoded and embedded inline into the HTML email body as a Data URI.
+
+### Validation (Organizer Scanner)
+1. Organizer opens `/organizer/check-in` page — browser activates device camera.
+2. `@html5-qrcode` decodes the QR string from the live video feed.
+3. The scanned JWT string is `POST`ed to `/api/events/{event_id}/check-in/`.
+4. Backend atomically:
+   - Verifies JWT signature with `SECRET_KEY`.
+   - Confirms `ticket.event == event_id` (cross-event fraud prevention).
+   - Checks `ticket.status == VALID` (rejects duplicate scans).
+   - Sets `ticket.status = CHECKED_IN` and stamps `checked_in_at = now()`.
+
+---
+
+## 6. Payment Flow (eSewa epay v2)
+
+```
+Attendee browser                  Karyakram Backend              eSewa
+      │                                   │                         │
+      │  POST /payment/initiate/          │                         │
+      │──────────────────────────────────►│                         │
+      │                                   │  Compute HMAC-SHA256    │
+      │  { params, signature, pay_url }   │  signature              │
+      │◄──────────────────────────────────│                         │
+      │                                   │                         │
+      │  Redirect to eSewa form ──────────────────────────────────►│
+      │                                   │                         │
+      │  eSewa redirects back with        │                         │
+      │  encoded `data` param ◄───────────────────────────────────│
+      │                                   │                         │
+      │  POST /payment/verify/            │                         │
+      │──────────────────────────────────►│                         │
+      │                                   │  GET /decodedated/ ────►│
+      │                                   │  Verify txn status      │
+      │                                   │◄────────────────────────│
+      │  { status: CONFIRMED }            │                         │
+      │◄──────────────────────────────────│                         │
+```
+
+---
+
+## 7. Email System
+
+| Email | Template | Trigger |
+|-------|----------|---------|
+| OTP Verification | `emails/otp_email` | User registration |
+| Booking Hold Notice | `emails/booking_created` | `create_booking()` |
+| Booking Confirmed + QR Tickets | `emails/booking_confirmed` + `emails/tickets_delivered` | `confirm_booking()` after payment verified |
+| Booking Cancelled | `emails/booking_cancelled` | `cancel_booking()` |
+| Organizer New Sale Alert | `emails/organizer_booking_alert` | `confirm_booking()` |
+
+**Email Fallback:** If Celery dispatch fails, `send_email()` automatically invokes `_send_email_direct()` for synchronous in-process delivery.
+
+---
+
+## 8. Data Model Overview (ER Summary)
+
+```
+[User] 1 ─────────── 1 [OrganizerProfile]
+  │                             │
+  │                             * (organizer)
+  *                          [Event] 1 ─── * [TicketTier]
+[Booking] * ──────── 1 [Event]     │
+  │                             * [EventImage]
+  * [BookingItem] * ── 1 [TicketTier]
+  │
+  1 [Payment]
+  │
+  * [Ticket] ── 1 [BookingItem]
+```
+
+---
+
+## 9. Testing Strategy
+
+- **Backend:** Django's built-in `TestCase` + `TransactionTestCase` (for row-lock tests)
+- **Test Database:** PostgreSQL (matches production — SQLite cannot test `select_for_update`)
+- **Coverage:** 31 automated unit tests covering auth, events, bookings, payments, and tickets
+- **Run tests:**
+  ```bash
+  cd backend
+  python manage.py test apps.users.tests apps.events.tests apps.bookings.tests apps.payments.tests apps.tickets.tests
+  ```

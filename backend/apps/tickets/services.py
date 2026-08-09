@@ -19,27 +19,47 @@ def list_user_tickets(user):
     """Return all tickets owned by the given user with select_related optimization."""
     return Ticket.objects.filter(booking__user=user).select_related(
         "booking__event", "booking_item__ticket_tier"
-    )
+    ).order_by("-created_at")
 
 
 def send_tickets_delivered_email(booking: Booking, tickets: list[Ticket]) -> None:
     try:
+        import base64
         from apps.common.email import send_email
+        from django.conf import settings
 
+        frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:5173").rstrip("/")
         attachments = []
+
         for ticket in tickets:
+            if not ticket.qr_code_image:
+                try:
+                    generate_ticket_qr_code(str(ticket.id))
+                    ticket.refresh_from_db()
+                except Exception as err:
+                    logger.warning(f"Error generating QR image for ticket {ticket.id}: {err}")
+
             if ticket.qr_code_image:
-                attachments.append(
-                    (f"ticket_{ticket.id}.png", ticket.qr_code_image.read(), "image/png")
-                )
+                try:
+                    ticket.qr_code_image.open("rb")
+                    img_data = ticket.qr_code_image.read()
+                    ticket.qr_code_b64 = base64.b64encode(img_data).decode("ascii")
+                    attachments.append(
+                        (f"ticket_{ticket.id}.png", img_data, "image/png")
+                    )
+                except Exception as err:
+                    logger.warning(f"Failed to read QR image for ticket {ticket.id}: {err}")
 
         send_email(
             to=booking.user.email,
-            subject=f"Your Tickets for {booking.event.title}",
+            subject=f"Confirmed Entry Ticket & QR Pass - {booking.event.title} (#{booking.id})",
             template_prefix="emails/tickets_delivered",
             context={
                 "user": booking.user,
                 "event": booking.event,
+                "booking": booking,
+                "tickets": tickets,
+                "my_tickets_url": f"{frontend_url}/my-tickets",
             },
             attachments=attachments if attachments else None,
             user=booking.user,
@@ -52,11 +72,12 @@ def send_tickets_delivered_email(booking: Booking, tickets: list[Ticket]) -> Non
 def generate_qr_jwt(ticket: Ticket) -> str:
     """
     Generate a signed JWT containing the ticket ID and expiration.
-    Kept streamlined and minimal to optimize QR code block size for fast scanning on low-quality cameras.
+    Uses compact claim keys (t, e, exp) to minimize string length, creating a low-density,
+    large-block QR code optimized for rapid scanning on mobile cameras.
     """
     payload = {
-        "ticket_id": str(ticket.id),
-        "event_id": ticket.booking.event_id,
+        "t": str(ticket.id),
+        "e": ticket.booking.event_id,
         "exp": int(ticket.booking.event.end_datetime.timestamp()),
     }
     return jwt.encode(payload, settings.QR_JWT_SECRET_KEY, algorithm="HS256")
@@ -64,13 +85,13 @@ def generate_qr_jwt(ticket: Ticket) -> str:
 
 def generate_qr_image(ticket: Ticket) -> ContentFile:
     """
-    Generate a high-contrast, low-density QR code image optimized for low-resolution phone cameras.
+    Generate a high-contrast, low-density QR code image with large blocks optimized for fast phone scanning.
     """
     qr = qrcode.QRCode(
         version=None,
         error_correction=qrcode.constants.ERROR_CORRECT_M,
-        box_size=14,
-        border=3,
+        box_size=16,
+        border=2,
     )
     qr.add_data(ticket.qr_code_payload)
     qr.make(fit=True)
@@ -138,13 +159,13 @@ def check_in_ticket(qr_payload: str, event_id: int) -> Ticket:
     """
     try:
         decoded = jwt.decode(qr_payload, settings.QR_JWT_SECRET_KEY, algorithms=["HS256"])
-        ticket_id = decoded["ticket_id"]
+        ticket_id = decoded.get("t") or decoded.get("ticket_id")
     except jwt.ExpiredSignatureError:
         raise ValidationError("This ticket QR code has expired because the event has ended.")
     except jwt.InvalidSignatureError:
         try:
             decoded = jwt.decode(qr_payload, settings.SECRET_KEY, algorithms=["HS256"])
-            ticket_id = decoded["ticket_id"]
+            ticket_id = decoded.get("t") or decoded.get("ticket_id")
         except jwt.ExpiredSignatureError:
             raise ValidationError("This ticket QR code has expired because the event has ended.")
         except jwt.PyJWTError:

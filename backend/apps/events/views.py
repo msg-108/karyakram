@@ -189,14 +189,16 @@ class PublicRecommendedEventListView(ListAPIView):
 
 
 class PublicEventDetailView(RetrieveAPIView):
-    """Retrieve a single published, public event by its slug."""
+    """Retrieve a single published event (PUBLIC or UNLISTED) by its slug."""
 
     permission_classes = []
     serializer_class = PublicEventDetailSerializer
     lookup_field = "slug"
 
     def get_queryset(self):
-        return services.list_public_events()
+        return Event.objects.filter(
+            status=Event.Status.PUBLISHED
+        ).select_related("organizer", "category")
 
     @extend_schema(
         operation_id="getPublicEvent",

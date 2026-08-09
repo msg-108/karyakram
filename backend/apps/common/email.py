@@ -24,6 +24,35 @@ from .tasks import dispatch_email_task
 logger = logging.getLogger(__name__)
 
 
+def _send_email_direct(
+    to: list[str],
+    subject: str,
+    text_body: str,
+    html_body: str | None,
+    attachments: list[tuple[str, bytes, str]] | None,
+    reply_to: list[str] | None,
+    fail_silently: bool,
+) -> None:
+    """Send email synchronously using EmailMultiAlternatives."""
+    from django.core.mail import EmailMultiAlternatives
+
+    message = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=to,
+        reply_to=reply_to,
+    )
+    if html_body:
+        message.attach_alternative(html_body, "text/html")
+    if attachments:
+        for filename, content, mime_type in attachments:
+            message.attach(filename, content, mime_type)
+
+    message.send(fail_silently=fail_silently)
+    logger.info("[email-direct] Sent '%s' → %s", subject, to)
+
+
 def send_email(
     *,
     to: str | list[str],
@@ -65,6 +94,24 @@ def send_email(
     except Exception:  # noqa: BLE001
         pass
 
+    # Check if eager mode is explicitly enabled
+    if getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False):
+        try:
+            _send_email_direct(
+                to=to,
+                subject=subject,
+                text_body=text_body,
+                html_body=html_body,
+                attachments=attachments,
+                reply_to=reply_to,
+                fail_silently=fail_silently,
+            )
+            return
+        except Exception:
+            if not fail_silently:
+                raise
+            return
+
     # Base64 encode attachments for Celery JSON serialization
     b64_attachments = None
     if attachments:
@@ -83,16 +130,28 @@ def send_email(
             reply_to=reply_to,
             fail_silently=fail_silently,
         )
-    except Exception:
-        log_extra = {}
-        if user is not None:
-            log_extra = {
-                "user_id": getattr(user, "pk", None),
-                "email": getattr(user, "email", None),
-            }
-        logger.exception("Failed to dispatch async email to %s", to, extra=log_extra)
-        if not fail_silently:
-            raise
+    except Exception as exc:
+        logger.warning(f"Celery dispatch failed ({exc}); falling back to direct email sending.")
+        try:
+            _send_email_direct(
+                to=to,
+                subject=subject,
+                text_body=text_body,
+                html_body=html_body,
+                attachments=attachments,
+                reply_to=reply_to,
+                fail_silently=fail_silently,
+            )
+        except Exception:
+            log_extra = {}
+            if user is not None:
+                log_extra = {
+                    "user_id": getattr(user, "pk", None),
+                    "email": getattr(user, "email", None),
+                }
+            logger.exception("Failed to send fallback email to %s", to, extra=log_extra)
+            if not fail_silently:
+                raise
 
 
 def send_email_to_staff(*, subject: str, template_prefix: str, context: dict) -> None:

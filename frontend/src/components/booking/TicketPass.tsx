@@ -90,7 +90,7 @@ export const TicketPass: React.FC<TicketPassProps> = ({
           )}
         </div>
 
-        <div className="pt-3 border-t border-slate-300 grid grid-cols-2 gap-4 text-xs">
+        <div className="pt-3 border-t border-slate-300 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
           <div>
             <p className="text-slate-600 font-medium">Attendee</p>
             <p className="font-extrabold text-slate-900 truncate">{ticket.attendee_name}</p>
@@ -99,6 +99,14 @@ export const TicketPass: React.FC<TicketPassProps> = ({
             <p className="text-slate-600 font-medium">Ticket Tier</p>
             <p className="font-extrabold text-slate-900">{ticket.booking_item?.ticket_tier_name || 'Standard'}</p>
           </div>
+          {(ticket.booked_at || ticket.created_at || (ticket as any).booking?.created_at) && (
+            <div>
+              <p className="text-slate-600 font-medium">Booked On</p>
+              <p className="font-bold text-slate-900">
+                {formatDateTime(ticket.booked_at || ticket.created_at || (ticket as any).booking?.created_at)}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="pt-2">

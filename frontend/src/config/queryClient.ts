@@ -37,7 +37,7 @@ export const queryKeys = {
   // Bookings
   bookings: {
     all: () => ['bookings'] as const,
-    list: () => ['bookings', 'list'] as const,
+    list: (page?: number) => ['bookings', 'list', page] as const,
     detail: (id: number) => ['bookings', 'detail', id] as const,
   },
 

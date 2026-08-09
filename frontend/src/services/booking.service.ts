@@ -16,8 +16,8 @@ export const bookingService = {
     return res.data;
   },
 
-  async listUserBookings(): Promise<BookingList[]> {
-    const res = await api.get<BookingList[]>('/bookings/');
+  async listUserBookings(page = 1): Promise<PaginatedResponse<BookingList>> {
+    const res = await api.get<PaginatedResponse<BookingList>>('/bookings/', { params: { page } });
     return res.data;
   },
 

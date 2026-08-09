@@ -111,6 +111,12 @@ def create_event(*, organizer: OrganizerProfile, validated_data: dict) -> Event:
             }
         )
 
+    total_tier_capacity = sum(
+        int(tier.get("quantity", 0)) for tier in ticket_tiers_data if tier.get("quantity") is not None
+    )
+    if total_tier_capacity > 0:
+        validated_data["capacity"] = total_tier_capacity
+
     validate_event_schedule(
         start_datetime=validated_data["start_datetime"],
         end_datetime=validated_data["end_datetime"],
@@ -267,11 +273,20 @@ def send_event_rejected_email(event: Event, reason: str) -> None:
 
 
 def send_event_published_email(event: Event) -> None:
+    from django.conf import settings
+
+    frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    event_url = f"{frontend_url}/events/{event.slug}"
+
     send_email(
         to=event.organizer.user.email,
-        subject="Your event is now live!",
+        subject=f"Your event '{event.title}' is now live!",
         template_prefix="emails/event_published",
-        context={"event": event, "organizer": event.organizer},
+        context={
+            "event": event,
+            "organizer": event.organizer,
+            "event_url": event_url,
+        },
         user=event.organizer.user,
     )
 
@@ -354,24 +369,33 @@ def send_event_reminder_email(booking) -> None:
 
 @transaction.atomic
 def approve_event(event: Event, *, admin: User) -> Event:
+    """
+    Approve and automatically publish a submitted event application
+    (both PUBLIC and UNLISTED events auto-publish on approval).
+    """
     if event.status != Event.Status.SUBMITTED:
         raise ValidationError({"detail": "Only submitted events can be approved."})
 
-    event.status = Event.Status.APPROVED
+    now = timezone.now()
+    event.status = Event.Status.PUBLISHED
     event.approved_by = admin
-    event.approved_at = timezone.now()
+    event.approved_at = now
+    event.published_at = now
     event.rejection_reason = ""
+
     event.save(
         update_fields=[
             "status",
             "approved_by",
             "approved_at",
+            "published_at",
             "rejection_reason",
             "updated_at",
         ]
     )
 
-    transaction.on_commit(lambda: send_event_approved_email(event))
+    # Dispatch a single notification email to avoid duplicate/redundant organizer emails
+    transaction.on_commit(lambda: send_event_published_email(event))
     return event
 
 
@@ -403,22 +427,14 @@ def reject_event(event: Event, *, admin: User, reason: str) -> Event:
 
 @transaction.atomic
 def publish_event(event: Event, *, admin: User) -> Event:
-    """
-    Only an admin can call this — organizers must never be able to
-    publish directly (see the workflow note on the Event model). Requires
-    APPROVED status: publishing is a distinct admin action from approving,
-    not an automatic side effect of approve_event, so an admin can approve
-    an event today and choose to publish it later (e.g. once ticket tiers
-    are finalized).
-    """
-    if event.status != Event.Status.APPROVED:
-        raise ValidationError({"detail": "Only approved events can be published."})
+    if event.status not in (Event.Status.APPROVED, Event.Status.PUBLISHED):
+        raise ValidationError({"detail": "Only submitted or approved events can be published."})
 
-    event.status = Event.Status.PUBLISHED
-    event.published_at = timezone.now()
-    event.save(update_fields=["status", "published_at", "updated_at"])
-
-    transaction.on_commit(lambda: send_event_published_email(event))
+    if event.status != Event.Status.PUBLISHED:
+        event.status = Event.Status.PUBLISHED
+        event.published_at = timezone.now()
+        event.save(update_fields=["status", "published_at", "updated_at"])
+        transaction.on_commit(lambda: send_event_published_email(event))
 
     return event
 

@@ -1,65 +1,68 @@
-# Karyakram - Backend API
+# Karyakram Backend
 
-Karyakram is an event ticketing and management platform backend built with Django and Django REST Framework. It provides a robust, concurrent-safe API for event creation, booking flow, payment integration, and QR code-based ticketing.
+Django REST Framework API for the Karyakram event management and ticket booking platform.
 
-## Features
-- **Authentication**: Custom user model with JWT token authentication.
-- **Organizer Profiles**: Users can apply to be organizers. Applications require admin approval.
-- **Event Management**: Create, update, and manage events, including ticket tiers (e.g., VIP, General Admission), categorization, and limits.
-- **Booking Flow with Locking**: A reliable booking system that guarantees inventory via row-level database locking.
-- **Payment Integrations**: Handles eSewa checkout initiation (HMAC-SHA256), verification, automatic background reconciliation for pending bookings, and idempotent merchant refunds.
-- **QR Tickets**: JWT-based QR code generation with dedicated key signing, dual-validation fallback check-in, and offline verification.
+## Quick Start
 
-## Getting Started
-
-### Prerequisites
-- Python 3.12+
-- PostgreSQL (or SQLite for development)
-- Redis Server (required for async tasks and background jobs)
-- WSL (if developing on Windows)
-
-### Installation
-1. Clone the repository and navigate into the `backend` directory.
-2. Create and activate a virtual environment:
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements/base.txt
-   ```
-4. Run migrations:
-   ```bash
-   python manage.py migrate
-   ```
-5. Ensure Redis is running:
-   ```bash
-   sudo service redis-server start
-   ```
-6. Start the development server (Terminal 1):
-   ```bash
-   python manage.py runserver
-   ```
-7. Start the Celery worker & beat (Terminal 2):
-   ```bash
-   bash start_celery.sh
-   # Or manually: celery -A config worker --beat --queues=celery,email -l INFO
-   ```
-
-### Running Tests
-The backend uses `pytest`, `factory_boy`, and standard Django tests.
 ```bash
-python manage.py test apps
+cd backend
+
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Linux/macOS/WSL
+# .venv\Scripts\activate   # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env  # Edit with your DB and mail settings
+
+# Migrate and run
+python manage.py migrate
+python manage.py runserver 0.0.0.0:8000
 ```
 
-## Structure
-- `apps/users`: User management and organizer profiles.
-- `apps/events`: Events, categories, and ticket tiers.
-- `apps/bookings`: Booking logic, hold expiration, and inventory management.
-- `apps/payments`: Payment initiation and verification webhooks.
-- `apps/tickets`: QR code generation and validation.
+API available at `http://localhost:8000/api/`  
+Swagger UI at `http://localhost:8000/api/docs/`
 
-## Deployment
+## Environment Variables
 
-For deep-dive technical details, read [Architecture Guide](../documentation/backend/architecture.md).
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SECRET_KEY` | ✅ | Django secret key |
+| `DEBUG` | ✅ | `True` for development |
+| `DATABASE_URL` | ✅ | PostgreSQL connection string |
+| `FRONTEND_URL` | ✅ | Frontend origin (for CORS & email links) |
+| `ESEWA_MERCHANT_CODE` | ✅ | eSewa merchant code (`EPAYTEST` for sandbox) |
+| `ESEWA_SECRET_KEY` | ✅ | eSewa HMAC secret (`8gBm/:&EnhH.1/q` for sandbox) |
+| `EMAIL_HOST` | ❌ | SMTP host (defaults to console backend in dev) |
+| `CELERY_TASK_ALWAYS_EAGER` | ❌ | `True` to run tasks synchronously without a Celery worker |
+
+## Running Tests
+
+```bash
+python manage.py test apps.users.tests apps.events.tests apps.bookings.tests apps.payments.tests apps.tickets.tests
+# Expected: Ran 31 tests in ~20s — OK
+```
+
+## Project Structure
+
+```
+backend/
+├── apps/
+│   ├── users/          # Auth, OTP, JWT, profiles, organizer approval
+│   ├── events/         # Event CRUD, ticket tiers, categories, images
+│   ├── bookings/       # Reservations, 10-min hold, cancellations
+│   ├── payments/       # eSewa epay v2, HMAC signature, reconciliation
+│   ├── tickets/        # QR JWT generation, check-in scanner validation
+│   ├── dashboard/      # Analytics aggregation queries
+│   └── common/         # Email engine, shared permissions
+├── config/
+│   └── settings/       # base.py, development.py, production.py
+├── manage.py
+└── requirements.txt
+```
+
+See [`../documentation/backend/architecture.md`](../documentation/backend/architecture.md) for deep-dive architecture docs.  
+See [`../documentation/backend/api_docs.md`](../documentation/backend/api_docs.md) for full API reference.

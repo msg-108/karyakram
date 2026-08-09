@@ -13,6 +13,12 @@ export const MyTicketsPage: React.FC = () => {
   const tickets = ticketsData?.results || [];
   const totalCount = ticketsData?.count || 0;
 
+  React.useEffect(() => {
+    if (error && page > 1) {
+      setPage(1);
+    }
+  }, [error, page]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">

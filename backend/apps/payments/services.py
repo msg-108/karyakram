@@ -78,26 +78,62 @@ def get_esewa_payment_data(payment: Payment) -> dict:
     }
 
 
-def verify_esewa_payment(payment: Payment) -> Payment:
-    """Verify eSewa payment status directly with their server."""
+def verify_esewa_payment(
+    payment: Payment,
+    data_token: str | None = None,
+    allow_sandbox_fallback: bool = False,
+) -> Payment:
+    """Verify eSewa payment status directly with their server or using response token."""
     if payment.status == Payment.Status.COMPLETED:
         return payment
 
-    url = f"{settings.ESEWA_STATUS_URL}?product_code={settings.ESEWA_MERCHANT_CODE}&total_amount={payment.amount}&transaction_uuid={payment.reference_id}"
+    # 1. Try decoding response data token if supplied by eSewa redirect
+    if data_token:
+        try:
+            import base64
+            import json
+
+            # Padding fix if base64 string lacks padding
+            missing_padding = len(data_token) % 4
+            if missing_padding:
+                data_token += "=" * (4 - missing_padding)
+
+            decoded_bytes = base64.b64decode(data_token)
+            data_dict = json.loads(decoded_bytes.decode("utf-8"))
+            status_val = str(data_dict.get("status", "")).upper()
+            if status_val in ["COMPLETE", "COMPLETED", "SUCCESS"]:
+                payment.status = Payment.Status.COMPLETED
+                payment.transaction_id = (
+                    data_dict.get("transaction_code")
+                    or data_dict.get("refId")
+                    or str(payment.reference_id)
+                )
+                payment.save(update_fields=["status", "transaction_id", "updated_at"])
+                return payment
+        except Exception as err:
+            logger.warning(f"Failed to parse eSewa data token: {err}")
+
+    # 2. Try eSewa status API endpoint
+    amount_str = f"{payment.amount:.2f}"
+    url = f"{settings.ESEWA_STATUS_URL}?product_code={settings.ESEWA_MERCHANT_CODE}&total_amount={amount_str}&transaction_uuid={payment.reference_id}"
     try:
         response = requests.get(url, timeout=10)
         data = response.json()
         status_val = str(data.get("status", "")).upper()
         if status_val in ["COMPLETE", "COMPLETED", "SUCCESS"]:
             payment.status = Payment.Status.COMPLETED
-            payment.transaction_id = data.get("refId") or data.get("ref_id") or str(payment.reference_id)
+            payment.transaction_id = (
+                data.get("refId")
+                or data.get("transaction_code")
+                or str(payment.reference_id)
+            )
             payment.save(update_fields=["status", "transaction_id", "updated_at"])
             return payment
-    except Exception:
-        pass
+    except Exception as err:
+        logger.warning(f"eSewa status API request error: {err}")
 
-    # Fallback for Sandbox / Test merchant
-    if settings.DEBUG or getattr(settings, "ESEWA_MERCHANT_CODE", "") == "EPAYTEST":
+    # 3. Explicit fallback ONLY when user is actively completing callback in test environment
+    if allow_sandbox_fallback and (settings.DEBUG or getattr(settings, "ESEWA_MERCHANT_CODE", "") == "EPAYTEST"):
         payment.status = Payment.Status.COMPLETED
         payment.transaction_id = payment.transaction_id or f"TEST-{payment.reference_id}"
         payment.save(update_fields=["status", "transaction_id", "updated_at"])

@@ -362,21 +362,28 @@ class OrganizerEventWriteSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         """
         When the request is multipart/form-data the DRF parser hands us a
-        QueryDict.  A QueryDict value for 'ticket_tiers' will be a plain
+        QueryDict. A QueryDict value for 'ticket_tiers' will be a plain
         string (the JSON the frontend serialised before appending to FormData).
-        We must parse it back into a list before the standard field validation
-        runs; otherwise TicketTierCreateInputSerializer(many=True) receives a
-        string instead of a list and either rejects it or silently drops it.
+        We must convert QueryDict to a standard dict and parse JSON string
+        into a list before standard field validation runs; otherwise
+        QueryDict.getlist() causes DRF's ListSerializer to receive a nested
+        or raw string data structure.
         """
         import json
-        if hasattr(data, '_mutable'):
-            # QueryDict — make mutable so we can replace the value
+
+        if hasattr(data, "dict"):
+            data = data.dict()
+        elif hasattr(data, "copy"):
             data = data.copy()
-        if 'ticket_tiers' in data and isinstance(data.get('ticket_tiers'), str):
+        else:
+            data = dict(data)
+
+        if "ticket_tiers" in data and isinstance(data.get("ticket_tiers"), str):
             try:
-                data['ticket_tiers'] = json.loads(data['ticket_tiers'])
+                data["ticket_tiers"] = json.loads(data["ticket_tiers"])
             except (json.JSONDecodeError, ValueError):
                 pass  # leave as-is; field-level validation will catch it
+
         return super().to_internal_value(data)
 
     def validate(self, attrs: dict) -> dict:

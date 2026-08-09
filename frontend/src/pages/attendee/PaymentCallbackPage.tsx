@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { CheckCircle2, AlertOctagon, RefreshCw, Ticket as TicketIcon, XCircle } from 'lucide-react';
 import { useVerifyPayment } from '../../hooks/useBookings';
+import { useToast } from '../../context/ToastContext';
 import { ProviderEnum } from '../../types/common.types';
 import { SESSION_KEYS } from '../../config/constants';
 import { Button } from '../../components/ui/Button';
@@ -10,6 +11,7 @@ import { Spinner } from '../../components/ui/Spinner';
 export const PaymentCallbackPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const pathParams = useParams<{ bookingId?: string; provider?: string }>();
   const verifyMutation = useVerifyPayment();
   const hasTriggeredRef = useRef(false);
@@ -55,119 +57,131 @@ export const PaymentCallbackPage: React.FC = () => {
 
   // ─── Trigger verification once ─────────────────────────────────────────────
   useEffect(() => {
-    if (isFailed) return;
-    if (bookingId && !hasTriggeredRef.current && !verifyMutation.isSuccess && !verifyMutation.isPending) {
+    const targetId = bookingId || 0;
+    if (!hasTriggeredRef.current && !verifyMutation.isSuccess && !verifyMutation.isPending) {
       hasTriggeredRef.current = true;
       verifyMutation.mutate({
-        bookingId,
+        bookingId: targetId,
         data: {
           provider,
-          // Pass the base64 data token if present; backend will use it to verify
           pidx: esewaData || undefined,
         },
       });
     }
-  }, [bookingId, provider, esewaData, isFailed]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [bookingId, provider, esewaData]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-redirect to My Bookings upon successful verification after 3s
+  useEffect(() => {
+    if (verifyMutation.isSuccess) {
+      const timer = setTimeout(() => {
+        handleFinish(true);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [verifyMutation.isSuccess]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-redirect to My Bookings upon failure/error after 4s
+  useEffect(() => {
+    if (!verifyMutation.isPending && (isFailed || verifyMutation.isError)) {
+      const timer = setTimeout(() => {
+        handleFinish(false);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [verifyMutation.isPending, isFailed, verifyMutation.isError]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Safety fallback: If verification stays pending > 8 seconds, force finish/retry
+  useEffect(() => {
+    if (verifyMutation.isPending) {
+      const timer = setTimeout(() => {
+        if (!verifyMutation.isSuccess) {
+          handleFinish(false);
+        }
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [verifyMutation.isPending]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRetry = () => {
-    if (bookingId) {
-      hasTriggeredRef.current = false;
-      verifyMutation.mutate({
-        bookingId,
-        data: { provider, pidx: esewaData || undefined },
-      });
-    }
+    hasTriggeredRef.current = false;
+    verifyMutation.mutate({
+      bookingId: bookingId || 0,
+      data: { provider, pidx: esewaData || undefined },
+    });
   };
 
-  const handleFinish = () => {
+  const handleFinish = (success = true) => {
     sessionStorage.removeItem(SESSION_KEYS.PENDING_BOOKING_ID);
     sessionStorage.removeItem(SESSION_KEYS.PAYMENT_PROVIDER);
-    navigate('/my-tickets');
+    if (success) {
+      toast.success('Payment verified! Your booking is confirmed.');
+      navigate('/my-bookings', {
+        state: {
+          paymentStatus: 'success',
+          message: 'Payment verified! Your booking has been confirmed and tickets issued.',
+        },
+      });
+    } else {
+      toast.error('Payment was not completed or rejected.');
+      navigate('/my-bookings', {
+        state: {
+          paymentStatus: 'rejected',
+          message: 'Payment was not completed or was rejected by the gateway.',
+        },
+      });
+    }
   };
 
   return (
     <div className="container-app py-16 flex items-center justify-center min-h-[70vh]">
       <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-xl border border-slate-200 text-center space-y-6">
 
-        {/* eSewa explicitly returned failure */}
-        {isFailed && (
-          <div className="space-y-6">
-            <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
-              <XCircle className="w-10 h-10" />
-            </div>
-            <div className="space-y-1">
-              <h2 className="text-xl font-bold text-slate-900">Payment Failed</h2>
-              <p className="text-xs text-rose-600">
-                eSewa reported that the payment was not completed. No charge was made.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => navigate(`/checkout`)} className="flex-1 gap-1">
-                <RefreshCw className="w-4 h-4" />
-                Try Again
-              </Button>
-              <Button variant="secondary" onClick={() => navigate('/events')} className="flex-1">
-                Browse Events
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Verifying */}
-        {!isFailed && verifyMutation.isPending && (
-          <div className="space-y-4">
-            <Spinner size="lg" className="mx-auto" />
-            <h2 className="text-xl font-bold text-slate-900">Verifying Payment...</h2>
-            <p className="text-xs text-slate-500">Please do not refresh or close this tab.</p>
-          </div>
-        )}
-
-        {/* Initial state (not yet started) */}
-        {!isFailed && !verifyMutation.isPending && !verifyMutation.isSuccess && !verifyMutation.isError && (
-          <div className="space-y-4">
-            <Spinner size="lg" className="mx-auto" />
-            <h2 className="text-xl font-bold text-slate-900">Processing...</h2>
-            <p className="text-xs text-slate-500">Confirming your payment with eSewa.</p>
-          </div>
-        )}
-
-        {/* Success */}
+        {/* 1. Success (Highest Priority) */}
         {verifyMutation.isSuccess && (
           <div className="space-y-6">
             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <div className="space-y-1">
-              <h2 className="text-2xl font-black text-slate-900">Payment Verified!</h2>
+              <h2 className="text-2xl font-black text-slate-900 font-heading">Payment Verified!</h2>
               <p className="text-xs text-slate-500">
                 Your booking is confirmed and your tickets have been generated.
               </p>
             </div>
-            <Button size="lg" onClick={handleFinish} className="w-full gap-2">
+            <Button size="lg" onClick={() => handleFinish(true)} className="w-full gap-2">
               <TicketIcon className="w-5 h-5" />
               View My Tickets &amp; QR Passes
             </Button>
           </div>
         )}
 
-        {/* Error */}
-        {verifyMutation.isError && (
+        {/* 2. Pending Verification */}
+        {!verifyMutation.isSuccess && verifyMutation.isPending && (
+          <div className="space-y-4">
+            <Spinner size="lg" className="mx-auto" />
+            <h2 className="text-xl font-bold text-slate-900 font-heading">Verifying Payment...</h2>
+            <p className="text-xs text-slate-500">Please do not refresh or close this tab.</p>
+          </div>
+        )}
+
+        {/* 3. Explicit eSewa failure or verification error */}
+        {!verifyMutation.isSuccess && !verifyMutation.isPending && (isFailed || verifyMutation.isError) && (
           <div className="space-y-6">
             <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
-              <AlertOctagon className="w-10 h-10" />
+              <XCircle className="w-10 h-10" />
             </div>
             <div className="space-y-1">
-              <h2 className="text-xl font-bold text-slate-900">Verification Failed</h2>
+              <h2 className="text-xl font-bold text-slate-900 font-heading">Payment Failed</h2>
               <p className="text-xs text-rose-600">
-                {(verifyMutation.error as Error)?.message || 'Could not verify payment with the gateway.'}
+                {(verifyMutation.error as Error)?.message || 'eSewa reported that the payment was not completed. No charge was made.'}
               </p>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={handleRetry} className="flex-1 gap-1">
+              <Button variant="outline" onClick={handleRetry} className="flex-1 gap-1 text-xs">
                 <RefreshCw className="w-4 h-4" />
                 Retry Verify
               </Button>
-              <Button variant="secondary" onClick={() => navigate('/events')} className="flex-1">
+              <Button variant="secondary" onClick={() => navigate('/events')} className="flex-1 text-xs">
                 Browse Events
               </Button>
             </div>

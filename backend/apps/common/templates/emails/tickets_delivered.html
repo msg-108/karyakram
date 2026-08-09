@@ -1,10 +1,25 @@
 {% extends "emails/base.html" %}
-{% block subject %}Your Tickets for {{ event.title }}{% endblock %}
+{% block subject %}Confirmed Entry Ticket & QR Pass - {{ event.title }} (#{{ booking.id }}){% endblock %}
 {% block content %}
-<h2>Your Tickets Are Ready!</h2>
-<p>Hello {{ user.username }},</p>
-<p>Your tickets for <strong>{{ event.title }}</strong> are attached to this email.</p>
-<p>Please present the QR codes at the entrance for scanning.</p>
-<p>You can also view and download your tickets at any time from your dashboard.</p>
-<a href="{{ settings.FRONTEND_URL }}/dashboard/tickets" class="btn">View My Tickets</a>
+<h2>Your Ticket &amp; Entry QR Pass is Confirmed!</h2>
+<p>Hello <strong>{{ user.username }}</strong>,</p>
+<p>Your booking for <strong>{{ event.title }}</strong> has been verified. Your QR entry pass(es) are attached directly to this email.</p>
+
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 20px 0;">
+  <h3 style="margin-top: 0; color: #1e293b; font-size: 16px;">Event Details</h3>
+  <p style="margin: 4px 0; color: #475569;"><strong>Event:</strong> {{ event.title }}</p>
+  <p style="margin: 4px 0; color: #475569;"><strong>Venue:</strong> {{ event.venue }}, {{ event.address }}, {{ event.city }}</p>
+  <p style="margin: 4px 0; color: #475569;"><strong>Date &amp; Time:</strong> {{ event.start_datetime|date:"N j, Y, g:i a" }}</p>
+  <p style="margin: 4px 0; color: #475569;"><strong>Booking Ref:</strong> #{{ booking.id }}</p>
+</div>
+
+<p style="font-size: 13px; color: #64748b;">
+  <strong>Entrance Instructions:</strong> Present the QR code image above directly from your phone at the entrance scanner for rapid entry.
+</p>
+
+<div style="margin: 24px 0;">
+  <a href="{{ my_tickets_url }}" style="background-color: #6366f1; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+    Open My Tickets Dashboard
+  </a>
+</div>
 {% endblock %}

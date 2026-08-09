@@ -24,10 +24,10 @@ def generate_ticket_qr_code(ticket_id: str):
             return
 
         qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
+            version=None,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=16,
+            border=2,
         )
         qr.add_data(ticket.qr_code_payload)
         qr.make(fit=True)

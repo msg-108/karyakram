@@ -11,9 +11,10 @@ import { FormField } from '../../components/forms/FormField';
 import { Spinner } from '../../components/ui/Spinner';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { parseApiError } from '../../lib/api';
+import { formatForDateTimeLocal, addHoursToDateTimeLocal } from '../../lib/formatters';
 
 export const EditEventPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -42,10 +43,14 @@ export const EditEventPage: React.FC = () => {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<UpdateEventFormData>({
     resolver: zodResolver(updateEventSchema),
   });
+
+  const startDatetime = watch('start_datetime');
 
   useEffect(() => {
     if (event) {
@@ -58,8 +63,8 @@ export const EditEventPage: React.FC = () => {
         venue: event.venue,
         address: event.address || '',
         city: event.city,
-        start_datetime: event.start_datetime ? new Date(event.start_datetime).toISOString().slice(0, 16) : '',
-        end_datetime: event.end_datetime ? new Date(event.end_datetime).toISOString().slice(0, 16) : '',
+        start_datetime: formatForDateTimeLocal(event.start_datetime),
+        end_datetime: formatForDateTimeLocal(event.end_datetime),
         capacity: event.capacity || 100,
         visibility: event.visibility || 'PUBLIC',
       });
@@ -96,9 +101,16 @@ export const EditEventPage: React.FC = () => {
     { value: 'UNLISTED', label: 'Unlisted (Link access only)' },
   ];
 
+  const onFormInvalid = (fieldErrors: any) => {
+    const firstError = Object.values(fieldErrors)[0] as any;
+    toast.warning(firstError?.message || 'Please check and fix the required fields below.');
+  };
+
   const onSubmit = (data: UpdateEventFormData) => {
     updateMutation.mutate(data);
   };
+
+  const totalErrorsCount = Object.keys(errors).length;
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -108,6 +120,32 @@ export const EditEventPage: React.FC = () => {
           Status: <span className="font-bold uppercase text-karyakram-purple-800">{event.status}</span>
         </p>
       </div>
+
+      {/* Warning Callout when validation fails */}
+      {totalErrorsCount > 0 && (
+        <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl flex items-start gap-3 text-amber-900 shadow-2xs">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-1 text-xs">
+            <h4 className="font-extrabold text-amber-950 text-sm">
+              Form Validation Warning ({totalErrorsCount} field{totalErrorsCount > 1 ? 's' : ''} need attention)
+            </h4>
+            <p className="font-medium text-amber-800">
+              Please review the highlighted fields in the form below before saving changes.
+            </p>
+            <ul className="list-disc list-inside space-y-0.5 font-bold text-amber-900 pt-1">
+              {errors.title && <li>Event Title: {errors.title.message}</li>}
+              {errors.category && <li>Category: {errors.category.message}</li>}
+              {errors.short_description && <li>Short Summary: {errors.short_description.message}</li>}
+              {errors.description && <li>Full Description: {errors.description.message}</li>}
+              {errors.start_datetime && <li>Start Date & Time: {errors.start_datetime.message}</li>}
+              {errors.end_datetime && <li>End Date & Time: {errors.end_datetime.message}</li>}
+              {errors.venue && <li>Venue: {errors.venue.message}</li>}
+              {errors.address && <li>Address: {errors.address.message}</li>}
+              {errors.city && <li>City: {errors.city.message}</li>}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {event.rejection_reason && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-amber-800 shadow-2xs">
@@ -124,7 +162,7 @@ export const EditEventPage: React.FC = () => {
           <CardTitle className="text-base">Event Details & Location</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit, onFormInvalid)} className="space-y-4">
             <FormField label="Event Title" {...register('title')} error={errors.title?.message} />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -147,8 +185,19 @@ export const EditEventPage: React.FC = () => {
             <FormField as="textarea" rows={4} label="Full Description" {...register('description')} error={errors.description?.message} />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <FormField label="Start Date & Time" type="datetime-local" {...register('start_datetime')} error={errors.start_datetime?.message} />
-              <FormField label="End Date & Time" type="datetime-local" {...register('end_datetime')} error={errors.end_datetime?.message} />
+              <FormField
+                label="Start Date & Time"
+                type="datetime-local"
+                {...register('start_datetime')}
+                error={errors.start_datetime?.message}
+              />
+              <FormField
+                label="End Date & Time"
+                type="datetime-local"
+                min={startDatetime}
+                {...register('end_datetime')}
+                error={errors.end_datetime?.message}
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">

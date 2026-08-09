@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Building, ShieldCheck, Ticket } from 'lucide-react';
-import { usePublicEvent } from '../../hooks/useEvents';
+import { usePublicEvent, useOrganizerEvents, useOrganizerEventDetail } from '../../hooks/useEvents';
 import { useCreateBooking } from '../../hooks/useBookings';
 import { useAuth } from '../../hooks/useAuth';
 import { formatDate, formatTime } from '../../lib/formatters';
@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Spinner } from '../../components/ui/Spinner';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { AlertTriangle } from 'lucide-react';
 import { bookingService } from '../../services/booking.service';
 import { submitEsewaForm } from '../../lib/payment';
 import { SESSION_KEYS } from '../../config/constants';
@@ -17,12 +18,20 @@ import { SESSION_KEYS } from '../../config/constants';
 export const EventDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
-  const { data: event, isLoading, error } = usePublicEvent(slug || '');
+  const { data: publicEvent, isLoading: isPublicLoading, error: publicError } = usePublicEvent(slug || '');
+  const { data: orgEvents = [] } = useOrganizerEvents();
+
+  const matchingOrgEventSummary = orgEvents.find((e) => e.slug === slug);
+  const { data: orgEventDetail, isLoading: isOrgLoading } = useOrganizerEventDetail(matchingOrgEventSummary?.id || 0);
+
   const createBookingMutation = useCreateBooking();
-
   const [selectedTiers, setSelectedTiers] = useState<Record<number, number>>({});
+
+  const event = publicEvent || (orgEventDetail as any);
+  const isDraftPreview = !publicEvent && Boolean(orgEventDetail);
+  const isLoading = isPublicLoading || (matchingOrgEventSummary && isOrgLoading);
 
   if (isLoading) {
     return (
@@ -32,12 +41,24 @@ export const EventDetailPage: React.FC = () => {
     );
   }
 
-  if (error || !event) {
+  if ((publicError && !orgEventDetail) || !event) {
     return (
-      <div className="container-app py-16 text-center space-y-4">
-        <h2 className="text-2xl font-bold text-slate-900">Event Not Found</h2>
-        <p className="text-sm text-slate-500">The event you requested is unavailable or has been unlisted.</p>
-        <Button onClick={() => navigate('/events')}>Back to All Events</Button>
+      <div className="container-app py-16 text-center space-y-4 max-w-md mx-auto">
+        <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-2">
+          <AlertTriangle className="w-6 h-6" />
+        </div>
+        <h2 className="text-2xl font-black text-slate-900 font-heading">Event Not Found</h2>
+        <p className="text-xs text-slate-500 font-medium leading-relaxed">
+          The event you requested is either in <strong>Draft</strong> status, unlisted, or does not exist. If you are the event organizer, please check your <strong>My Events</strong> dashboard to edit or submit it for admin review.
+        </p>
+        <div className="pt-2 flex items-center justify-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => navigate('/organizer/events')}>
+            My Events Dashboard
+          </Button>
+          <Button size="sm" onClick={() => navigate('/events')}>
+            All Live Events
+          </Button>
+        </div>
       </div>
     );
   }
@@ -59,7 +80,7 @@ export const EventDetailPage: React.FC = () => {
   const totalSelectedTickets = selectedItemsList.reduce((acc, item) => acc + item.quantity, 0);
 
   const totalCost = selectedItemsList.reduce((acc, item) => {
-    const tier = event.ticket_tiers.find((t) => t.id === item.ticket_tier);
+    const tier = (event.ticket_tiers || []).find((t: any) => t.id === item.ticket_tier);
     return acc + (tier ? parseFloat(tier.price) * item.quantity : 0);
   }, 0);
 
@@ -87,6 +108,24 @@ export const EventDetailPage: React.FC = () => {
 
   return (
     <div className="container-app py-8 space-y-8 min-h-screen text-slate-900">
+      {isDraftPreview && (
+        <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-900 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+            <div className="text-xs">
+              <span className="font-extrabold text-sm text-amber-950 block">
+                Organizer Draft Preview Mode ({event.status})
+              </span>
+              <span className="font-medium text-amber-800">
+                This event is currently in <strong>{event.status}</strong> status and is not visible to the public yet.
+              </span>
+            </div>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => navigate('/organizer/events')}>
+            My Events Dashboard
+          </Button>
+        </div>
+      )}
       {/* 1. Top Banner Container */}
       <div className="w-full h-[400px] sm:h-[520px] lg:h-[600px] rounded-3xl overflow-hidden shadow-xl relative bg-karyakram-purple-600 border border-karyakram-purple-800">
         {event.banner ? (

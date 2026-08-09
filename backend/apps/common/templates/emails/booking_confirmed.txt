@@ -1,0 +1,20 @@
+Booking Confirmed — {{ event.title }} (#{{ booking.id }})
+
+Hello {{ user.first_name|default:user.username }},
+
+Your payment has been verified and your booking for {{ event.title }} is fully confirmed.
+
+Event: {{ event.title }}
+Date & Time: {{ event.start_datetime }}
+Venue: {{ event.venue }} ({{ event.city }})
+Booking Ref: #{{ booking.id }}
+
+Order Summary:
+{% for item in items %}
+- {{ item.ticket_tier.name }} x {{ item.quantity }} = NPR {{ item.line_total }}
+{% endfor %}
+
+Total Paid: NPR {{ booking.total_amount }}
+
+View your digital passes and QR codes online:
+{{ settings.FRONTEND_URL }}/my-tickets

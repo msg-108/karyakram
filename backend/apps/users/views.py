@@ -370,16 +370,15 @@ class OrganizerApprovalView(APIView):
         operation_id="approveOrRejectOrganizer",
         summary="Approve or reject organizer",
         description=(
-                "Approve or reject an organizer registration request. "
-                "Approving activates the account. Rejecting keeps the "
-                "account inactive and stores the rejection reason."
+            "Approve or reject an organizer registration request. "
+            "Approving activates the account. Rejecting sends a rejection email "
+            "and removes the account data from the database."
         ),
         tags=["Admin: Organizers"],
         request=OrganizerApprovalActionSerializer,
         responses={
             200: OpenApiResponse(
-                OrganizerProfileSerializer,
-                description="Organizer approval status updated."
+                description="Organizer approved (returns profile) or rejected (account deleted)."
             ),
             400: OpenApiResponse(
                 description="Invalid approval request."
@@ -397,11 +396,15 @@ class OrganizerApprovalView(APIView):
 
         if serializer.validated_data["action"] == "approve":
             profile = services.approve_organizer(profile, admin=request.user)
+            return Response(OrganizerProfileSerializer(profile).data)
         else:
-            profile = services.reject_organizer(
+            services.reject_organizer(
                 profile, admin=request.user, reason=serializer.validated_data["reason"]
             )
-        return Response(OrganizerProfileSerializer(profile).data)
+            return Response(
+                {"detail": "Organizer registration rejected and account deleted."},
+                status=status.HTTP_200_OK,
+            )
 
 
 # ==================== PASSWORD RESET & LOGOUT ====================

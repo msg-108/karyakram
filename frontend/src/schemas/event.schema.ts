@@ -5,8 +5,8 @@ export const ticketTierInputSchema = z.object({
   description: z.string().optional(),
   price: z
     .string()
-    .regex(/^\d+(\.\d{1,2})?$/, 'Price must be a valid amount (e.g. 500 or 500.00)'),
-  quantity: z.number().int('Must be a whole number').positive('Quantity must be greater than 0'),
+    .regex(/^\d+(\.\d{1,2})?$/, 'Price must be a valid amount (e.g. 0 or 500)'),
+  quantity: z.number().int('Must be a whole number').min(0, 'Quantity cannot be negative'),
   display_order: z.number().int().min(0).optional(),
   is_active: z.boolean().optional(),
 });
@@ -41,8 +41,9 @@ export const createEventSchema = z
   })
   .refine(
     (data) => {
-      const start = new Date(data.start_datetime);
-      const end = new Date(data.end_datetime);
+      if (!data.start_datetime || !data.end_datetime) return true;
+      const start = new Date(data.start_datetime).getTime();
+      const end = new Date(data.end_datetime).getTime();
       return end > start;
     },
     {
@@ -77,8 +78,9 @@ export const updateEventSchema = z
   })
   .refine(
     (data) => {
-      const start = new Date(data.start_datetime);
-      const end = new Date(data.end_datetime);
+      if (!data.start_datetime || !data.end_datetime) return true;
+      const start = new Date(data.start_datetime).getTime();
+      const end = new Date(data.end_datetime).getTime();
       return end > start;
     },
     {

@@ -2,6 +2,7 @@ from .base import *  # noqa: F401,F403
 from decouple import config
 
 DEBUG = True
+ALLOWED_HOSTS = ["*"]
 
 import sys
 
@@ -27,8 +28,8 @@ else:
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-# Allows running Celery tasks synchronously in local dev if configured via env
-CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", cast=bool, default=False)
+# Runs Celery tasks synchronously in local dev for instant email delivery
+CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", cast=bool, default=True)
 
 # Relax DRF burst throttling in development mode (100 requests/min)
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["auth_burst"] = config("THROTTLE_AUTH_BURST", default="100/min")

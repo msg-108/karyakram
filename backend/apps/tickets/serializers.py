@@ -12,6 +12,7 @@ class TicketSerializer(serializers.ModelSerializer):
     event_venue = serializers.CharField(source="booking.event.venue", read_only=True)
     event_address = serializers.CharField(source="booking.event.address", read_only=True)
     event_city = serializers.CharField(source="booking.event.city", read_only=True)
+    booked_at = serializers.DateTimeField(source="booking.created_at", read_only=True)
 
     class Meta:
         model = Ticket
@@ -33,6 +34,7 @@ class TicketSerializer(serializers.ModelSerializer):
             "event_city",
             "checked_in_at",
             "created_at",
+            "booked_at",
         ]
 
 

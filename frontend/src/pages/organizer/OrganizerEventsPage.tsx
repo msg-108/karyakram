@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { PlusCircle, Edit, Send, Trash2, Users } from 'lucide-react';
+import { PlusCircle, Edit, Send, Trash2, Users, ExternalLink } from 'lucide-react';
 import { useOrganizerEvents, useSubmitEvent } from '../../hooks/useEvents';
 import { eventService } from '../../services/event.service';
 import { DataTable, Column } from '../../components/dashboard/DataTable';
@@ -76,12 +76,23 @@ export const OrganizerEventsPage: React.FC = () => {
             </button>
           )}
 
-          {/* Attendees link */}
-          <Link to={`/organizer/events/${row.id}/attendees`}>
-            <button title="View Attendees" className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">
-              <Users className="w-4 h-4" />
-            </button>
-          </Link>
+          {/* Attendees link (only for active/published events) */}
+          {row.status !== 'DRAFT' && row.status !== 'SUBMITTED' && row.status !== 'REJECTED' && (
+            <Link to={`/organizer/events/${row.id}/attendees`}>
+              <button title="View Attendees" className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">
+                <Users className="w-4 h-4" />
+              </button>
+            </Link>
+          )}
+
+          {/* View Direct Event Link (for published events, public or unlisted) */}
+          {row.status === 'PUBLISHED' && (
+            <Link to={`/events/${row.slug}`} target="_blank" rel="noopener noreferrer">
+              <button title="View Event Page (Direct Link)" className="p-1.5 rounded-lg border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors">
+                <ExternalLink className="w-4 h-4" />
+              </button>
+            </Link>
+          )}
 
           {/* Delete (only DRAFT/REJECTED) */}
           {(row.status === 'DRAFT' || row.status === 'REJECTED') && (

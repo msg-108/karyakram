@@ -101,11 +101,16 @@ class TicketSummary:
 
 def list_upcoming_tickets(user: User) -> list[TicketSummary]:
     from apps.tickets.models import Ticket
+    from apps.bookings.models import Booking
     from django.utils import timezone
 
     tickets = Ticket.objects.filter(
-        booking__user=user, booking__event__start_datetime__gte=timezone.now()
-    ).select_related("booking__event", "booking_item__ticket_tier")
+        booking__user=user,
+        booking__status=Booking.Status.CONFIRMED,
+        booking__event__start_datetime__gte=timezone.now(),
+    ).exclude(status=Ticket.Status.CANCELLED).select_related(
+        "booking__event", "booking_item__ticket_tier"
+    )
 
     return [
         TicketSummary(
@@ -122,8 +127,12 @@ def list_upcoming_tickets(user: User) -> list[TicketSummary]:
 
 def list_ticket_history(user: User) -> list[TicketSummary]:
     from apps.tickets.models import Ticket
+    from apps.bookings.models import Booking
 
-    tickets = Ticket.objects.filter(booking__user=user).select_related(
+    tickets = Ticket.objects.filter(
+        booking__user=user,
+        booking__status=Booking.Status.CONFIRMED,
+    ).exclude(status=Ticket.Status.CANCELLED).select_related(
         "booking__event", "booking_item__ticket_tier"
     )
 
@@ -466,9 +475,11 @@ def get_revenue_analytics(profile: OrganizerProfile) -> RevenueAnalytics:
     from django.db.models.functions import TruncMonth
     from apps.payments.models import Payment
 
+    from apps.bookings.models import Booking
+
     payments = Payment.objects.filter(
         booking__event__organizer=profile, status=Payment.Status.COMPLETED
-    )
+    ).exclude(booking__status=Booking.Status.CANCELLED)
 
     total = payments.aggregate(Sum("amount"))["amount__sum"] or Decimal("0.00")
 
@@ -748,7 +759,11 @@ def get_admin_revenue_statistics(user: User) -> AdminRevenueStatistics:
     from apps.payments.models import Payment
     from django.db.models import Sum
 
-    completed_payments = Payment.objects.filter(status=Payment.Status.COMPLETED)
+    from apps.bookings.models import Booking
+
+    completed_payments = Payment.objects.filter(
+        status=Payment.Status.COMPLETED
+    ).exclude(booking__status=Booking.Status.CANCELLED)
     total_rev = completed_payments.aggregate(Sum("amount"))["amount__sum"] or Decimal(
         "0.00"
     )
